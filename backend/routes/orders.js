@@ -302,47 +302,12 @@ router.post('/', async (req, res) => {
         }
 
 
-        // Send confirmation email to customer
-        try {
-            await sendOrderConfirmationEmail(
-                customerEmail,
-                customerName,
-                orderNumber,
-                orderItems,
-                total,
-                {
-                    created_at: new Date().toISOString(),
-                    service_type: serviceType,
-                    delivery_fee: safeDeliveryFee,
-                    packeta_point_json: packetaPoint ? JSON.stringify(packetaPoint) : null
-                }
-            );
-            console.log(`Order confirmation email sent to ${customerEmail} for order ${orderNumber}`);
-        } catch (emailError) {
-            console.error('Failed to send order confirmation email:', emailError.message);
-            // Don't fail the request if email fails, just log the error
-        }
-
-        // Send owner notification email
-        try {
-            const ownerEmail = process.env.OWNER_NOTIFY_EMAIL || 'djsamu.jb@gmail.com';
-            await sendNewOrderNotificationEmail(
-                ownerEmail,
-                orderNumber,
-                customerName,
-                customerEmail,
-                total,
-                {
-                    created_at: new Date().toISOString(),
-                    service_type: serviceType,
-                    delivery_fee: safeDeliveryFee,
-                    packeta_point_json: packetaPoint ? JSON.stringify(packetaPoint) : null
-                }
-            );
-            console.log(`Owner notification email sent to ${ownerEmail} for order ${orderNumber}`);
-        } catch (emailError) {
-            console.error('Failed to send owner notification email:', emailError.message);
-        }
+        const emailContext = {
+            created_at: new Date().toISOString(),
+            service_type: serviceType,
+            delivery_fee: safeDeliveryFee,
+            packeta_point_json: packetaPoint ? JSON.stringify(packetaPoint) : null
+        };
 
         res.status(201).json({
             success: true,
@@ -353,6 +318,38 @@ router.post('/', async (req, res) => {
                 total,
                 itemCount: cartItems.length,
                 status: 'pending'
+            }
+        });
+
+        // Send emails asynchronously so checkout response is not blocked by SMTP latency/timeouts
+        setImmediate(async () => {
+            try {
+                await sendOrderConfirmationEmail(
+                    customerEmail,
+                    customerName,
+                    orderNumber,
+                    orderItems,
+                    total,
+                    emailContext
+                );
+                console.log(`Order confirmation email sent to ${customerEmail} for order ${orderNumber}`);
+            } catch (emailError) {
+                console.error('Failed to send order confirmation email:', emailError.message);
+            }
+
+            try {
+                const ownerEmail = process.env.OWNER_NOTIFY_EMAIL || 'djsamu.jb@gmail.com';
+                await sendNewOrderNotificationEmail(
+                    ownerEmail,
+                    orderNumber,
+                    customerName,
+                    customerEmail,
+                    total,
+                    emailContext
+                );
+                console.log(`Owner notification email sent to ${ownerEmail} for order ${orderNumber}`);
+            } catch (emailError) {
+                console.error('Failed to send owner notification email:', emailError.message);
             }
         });
     } catch (err) {

@@ -730,7 +730,7 @@ document.addEventListener('DOMContentLoaded', function() {
     //   prevents attempts to fetch `file:///api/...` which cause CORS/errors in the console.
     // - Otherwise use a relative `/api` so the frontend works when served from the same origin.
     const API_BASE_URL = (location.protocol === 'file:' || location.origin === 'null')
-        ? 'http://localhost:3000/api'
+        ? 'https://webdone-wymx.onrender.com/api'
         : '/api';
 
     /**
@@ -6599,7 +6599,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify(orderData)
             };
 
-            const response = await fetch('http://localhost:3000/api/orders', options);
+            const response = await fetch(`${API_BASE_URL}/orders`, options);
             const result = await response.json();
 
             if (!response.ok || !result.success) {
