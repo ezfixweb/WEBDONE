@@ -1,0 +1,9 @@
+node_modules/
+.vscode/
+.env
+backend/.env
+backend/.env.*
+backend/database/*.db
+backend/database/*.db-journal
+*.log
+.DS_Store

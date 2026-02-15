@@ -1,0 +1,324 @@
+================================================================================
+                    EZFIX WEB APPLICATION - SETUP GUIDE
+================================================================================
+
+This guide covers development setup and production deployment for EzFix.
+
+TECH STACK:
+- Frontend: Vanilla JavaScript, HTML5, CSS3 (no frameworks)
+- Backend: Node.js + Express.js
+- Database: SQLite (development), PostgreSQL (recommended for production)
+- Email: Nodemailer with Gmail SMTP
+- Auth: JWT tokens + Google OAuth
+- Payment: GoPay (configured, needs live credentials)
+
+
+================================================================================
+PART 1: LOCAL DEVELOPMENT SETUP
+================================================================================
+
+Prerequisites:
+- Node.js 16+ LTS
+- npm or yarn
+- Git (optional)
+
+Steps:
+
+1) Extract/clone to folder: e:\web
+
+2) Install backend dependencies:
+   cd backend
+   npm install
+
+3) Set up environment variables in backend/.env:
+   JWT_SECRET=your_secret_key_here
+   JWT_EXPIRE=7d
+   EMAIL_USER=your_email@gmail.com
+   EMAIL_PASSWORD=your_app_specific_password
+   FRONTEND_URL=http://localhost:3000
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+   GOOGLE_REDIRECT_URI=http://localhost:3000/auth.html
+   ADMIN_EMAILS=your_admin_email@example.com
+   OWNER_USERNAME=admin
+
+   (For Gmail password, use 16-char app-specific password from Google Account settings)
+
+4) Start backend:
+   node server.js
+   Backend runs on: http://localhost:3000/api
+
+5) In separate terminal, open frontend:
+   Open index.html in browser (e:\web\index.html)
+   or start simple HTTP server: python -m http.server 8000
+   Frontend runs on: http://localhost:8000
+
+6) Test login:
+   - Use default credentials: admin / admin
+   - or register new account
+   - Password must: 8+ chars, uppercase, lowercase, number, special char
+
+7) Admin features:
+   - Click "Výpisy" (Admin Tab) after login
+   - Manage catalog (delivery methods, 3D printers, PC builders)
+   - View and manage orders
+
+
+================================================================================
+PART 2: PRODUCTION DEPLOYMENT - FRONTEND (Active24)
+================================================================================
+
+Active24 provides domain + web hosting for static files.
+
+Steps:
+
+1) Go to: https://www.active24.cz/
+
+2) Register or login to your account
+
+3) Upload frontend files via FTP or File Manager:
+   Files to upload (from e:\web root):
+   - index.html
+   - script.js
+   - styles.css
+   - assets/ folder
+
+4) Update frontend API URL:
+   In script.js, find: const API_BASE_URL = 
+   Change to your backend URL (see Part 3)
+   Example: https://your-backend-domain.com/api
+
+5) Access frontend:
+   https://your-domain.cz/
+
+Note: Active24 does NOT support Node.js (only PHP).
+      You need separate hosting for the backend API.
+
+
+================================================================================
+PART 3: PRODUCTION DEPLOYMENT - BACKEND (Czech VPS)
+================================================================================
+
+You need a VPS with Node.js support for the API backend.
+Recommended Czech providers:
+- Wedos (wedos.cz) - Popular, Node.js ready
+- Morfeus (morfeus.io) - VPS + cloud
+- Ignum (ignum.cz) - Czech hosting
+- ForPsi (forpsi.cz) - VPS provider
+
+GENERIC VPS SETUP (works for most providers):
+
+1) SSH into your VPS:
+   ssh root@your_vps_ip_address
+   (or use provider's web terminal)
+
+2) Update system:
+   apt update && apt upgrade -y
+
+3) Install Node.js LTS:
+   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+   apt install -y nodejs
+   node --version
+   npm --version
+
+4) Install PM2 (process manager):
+   npm install -g pm2
+
+5) Create application folder:
+   mkdir -p /var/www/ezfix-api
+   cd /var/www/ezfix-api
+
+6) Upload backend code:
+   Option A: Via Git (recommended)
+     git clone <your_repo_url> .
+   
+   Option B: Via SFTP
+     Use WinSCP or FileZilla
+     Upload: backend/ contents to /var/www/ezfix-api/
+
+7) Install dependencies:
+   npm install
+
+8) Create .env file:
+   nano .env
+   
+   Add these variables:
+   ----
+   JWT_SECRET=your_secret_key_generate_random_string
+   JWT_EXPIRE=7d
+   EMAIL_USER=your_email@gmail.com
+   EMAIL_PASSWORD=your_app_specific_password
+   FRONTEND_URL=https://your-domain.cz
+   GOOGLE_CLIENT_ID=your_client_id
+   GOOGLE_CLIENT_SECRET=your_client_secret
+   GOOGLE_REDIRECT_URI=https://your-backend-domain.com/api/auth/google/callback
+   ADMIN_EMAILS=your_admin_email@example.com
+   OWNER_USERNAME=admin
+   NODE_ENV=production
+   ----
+   
+   Save: Press Ctrl+X, then Y, then Enter
+
+9) Start backend with PM2:
+   pm2 start server.js --name "ezfix-api"
+   pm2 startup
+   pm2 save
+   (This auto-starts on reboot)
+
+10) Verify it's running:
+    pm2 list
+    pm2 logs ezfix-api
+
+11) Install Nginx (reverse proxy):
+    apt install -y nginx
+
+12) Configure Nginx:
+    nano /etc/nginx/sites-available/default
+    
+    Replace server block with:
+    ----
+    server {
+        listen 80;
+        server_name your-backend-domain.com;
+        
+        location / {
+            proxy_pass http://localhost:3000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+        }
+    }
+    ----
+    
+    Save: Press Ctrl+X, then Y, then Enter
+
+13) Test and restart Nginx:
+    nginx -t
+    systemctl restart nginx
+
+14) Install SSL certificate (Let's Encrypt):
+    apt install -y certbot python3-certbot-nginx
+    certbot --nginx -d your-backend-domain.com
+    
+    Follow prompts (choose auto-renewal)
+
+15) Verify backend is accessible:
+    https://your-backend-domain.com/api (should return API info)
+    https://your-backend-domain.com/api/health (if implemented)
+
+PROVIDER-SPECIFIC: Tell me your chosen provider and I'll add exact dashboard steps.
+
+
+================================================================================
+PART 4: CONFIGURATION AFTER DEPLOYMENT
+================================================================================
+
+Admin Catalog Setup:
+
+1) Login to frontend with admin account
+2) Click "Výpisy" (Admin Tab)
+3) Configure:
+   - Delivery methods (Zasilkovna, Česká pošta, PPL, DPD, GLS)
+   - 3D Printer models with colors
+   - PC Builder components
+   - Payment method fees (GoPay, Pay on Delivery)
+
+4) Each delivery method can have custom fee
+
+5) GoPay Payment:
+   - UI configured and saves payment method
+   - To use live: Add GoPay API credentials to .env
+   - Awaiting your GoPay account setup
+
+
+================================================================================
+PART 5: DATABASE BACKUP & MAINTENANCE
+================================================================================
+
+SQLite (development/testing):
+- Database file: backend/database/repair_service.db
+- Backup: Copy file regularly
+- Size: Grows as orders accumulate
+
+PostgreSQL (recommended for production):
+- Contact Czech VPS provider for PostgreSQL setup
+- Update connection string in backend/config/database.js
+- Benefits: Persistence, auto-scaling, backups
+
+Email Configuration:
+- Gmail: Need app-specific password (not regular password)
+- Generate at: https://myaccount.google.com/apppasswords
+- Alternative: Use other SMTP (Sendgrid, Mailgun, VPS's SMTP)
+
+
+================================================================================
+PART 6: TESTING DEPLOYMENT
+================================================================================
+
+After everything is deployed:
+
+1) Open frontend: https://your-domain.cz/
+2) Register test account
+3) Create test repair order
+4) Test checkout with different delivery methods
+5) Check admin dashboard loads
+6) Verify emails are received
+7) Test password reset
+
+Common Issues:
+
+Q: "Cannot connect to API"
+A: Check:
+   - Backend .env has correct URLs
+   - Frontend script.js has correct API_BASE_URL
+   - Nginx is running: systemctl status nginx
+   - PM2 app is running: pm2 list
+
+Q: "SSL certificate error"
+A: Run: certbot renew
+
+Q: "Database reset on Render"
+A: Use VPS + PostgreSQL instead (data persists)
+
+Q: "Emails not sending"
+A: Check Gmail app password in .env
+   Check email address formatting
+   Review backend logs: pm2 logs
+
+
+================================================================================
+PART 7: GOPAY INTEGRATION (OPTIONAL)
+================================================================================
+
+When you have GoPay credentials:
+
+1) Add to .env:
+   GOPAY_API_KEY=your_key
+   GOPAY_CLIENT_ID=your_client_id
+   GOPAY_REDIRECT_URL=https://your-backend-domain.com/api/payment/gopay/callback
+
+2) Backend already has GoPay routes, awaits credentials
+
+3) Live payment flow:
+   User selects GoPay → Redirect to GoPay → Payment → Return to frontend
+   Order updated with payment status
+
+
+================================================================================
+SUPPORT
+================================================================================
+
+Documentation references:
+- Node.js: https://nodejs.org
+- Express: https://expressjs.com
+- PM2: https://pm2.keymetrics.io
+- Nginx: https://nginx.org
+- Certbot: https://certbot.eff.org
+- Nodemailer: https://nodemailer.com
+
+For Czech provider support, contact their technical support with your VPS IP
+and ask for Node.js + Nginx + PM2 configuration assistance.
+
+================================================================================

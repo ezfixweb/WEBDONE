@@ -1,0 +1,5 @@
+Patch: add order details modal, CSS, and JS changes
+Files updated:
+- index.html: add #orderDetailsModal markup
+- styles.css: add .order-details-modal rules
+- script.js: add showOrderDetails(), modal handlers, and update renderAdminOrders() to include Details button and show additional fields
