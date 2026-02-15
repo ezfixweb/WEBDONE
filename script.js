@@ -64,11 +64,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const I18N = {
         cs: {
-            'Home': 'Domu',
-            'Services': 'Sluzby',
-            'Custom Builds': 'Vlastni sestavy',
+            'Home': 'Domů',
+            'Services': 'Služby',
+            'Custom Builds': 'Vlastní sestavy',
             '3D Printing': '3D tisk',
-            'About': 'O nas',
+            'About': 'O nás',
             'Admin': 'Administrace',
             'Login': 'Prihlasit se',
             'Logout': 'Odhlasit se',
@@ -107,19 +107,19 @@ document.addEventListener('DOMContentLoaded', function() {
             'Specifications': 'Specifikace',
             'Scroll thumbnails left': 'Posunout nahledy doleva',
             'Scroll thumbnails right': 'Posunout nahledy doprava',
-            'Expert Tech Solutions': 'Profesionalni technologicka reseni',
-            'We Fix Your': 'Opravime vase',
-            'Tech Devices': 'zarizeni',
-            'Professional repair services for smartphones, tablets, notebooks, and desktop PCs. Plus, shop quality parts and accessories.': 'Profesionalni opravy smartphonu, tabletu, notebooku a stolnich PC. Navic kvalitni dily a prislusenstvi.',
-            'Service': 'Sluzby',
-            'Devices Repaired': 'Opravenych zarizeni',
+            'Expert Tech Solutions': 'Profesionální technologická řešení',
+            'We Fix Your': 'Opravíme vaše',
+            'Tech Devices': 'zařízení',
+            'Professional repair services for smartphones, tablets, notebooks, and desktop PCs. Plus, shop quality parts and accessories.': 'Profesionální opravy smartphonů, tabletů, notebooků a stolních PC. Navíc kvalitní díly a příslušenství.',
+            'Service': 'Služby',
+            'Devices Repaired': 'Opravených zařízení',
             'Satisfaction Rate': 'Spokojenost',
-            'Fast Turnaround': 'Rychle vyrizeni',
+            'Fast Turnaround': 'Rychlé vyřízení',
             'Everything You Need, One Place': 'Vse na jednom miste',
             'Fast repairs, custom builds, and precision 3D prints with transparent pricing.': 'Rychle opravy, vlastni sestavy a presny 3D tisk s transparentni cenou.',
             'Same-Day Repairs': 'Opravy v ten samy den',
             'Clear diagnostics and rapid turnaround on phones, tablets, and laptops.': 'Jasna diagnostika a rychle opravy telefonu, tabletu a notebooku.',
-            'Browse Services': 'Prohlidnout sluzby',
+            'Browse Services': 'Prohlédnout služby',
             'Custom Builds': 'Vlastni sestavy',
             'Design a PC or server with expert guidance and curated parts.': 'Navrhnete PC nebo server s odbornym vedenim a peclive vybranymi dilmi.',
             'Start a Build': 'Zacit sestavu',
@@ -565,9 +565,136 @@ document.addEventListener('DOMContentLoaded', function() {
         titleMap: new Map()
     };
 
+    function withCzechDiacritics(text) {
+        if (!text || typeof text !== 'string') return text;
+        const replacements = [
+            ['Domu', 'Domů'],
+            ['Sluzby', 'Služby'],
+            ['Vlastni', 'Vlastní'],
+            ['O nas', 'O nás'],
+            ['Prihlasit se', 'Přihlásit se'],
+            ['Odhlasit se', 'Odhlásit se'],
+            ['Zapomneli', 'Zapomněli'],
+            ['Zpet', 'Zpět'],
+            ['Zmenit', 'Změnit'],
+            ['Uzivatelske', 'Uživatelské'],
+            ['jmeno', 'jméno'],
+            ['Jmeno', 'Jméno'],
+            ['Predmet', 'Předmět'],
+            ['Zprava', 'Zpráva'],
+            ['Zrusit', 'Zrušit'],
+            ['Podminky', 'Podmínky'],
+            ['Odeslanim', 'Odesláním'],
+            ['nasledujicimi', 'následujícími'],
+            ['neni', 'není'],
+            ['orientacni', 'orientační'],
+            ['zmenit', 'změnit'],
+            ['Muze', 'Může'],
+            ['muze', 'může'],
+            ['dojit', 'dojít'],
+            ['ztrate', 'ztrátě'],
+            ['zalohujte', 'zálohujte'],
+            ['prosim', 'prosím'],
+            ['Nevyzvednuta', 'Nevyzvednutá'],
+            ['mohou byt', 'mohou být'],
+            ['zlikvidovana', 'zlikvidována'],
+            ['Mate-li', 'Máte-li'],
+            ['Nacitam', 'Načítám'],
+            ['Detaily dilu', 'Detaily dílu'],
+            ['Specifikace', 'Specifikace'],
+            ['Posunout nahledy', 'Posunout náhledy'],
+            ['Profesionalni', 'Profesionální'],
+            ['technologicka', 'technologická'],
+            ['reseni', 'řešení'],
+            ['Opravime', 'Opravíme'],
+            ['vase', 'vaše'],
+            ['zarizeni', 'zařízení'],
+            ['Zarizeni', 'Zařízení'],
+            ['stolnich', 'stolních'],
+            ['dily', 'díly'],
+            ['prislusenstvi', 'příslušenství'],
+            ['Rychle', 'Rychlé'],
+            ['vyrizeni', 'vyřízení'],
+            ['Prohlidnout', 'Prohlédnout'],
+            ['Vse', 'Vše'],
+            ['miste', 'místě'],
+            ['presny', 'přesný'],
+            ['samy', 'samý'],
+            ['Jasna', 'Jasná'],
+            ['zacit', 'začít'],
+            ['Vyberte', 'Vyberte'],
+            ['skrin', 'skříň'],
+            ['skrine', 'skříně'],
+            ['uloziste', 'úložiště'],
+            ['sitoveho', 'síťového'],
+            ['Moznosti', 'Možnosti'],
+            ['konkretni', 'konkrétní'],
+            ['potreba', 'potřeba'],
+            ['spolehlivy', 'spolehlivý'],
+            ['Diky', 'Díky'],
+            ['dlouholetym', 'dlouholetým'],
+            ['zkusenostem', 'zkušenostem'],
+            ['Nasi', 'Naši'],
+            ['certifikovani', 'certifikovaní'],
+            ['pouzivaji', 'používají'],
+            ['zaruky', 'záruky'],
+            ['Verime', 'Věříme'],
+            ['uprimna', 'upřímná'],
+            ['kvalite', 'kvalitě'],
+            ['denni', 'denní'],
+            ['nahradni', 'náhradní'],
+            ['Prumerna', 'Průměrná'],
+            ['zkusenosti', 'zkušenosti'],
+            ['Najdete', 'Najdete'],
+            ['Oteviraci doba', 'Otevírací doba'],
+            ['Zavreno', 'Zavřeno'],
+            ['Vas', 'Váš'],
+            ['prazdny', 'prázdný'],
+            ['Pridejte', 'Přidejte'],
+            ['Mezisoucet', 'Mezisoučet'],
+            ['Diagnosticky', 'Diagnostický'],
+            ['Konecna', 'Konečná'],
+            ['lisit', 'lišit'],
+            ['Pokracovat', 'Pokračovat'],
+            ['dalsi', 'další'],
+            ['Pokladna', 'Pokladna'],
+            ['Dokoncete', 'Dokončete'],
+            ['Zpusob doruceni', 'Způsob doručení'],
+            ['Osobni predani', 'Osobní předání'],
+            ['Prineste', 'Přineste'],
+            ['Osobni udaje', 'Osobní údaje'],
+            ['Prijmeni', 'Příjmení'],
+            ['Telefonni cislo', 'Telefonní číslo'],
+            ['Dodaci adresa', 'Dodací adresa'],
+            ['Mesto', 'Město'],
+            ['Zeme', 'Země'],
+            ['Poznamka', 'Poznámka'],
+            ['volitelne', 'volitelně'],
+            ['Specialni', 'Speciální'],
+            ['poznamky', 'poznámky'],
+            ['Souhlasim', 'Souhlasím'],
+            ['podminkami', 'podmínkami'],
+            ['ustanovenimi', 'ustanoveními'],
+            ['objednavka', 'objednávka'],
+            ['objednavky', 'objednávky'],
+            ['Cislo', 'Číslo'],
+            ['cislo', 'číslo'],
+            ['zadani', 'zadání'],
+            ['Pozadavky', 'Požadavky'],
+            ['oznameni', 'oznámení'],
+            ['Ulozit', 'Uložit'],
+            ['Ceska republika', 'Česká republika'],
+            ['Ceska posta', 'Česká pošta']
+        ];
+
+        return replacements.reduce((result, [from, to]) => {
+            return result.replaceAll(from, to);
+        }, text);
+    }
+
     function t(text) {
         if (!text || i18nState.lang !== 'cs') return text;
-        return I18N.cs[text] || text;
+        return withCzechDiacritics(I18N.cs[text] || text);
     }
 
     function translateTextNode(node, dict) {
@@ -577,7 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!i18nState.textMap.has(node)) {
             i18nState.textMap.set(node, raw);
         }
-        const translated = dict[trimmed];
+        const translated = withCzechDiacritics(dict[trimmed]);
         node.nodeValue = raw.replace(trimmed, translated);
     }
 
@@ -615,7 +742,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!i18nState.placeholderMap.has(el)) {
                     i18nState.placeholderMap.set(el, placeholder);
                 }
-                el.setAttribute('placeholder', dict[placeholder]);
+                el.setAttribute('placeholder', withCzechDiacritics(dict[placeholder]));
             });
 
             document.querySelectorAll('[aria-label]').forEach(el => {
@@ -624,7 +751,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!i18nState.ariaMap.has(el)) {
                     i18nState.ariaMap.set(el, label);
                 }
-                el.setAttribute('aria-label', dict[label]);
+                el.setAttribute('aria-label', withCzechDiacritics(dict[label]));
             });
 
             document.querySelectorAll('[title]').forEach(el => {
@@ -633,7 +760,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!i18nState.titleMap.has(el)) {
                     i18nState.titleMap.set(el, title);
                 }
-                el.setAttribute('title', dict[title]);
+                el.setAttribute('title', withCzechDiacritics(dict[title]));
             });
         } else {
             i18nState.textMap.forEach((value, node) => {

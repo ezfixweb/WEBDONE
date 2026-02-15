@@ -68,6 +68,11 @@ const authLimiter = rateLimit({
     windowMs: authWindowMs,
     max: authMax,
     message: 'Too many authentication attempts, please try again later',
+    skip: (req) => {
+        const path = req.path || '';
+        if (req.method === 'OPTIONS') return true;
+        return path === '/google' || path === '/google/callback';
+    },
     handler: (req, res, next, options) => {
         res.status(options.statusCode).json({
             success: false,
