@@ -71,10 +71,12 @@ body {
 
 .cookie-consent {
     position: fixed;
-    inset: auto 16px 16px 16px;
+    inset: 0;
     z-index: 2100;
     display: flex;
+    align-items: center;
     justify-content: center;
+    padding: 16px;
 }
 
 .cookie-consent.hidden {
@@ -2799,6 +2801,18 @@ body.has-announcement .hero {
     justify-content: center;
     align-items: center;
     transition: all 0.4s ease;
+}
+
+#customPcProgress {
+    justify-content: flex-start;
+    width: min(100%, 700px);
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 10px 8px;
+    box-sizing: border-box;
+    scroll-padding-left: 10px;
+    scroll-padding-right: 10px;
 }
 
 .custom-pc-container.sidebar-active .custom-pc-main {

@@ -122,31 +122,31 @@ document.addEventListener('DOMContentLoaded', function() {
             'Devices Repaired': 'Opravených zařízení',
             'Satisfaction Rate': 'Spokojenost',
             'Fast Turnaround': 'Rychlé vyřízení',
-            'Everything You Need, One Place': 'Vse na jednom miste',
-            'Fast repairs, custom builds, and precision 3D prints with transparent pricing.': 'Rychle opravy, vlastni sestavy a presny 3D tisk s transparentni cenou.',
-            'Same-Day Repairs': 'Opravy v ten samy den',
-            'Clear diagnostics and rapid turnaround on phones, tablets, and laptops.': 'Jasna diagnostika a rychle opravy telefonu, tabletu a notebooku.',
+            'Everything You Need, One Place': 'Vše na jednom místě',
+            'Fast repairs, custom builds, and precision 3D prints with transparent pricing.': 'Rychlé opravy, vlastní sestavy a přesný 3D tisk s transparentní cenou.',
+            'Same-Day Repairs': 'Opravy v ten samý den',
+            'Clear diagnostics and rapid turnaround on phones, tablets, and laptops.': 'Jasná diagnostika a rychlé opravy telefonů, tabletů a notebooků.',
             'Browse Services': 'Prohlédnout služby',
-            'Custom Builds': 'Vlastni sestavy',
-            'Design a PC or server with expert guidance and curated parts.': 'Navrhnete PC nebo server s odbornym vedenim a peclive vybranymi dilmi.',
-            'Start a Build': 'Zacit sestavu',
+            'Custom Builds': 'Vlastní sestavy',
+            'Design a PC or server with expert guidance and curated parts.': 'Navrhněte PC nebo server s odborným vedením a pečlivě vybranými díly.',
+            'Start a Build': 'Začít sestavu',
             '3D Printing': '3D tisk',
-            'Upload your model, choose materials, and get precise prints fast.': 'Nahrajte model, zvolte materialy a ziskejte presny tisk rychle.',
-            'Print a Part': 'Vytisknout dil',
-            'Welcome Back': 'Vitejte zpet',
-            'Login or create an account to manage your orders.': 'Prihlaste se nebo si vytvorte ucet pro spravu objednavek.',
+            'Upload your model, choose materials, and get precise prints fast.': 'Nahrajte model, zvolte materiály a získejte přesný tisk rychle.',
+            'Print a Part': 'Vytisknout díl',
+            'Welcome Back': 'Vítejte zpět',
+            'Login or create an account to manage your orders.': 'Přihlaste se nebo si vytvořte účet pro správu objednávek.',
             'Register': 'Registrace',
-            'Username': 'Uzivatelske jmeno',
+            'Username': 'Uživatelské jméno',
             'Email': 'E-mail',
-            'Min 8 chars, uppercase, lowercase, number, special character (any symbol).': 'Min. 8 znaku, velke a male pismeno, cislo, specialni znak (libovolny symbol).',
+            'Min 8 chars, uppercase, lowercase, number, special character (any symbol).': 'Min. 8 znaků, velké a malé písmeno, číslo, speciální znak (libovolný symbol).',
             'Confirm Password': 'Potvrdit heslo',
-            'Create Account': 'Vytvorit ucet',
+            'Create Account': 'Vytvořit účet',
             'or': 'nebo',
-            'Continue with Google': 'Pokracovat s Google',
-            'Sign up with Google': 'Registrovat pres Google',
-            'Choose a printer, filament, color, strength, and upload your model': 'Vyberte tiskarnu, filament, barvu, pevnost a nahrajte model',
-            'Select Printer': 'Vyberte tiskarnu',
-            'Pick the printer that matches your needs': 'Zvolte tiskarnu podle potreb',
+            'Continue with Google': 'Pokračovat s Google',
+            'Sign up with Google': 'Registrovat přes Google',
+            'Choose a printer, filament, color, strength, and upload your model': 'Vyberte tiskárnu, filament, barvu, pevnost a nahrajte model',
+            'Select Printer': 'Vyberte tiskárnu',
+            'Pick the printer that matches your needs': 'Zvolte tiskárnu podle potřeb',
             'Select Filament': 'Vyberte filament',
             'Choose filament type': 'Zvolte typ filamentu',
             'Select Color': 'Vyberte barvu',
@@ -157,45 +157,45 @@ document.addEventListener('DOMContentLoaded', function() {
             'Color 4': 'Barva 4',
             'Color 5': 'Barva 5',
             'Select Strength': 'Vyberte pevnost',
-            'Choose strength level': 'Zvolte uroven pevnosti',
-            'How many parts?': 'Kolik kusu?',
-            'Enter the quantity of parts to print': 'Zadejte pocet dilu k tisku',
+            'Choose strength level': 'Zvolte úroveň pevnosti',
+            'How many parts?': 'Kolik kusů?',
+            'Enter the quantity of parts to print': 'Zadejte počet dílů k tisku',
             'Upload Your File': 'Nahrajte soubor',
             'STL/OBJ/3MF accepted': 'Akceptujeme STL/OBJ/3MF',
-            'Upload File': 'Nahrat soubor',
-            'No file selected': 'Zadny soubor nevybran',
-            'Add 3D Print to Cart': 'Pridat 3D tisk do kosiku',
+            'Upload File': 'Nahrát soubor',
+            'No file selected': 'Žádný soubor nevybrán',
+            'Add 3D Print to Cart': 'Přidat 3D tisk do košíku',
             'Strength': 'Pevnost',
-            'Custom Builds': 'Vlastni sestavy',
-            'Build your perfect computer step by step': 'Postavte si idealni pocitac krok za krokem',
+            'Custom Builds': 'Vlastní sestavy',
+            'Build your perfect computer step by step': 'Postavte si ideální počítač krok za krokem',
             'Type': 'Typ',
             'Server Type': 'Typ serveru',
-            'Brand': 'Znacka',
+            'Brand': 'Značka',
             'Case': 'Skriň',
-            'Other': 'Jine',
-            'Other Items': 'Jine polozky',
-            'Other Item': 'Jina polozka',
-            'Item': 'Polozka',
-            'No items': 'Zadne polozky',
-            'No items yet': 'Zadne polozky zatim',
-            'No image': 'Bez obrazku',
-            'Item added to cart': 'Polozka pridana do kosiku',
-            'Failed to add item to cart': 'Nepodarilo se pridat polozku do kosiku',
-            'No other item orders yet': 'Zadne objednavky ostatnich polozek',
+            'Other': 'Jiné',
+            'Other Items': 'Jiné položky',
+            'Other Item': 'Jiná položka',
+            'Item': 'Položka',
+            'No items': 'Žádné položky',
+            'No items yet': 'Žádné položky zatím',
+            'No image': 'Bez obrázku',
+            'Item added to cart': 'Položka přidána do košíku',
+            'Failed to add item to cart': 'Nepodařilo se přidat položku do košíku',
+            'No other item orders yet': 'Žádné objednávky ostatních položek',
             'other item orders': 'objednavky ostatnich polozek',
-            'Item Details': 'Detaily polozky',
+            'Item Details': 'Detaily položky',
             'Other item orders will appear here': 'Objednavky ostatnich polozek se zobrazi zde',
-            'Browse 3D printing accessories and tools': 'Prohlednete prislusenstvi a nastroje pro 3D tisk',
-            'Add to cart': 'Pridat do kosiku',
+            'Browse 3D printing accessories and tools': 'Prohlédněte příslušenství a nástroje pro 3D tisk',
+            'Add to cart': 'Přidat do košíku',
             'added to cart': 'pridano do kosiku',
             'Contact': 'Kontakt',
-            'No pickup point selected': 'Nebyl vybran zadny vydejni bod',
-            'Pickup point required': 'Vyberte vydejni bod',
-            'Packeta API key is missing': 'Chybi Packeta API klic',
-            'Packeta widget failed to load': 'Packeta widget se nepodarilo nacist',
-            'Pickup point': 'Vydejni bod',
+            'No pickup point selected': 'Nebyl vybrán žádný výdejní bod',
+            'Pickup point required': 'Vyberte výdejní bod',
+            'Packeta API key is missing': 'Chybí Packeta API klíč',
+            'Packeta widget failed to load': 'Packeta widget se nepodařilo načíst',
+            'Pickup point': 'Výdejní bod',
             'Zasilkovna': 'Zasilkovna',
-            'Česká pošta': 'Ceska posta',
+            'Česká pošta': 'Česká pošta',
             'PPL': 'PPL',
             'DPD': 'DPD',
             'GLS': 'GLS',
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'Back': 'Zpet',
             'Select Server Type': 'Vyberte typ serveru',
             'Choose Server or Home Assistant Server': 'Vyberte server nebo Home Assistant',
-            'Select Brand': 'Vyberte znacku',
+            'Select Brand': 'Vyberte značku',
             'Choose Raspberry Pi or Nvidia Jetson': 'Vyberte Raspberry Pi nebo Nvidia Jetson',
             'Select Type': 'Vyberte typ',
             'Choose Small Rack or Case': 'Vyberte maly rack nebo skrine',
@@ -260,6 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'All brands & models': 'Vsechny znacky a modely',
             'Tablet Repair': 'Oprava tabletu',
             'Notebook Repair': 'Oprava notebooku',
+            'PC Repair': 'Oprava PC',
             'Desktop PC Repair': 'Oprava stolniho PC',
             '3D Printer Repair': 'Oprava 3D tiskarny',
             'Select your': 'Vyberte',
@@ -695,7 +696,29 @@ document.addEventListener('DOMContentLoaded', function() {
             ['oznameni', 'oznámení'],
             ['Ulozit', 'Uložit'],
             ['Ceska republika', 'Česká republika'],
-            ['Ceska posta', 'Česká pošta']
+            ['Ceska posta', 'Česká pošta'],
+            ['Jaky', 'Jaký'],
+            ['pristroj', 'přístroj'],
+            ['potrebuje', 'potřebuje'],
+            ['zacatek', 'začátek'],
+            ['znacku', 'značku'],
+            ['znacky', 'značky'],
+            ['Polozky', 'Položky'],
+            ['polozky', 'položky'],
+            ['Objednavky', 'Objednávky'],
+            ['Nahrat', 'Nahrát'],
+            ['nahrat', 'nahrát'],
+            ['zadny', 'žádný'],
+            ['Zadne', 'Žádné'],
+            ['nacist', 'načíst'],
+            ['Nacist', 'Načíst'],
+            ['ulozit', 'uložit'],
+            ['Prihlaseni', 'Přihlášení'],
+            ['Uspesne', 'Úspěšně'],
+            ['ohledne', 'ohledně'],
+            ['vasi', 'vaší'],
+            ['zobrazi', 'zobrazí'],
+            ['smazany', 'smazány']
         ];
 
         return replacements.reduce((result, [from, to]) => {
@@ -711,11 +734,22 @@ document.addEventListener('DOMContentLoaded', function() {
     function translateTextNode(node, dict) {
         const raw = node.nodeValue;
         const trimmed = raw.trim();
-        if (!trimmed || !dict[trimmed]) return;
+        if (!trimmed) return;
+
+        let translated = null;
+        if (dict[trimmed]) {
+            translated = withCzechDiacritics(dict[trimmed]);
+        } else {
+            const normalized = withCzechDiacritics(trimmed);
+            if (normalized !== trimmed) {
+                translated = normalized;
+            }
+        }
+
+        if (!translated) return;
         if (!i18nState.textMap.has(node)) {
             i18nState.textMap.set(node, raw);
         }
-        const translated = withCzechDiacritics(dict[trimmed]);
         node.nodeValue = raw.replace(trimmed, translated);
     }
 
@@ -749,29 +783,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
             document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
                 const placeholder = el.getAttribute('placeholder') || '';
-                if (!dict[placeholder]) return;
+                const translated = dict[placeholder]
+                    ? withCzechDiacritics(dict[placeholder])
+                    : withCzechDiacritics(placeholder);
+                if (translated === placeholder) return;
                 if (!i18nState.placeholderMap.has(el)) {
                     i18nState.placeholderMap.set(el, placeholder);
                 }
-                el.setAttribute('placeholder', withCzechDiacritics(dict[placeholder]));
+                el.setAttribute('placeholder', translated);
             });
 
             document.querySelectorAll('[aria-label]').forEach(el => {
                 const label = el.getAttribute('aria-label') || '';
-                if (!dict[label]) return;
+                const translated = dict[label]
+                    ? withCzechDiacritics(dict[label])
+                    : withCzechDiacritics(label);
+                if (translated === label) return;
                 if (!i18nState.ariaMap.has(el)) {
                     i18nState.ariaMap.set(el, label);
                 }
-                el.setAttribute('aria-label', withCzechDiacritics(dict[label]));
+                el.setAttribute('aria-label', translated);
             });
 
             document.querySelectorAll('[title]').forEach(el => {
                 const title = el.getAttribute('title') || '';
-                if (!dict[title]) return;
+                const translated = dict[title]
+                    ? withCzechDiacritics(dict[title])
+                    : withCzechDiacritics(title);
+                if (translated === title) return;
                 if (!i18nState.titleMap.has(el)) {
                     i18nState.titleMap.set(el, title);
                 }
-                el.setAttribute('title', withCzechDiacritics(dict[title]));
+                el.setAttribute('title', translated);
             });
         } else {
             i18nState.textMap.forEach((value, node) => {
@@ -3094,9 +3137,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        const requestedPageId = typeof pageId === 'string' ? pageId : '';
+        let targetPage = document.getElementById(requestedPageId);
+        if (!targetPage) {
+            pageId = 'home';
+            targetPage = document.getElementById('home');
+            if (!targetPage) return;
+        }
+
         // Hide all pages, show selected one
         DOM.pages.forEach(page => page.classList.remove('active'));
-        document.getElementById(pageId)?.classList.add('active');
+        targetPage.classList.add('active');
 
         // Update active nav link
         DOM.navPageLinks.forEach(link => {
