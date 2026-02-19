@@ -3108,6 +3108,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Prevent access to admin without login
         if (pageId === 'admin') {
             if (!Storage.getToken() || !Storage.adminLoggedIn) {
+                if (window.location.hash !== '#home') {
+                    window.history.replaceState(null, '', '#home');
+                }
+                showPage('home');
                 showSupportDialog();
                 return;
             }
@@ -3187,6 +3191,15 @@ document.addEventListener('DOMContentLoaded', function() {
         window.scrollTo(0, 0);
         DOM.mobileMenuBtn.classList.remove('active');
         DOM.navLinks.classList.remove('active');
+        ensureVisiblePage();
+    }
+
+    function ensureVisiblePage() {
+        if (document.querySelector('.page.active')) return;
+        const homePage = document.getElementById('home');
+        if (homePage) {
+            homePage.classList.add('active');
+        }
     }
 
     function renderPrintingPage() {
@@ -3776,25 +3789,52 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const COOKIE_CONSENT_KEY = 'cookie_consent_choice';
+    const COOKIE_CONSENT_TS_KEY = 'cookie_consent_ts';
+    const COOKIE_CONSENT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+    const COOKIE_CONSENT_VERSION_KEY = 'cookie_consent_version';
+    const COOKIE_CONSENT_CURRENT_VERSION = '2026-02-19';
 
-    function hideCookieConsent() {
+    function hideCookieConsent(animated = false) {
         if (!DOM.cookieConsent) return;
-        DOM.cookieConsent.classList.add('hidden');
+        if (!animated) {
+            DOM.cookieConsent.classList.remove('is-closing');
+            DOM.cookieConsent.classList.add('hidden');
+            return;
+        }
+
+        DOM.cookieConsent.classList.add('is-closing');
+        setTimeout(() => {
+            DOM.cookieConsent?.classList.remove('is-closing');
+            DOM.cookieConsent?.classList.add('hidden');
+        }, 240);
+    }
+
+    function showCookieConsent() {
+        if (!DOM.cookieConsent) return;
+        DOM.cookieConsent.classList.remove('hidden', 'is-closing');
     }
 
     function saveCookieConsent(choice) {
         localStorage.setItem(COOKIE_CONSENT_KEY, choice);
-        hideCookieConsent();
+        localStorage.setItem(COOKIE_CONSENT_TS_KEY, String(Date.now()));
+        localStorage.setItem(COOKIE_CONSENT_VERSION_KEY, COOKIE_CONSENT_CURRENT_VERSION);
+        hideCookieConsent(true);
     }
 
     function initCookieConsent() {
         if (!DOM.cookieConsent) return;
         const savedChoice = localStorage.getItem(COOKIE_CONSENT_KEY);
-        if (savedChoice === 'accepted' || savedChoice === 'declined') {
-            hideCookieConsent();
+        const savedTimestamp = Number(localStorage.getItem(COOKIE_CONSENT_TS_KEY) || 0);
+        const savedVersion = localStorage.getItem(COOKIE_CONSENT_VERSION_KEY) || '';
+        const hasValidAcceptanceWindow = savedTimestamp > 0
+            && (Date.now() - savedTimestamp) < COOKIE_CONSENT_MAX_AGE_MS;
+        const isCurrentVersion = savedVersion === COOKIE_CONSENT_CURRENT_VERSION;
+
+        if (savedChoice === 'accepted' && hasValidAcceptanceWindow && isCurrentVersion) {
+            hideCookieConsent(false);
             return;
         }
-        DOM.cookieConsent.classList.remove('hidden');
+        showCookieConsent();
     }
 
     // ========================================================================
@@ -7886,32 +7926,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========================================================================
 
     (async () => {
-        await sendPresenceHeartbeat();
-        setInterval(sendPresenceHeartbeat, 45 * 1000);
-        setInterval(refreshActiveVisitorsStat, 30 * 1000);
-        initCookieConsent();
-        await loadCatalog();
-        await refreshAuthState();
-        updateAuthUI();
-        hideLoginModal();
-        updateCartCount();
-        updateCheckoutPickupFeeUi();
-        renderTermsModalContent();
-        applyTranslations();
-        if (window.location.hash) {
-            handleHashNavigation();
-        } else {
+        try {
+            await sendPresenceHeartbeat();
+            setInterval(sendPresenceHeartbeat, 45 * 1000);
+            setInterval(refreshActiveVisitorsStat, 30 * 1000);
+            initCookieConsent();
+            await loadCatalog();
+            await refreshAuthState();
+            updateAuthUI();
+            hideLoginModal();
+            updateCartCount();
+            updateCheckoutPickupFeeUi();
+            renderTermsModalContent();
+            applyTranslations();
+            if (window.location.hash) {
+                handleHashNavigation();
+            } else {
+                showPage('home');
+            }
+            if (document.getElementById('printing')?.classList.contains('active')) {
+                renderPrintingPage();
+            }
+            if (!catalogState || !catalogState.announcement) {
+                renderAnnouncementBanner({ active: false, text: '' });
+            }
+        } catch (initError) {
+            console.error('Initialization error:', initError);
+            updateAuthUI();
+            applyTranslations();
             showPage('home');
-        }
-        if (document.getElementById('printing')?.classList.contains('active')) {
-            renderPrintingPage();
-        }
-        if (!catalogState || !catalogState.announcement) {
-            renderAnnouncementBanner({ active: false, text: '' });
+            initCookieConsent();
         }
     })();
 
-    window.addEventListener('hashchange', handleHashNavigation);
+    window.addEventListener('hashchange', () => {
+        handleHashNavigation();
+        ensureVisiblePage();
+    });
 
     // Admin access via F12 console (hint removed)
     window.adminAccess = () => { showSupportDialog(); };

@@ -121,10 +121,10 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
             });
         }
 
-        if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[!@#$%^&*]/.test(password)) {
+        if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
             return res.status(400).json({
                 success: false,
-                message: 'Password must contain uppercase, lowercase, number, and special character (!@#$%^&*)'
+                message: 'Password must contain uppercase, lowercase, number, and special character (any symbol)'
             });
         }
 
@@ -210,10 +210,10 @@ router.put('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
                     message: 'Password must be at least 8 characters'
                 });
             }
-            if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[!@#$%^&*]/.test(password)) {
+            if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Password must contain uppercase, lowercase, number, and special character (!@#$%^&*)'
+                    message: 'Password must contain uppercase, lowercase, number, and special character (any symbol)'
                 });
             }
         }
