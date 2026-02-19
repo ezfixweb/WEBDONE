@@ -69,6 +69,56 @@ body {
     padding: 0 24px;
 }
 
+.cookie-consent {
+    position: fixed;
+    inset: auto 16px 16px 16px;
+    z-index: 2100;
+    display: flex;
+    justify-content: center;
+}
+
+.cookie-consent.hidden {
+    display: none;
+}
+
+.cookie-consent-card {
+    width: 100%;
+    max-width: 540px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    padding: 16px;
+}
+
+.cookie-consent-card h3 {
+    margin-bottom: 8px;
+    color: var(--text);
+}
+
+.cookie-consent-card p {
+    color: var(--text-light);
+    margin-bottom: 12px;
+}
+
+.cookie-consent-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+@media (max-width: 640px) {
+    .cookie-consent-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .cookie-consent-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 h1, h2, h3, h4 {
     font-weight: 600;
     line-height: 1.2;
@@ -3104,8 +3154,10 @@ body.has-announcement .hero {
 }
 
 .checkout-item {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 36px;
+    align-items: start;
     padding: 12px 0;
     border-bottom: 1px solid var(--border);
 }
@@ -3127,6 +3179,7 @@ body.has-announcement .hero {
 .checkout-item-price {
     font-weight: 600;
     color: var(--primary);
+    white-space: nowrap;
 }
 
 /* Toast Notification */
@@ -3304,6 +3357,11 @@ body.has-announcement .hero {
     .cart-summary,
     .checkout-summary {
         position: static;
+    }
+
+    .checkout-summary {
+        order: -1;
+        margin-bottom: 20px;
     }
 }
 
@@ -3838,6 +3896,10 @@ body.has-announcement .hero {
     gap: 12px;
 }
 
+.users-empty {
+    opacity: 0.85;
+}
+
 .user-info {
     display: flex;
     flex-direction: column;
@@ -3948,8 +4010,6 @@ body.has-announcement .hero {
 .credentials-form .password-toggle {
     position: absolute;
     right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
     border: 1px solid rgba(148, 163, 184, 0.45);
     background: var(--bg-alt);
     color: var(--text-light);
@@ -4028,17 +4088,21 @@ body.has-announcement .hero {
 .password-field .password-toggle {
     position: absolute;
     right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
+    transform: none;
     border: 1px solid rgba(148, 163, 184, 0.45);
     background: var(--bg-alt);
     color: var(--text-light);
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border-radius: 8px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0;
+    line-height: 0;
     cursor: pointer;
     z-index: 2;
     transition: color 0.2s ease, background 0.2s ease;

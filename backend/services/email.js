@@ -5,6 +5,13 @@
 
 const nodemailer = require('nodemailer');
 
+const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER || '';
+const emailPassword = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.SMTP_PASS || '';
+const smtpHost = process.env.SMTP_HOST;
+const smtpPort = Number(process.env.SMTP_PORT || 587);
+const smtpSecure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
+const emailConfigured = Boolean(emailUser && emailPassword);
+
 function formatCurrency(value) {
     const num = typeof value === 'number' ? value : parseFloat(value);
     const safeValue = Number.isFinite(num) ? num : 0;
@@ -49,22 +56,50 @@ function getPacketaPointLine(order) {
  * Using Gmail SMTP - ensure to enable "Less secure app access" or use App Passwords
  * Or use your own email service
  */
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER || 'your-email@gmail.com',
-        pass: process.env.EMAIL_PASSWORD || 'your-app-password'
-    }
-});
+const transporter = nodemailer.createTransport(
+    smtpHost
+        ? {
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpSecure,
+            auth: {
+                user: emailUser,
+                pass: emailPassword
+            }
+        }
+        : {
+            service: 'gmail',
+            auth: {
+                user: emailUser,
+                pass: emailPassword
+            }
+        }
+);
 
 // Verify transporter on startup to surface auth/connectivity issues early
-transporter.verify()
-    .then(info => {
-        console.log('[EMAIL] SMTP transporter verified. Ready to send emails.');
-    })
-    .catch(err => {
-        console.error('[EMAIL] SMTP transporter verification failed:', err && err.message ? err.message : err);
-    });
+if (emailConfigured) {
+    transporter.verify()
+        .then(() => {
+            console.log('[EMAIL] SMTP transporter verified. Ready to send emails.');
+        })
+        .catch(err => {
+            console.error('[EMAIL] SMTP transporter verification failed:', err && err.message ? err.message : err);
+        });
+} else {
+    console.error('[EMAIL] SMTP is not configured. Set EMAIL_USER and EMAIL_PASSWORD (or EMAIL_PASS/SMTP_USER/SMTP_PASS).');
+}
+
+function ensureEmailConfigured(actionName) {
+    if (emailConfigured) return null;
+    const message = `[EMAIL] ${actionName} skipped: SMTP credentials are missing`;
+    console.error(message);
+    return {
+        success: false,
+        skipped: true,
+        reason: 'smtp_not_configured',
+        message
+    };
+}
 
 /**
  * Send order confirmation email
@@ -78,6 +113,8 @@ transporter.verify()
  */
 async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumber, items = [], total = 0, order = {}) {
     try {
+    const skipped = ensureEmailConfigured('Order confirmation email');
+    if (skipped) return skipped;
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const encodedOrder = encodeURIComponent(orderNumber);
     const encodedEmail = encodeURIComponent(customerEmail);
@@ -169,7 +206,7 @@ async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumb
         `;
 
         const mailOptions = {
-            from: process.env.EMAIL_USER || 'noreply@ezfix.com',
+            from: emailUser || 'noreply@ezfix.com',
             to: customerEmail,
             subject: `Potvrzeni objednavky #${orderNumber}`,
             html: emailHTML
@@ -195,6 +232,8 @@ async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumb
  */
 async function sendOrderStatusEmail(customerEmail, customerName, orderNumber, status, order = {}) {
     try {
+    const skipped = ensureEmailConfigured('Order status email');
+    if (skipped) return skipped;
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const encodedOrder = encodeURIComponent(orderNumber);
     const encodedEmail = encodeURIComponent(customerEmail);
@@ -278,7 +317,7 @@ async function sendOrderStatusEmail(customerEmail, customerName, orderNumber, st
         `;
 
         const mailOptions = {
-            from: process.env.EMAIL_USER || 'noreply@ezfix.com',
+            from: emailUser || 'noreply@ezfix.com',
             to: customerEmail,
             subject: `Objednavka #${orderNumber} - Aktualizace stavu: ${statusLabel}`,
             html: emailHTML
@@ -305,6 +344,8 @@ async function sendOrderStatusEmail(customerEmail, customerName, orderNumber, st
  */
 async function sendNewOrderNotificationEmail(ownerEmail, orderNumber, customerName, customerEmail, total = 0, order = {}) {
     try {
+        const skipped = ensureEmailConfigured('Owner notification email');
+        if (skipped) return skipped;
         if (!ownerEmail) {
             throw new Error('Owner email is required');
         }
@@ -354,7 +395,7 @@ async function sendNewOrderNotificationEmail(ownerEmail, orderNumber, customerNa
         `;
 
         const mailOptions = {
-            from: process.env.EMAIL_USER || 'noreply@ezfix.com',
+            from: emailUser || 'noreply@ezfix.com',
             to: ownerEmail,
             subject: `Nova objednavka #${orderNumber}`,
             html: emailHTML
@@ -379,6 +420,8 @@ async function sendNewOrderNotificationEmail(ownerEmail, orderNumber, customerNa
  */
 async function sendCustomEmail(customerEmail, subject, message, order = {}) {
     try {
+        const skipped = ensureEmailConfigured('Custom email');
+        if (skipped) return skipped;
         const emailHTML = `
             <!DOCTYPE html>
             <html>
@@ -416,7 +459,7 @@ async function sendCustomEmail(customerEmail, subject, message, order = {}) {
         `;
 
         const mailOptions = {
-            from: process.env.EMAIL_USER || 'noreply@ezfix.com',
+            from: emailUser || 'noreply@ezfix.com',
             to: customerEmail,
             subject: subject,
             html: emailHTML
@@ -440,6 +483,8 @@ async function sendCustomEmail(customerEmail, subject, message, order = {}) {
  */
 async function sendPasswordResetEmail(customerEmail, customerName, resetUrl) {
     try {
+        const skipped = ensureEmailConfigured('Password reset email');
+        if (skipped) return skipped;
         const emailHTML = `
             <!DOCTYPE html>
             <html>
@@ -476,7 +521,7 @@ async function sendPasswordResetEmail(customerEmail, customerName, resetUrl) {
         `;
 
         const mailOptions = {
-            from: process.env.EMAIL_USER || 'ezfix.podpora@gmail.com',
+            from: emailUser || 'ezfix.podpora@gmail.com',
             to: customerEmail,
             subject: 'Obnova hesla',
             html: emailHTML

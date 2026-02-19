@@ -29,6 +29,25 @@ const uploadsRoutes = require('./routes/uploads');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const ACTIVE_VISITOR_WINDOW_MS = Number(process.env.ACTIVE_VISITOR_WINDOW_MS || 2 * 60 * 1000);
+const activeVisitors = new Map();
+
+function cleanupActiveVisitors() {
+    const now = Date.now();
+    for (const [visitorId, lastSeenAt] of activeVisitors.entries()) {
+        if (now - lastSeenAt > ACTIVE_VISITOR_WINDOW_MS) {
+            activeVisitors.delete(visitorId);
+        }
+    }
+}
+
+function getActiveVisitorsCount() {
+    cleanupActiveVisitors();
+    return activeVisitors.size;
+}
+
+setInterval(cleanupActiveVisitors, 30 * 1000);
+
 // Reduce fingerprinting surface
 app.disable('x-powered-by');
 
@@ -125,6 +144,27 @@ app.use((req, res, next) => {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ success: true, message: 'Server is running' });
+});
+
+app.post('/api/presence/heartbeat', (req, res) => {
+    const rawVisitorId = typeof req.body?.visitorId === 'string' ? req.body.visitorId.trim() : '';
+    const safeVisitorId = /^[a-zA-Z0-9._-]{6,100}$/.test(rawVisitorId)
+        ? rawVisitorId
+        : `${req.ip || 'unknown'}:${req.headers['user-agent'] || 'ua'}`;
+
+    activeVisitors.set(safeVisitorId, Date.now());
+
+    res.json({
+        success: true,
+        activeVisitors: getActiveVisitorsCount()
+    });
+});
+
+app.get('/api/presence/active', (req, res) => {
+    res.json({
+        success: true,
+        activeVisitors: getActiveVisitorsCount()
+    });
 });
 
 // API Routes

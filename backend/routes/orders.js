@@ -13,6 +13,16 @@ const { db } = require('../config/database');
 const { verifyToken, verifyOrderManager, isOrderManagerRole } = require('../middleware/auth');
 const { sendOrderStatusEmail, sendOrderConfirmationEmail, sendNewOrderNotificationEmail } = require('../services/email');
 
+function withTimeout(promise, timeoutMs, timeoutMessage) {
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+    });
+
+    return Promise.race([promise, timeoutPromise])
+        .finally(() => clearTimeout(timeoutId));
+}
+
 /**
  * Get user's orders or all orders (admin)
  * GET /api/orders
@@ -309,6 +319,33 @@ router.post('/', async (req, res) => {
             packeta_point_json: packetaPoint ? JSON.stringify(packetaPoint) : null
         };
 
+        let customerEmailStatus = 'queued';
+        try {
+            const confirmationResult = await withTimeout(
+                sendOrderConfirmationEmail(
+                    customerEmail,
+                    customerName,
+                    orderNumber,
+                    orderItems,
+                    total,
+                    emailContext
+                ),
+                8000,
+                'Order confirmation email timeout'
+            );
+
+            if (confirmationResult && confirmationResult.success) {
+                customerEmailStatus = 'sent';
+            } else if (confirmationResult && confirmationResult.skipped) {
+                customerEmailStatus = 'skipped';
+            } else {
+                customerEmailStatus = 'failed';
+            }
+        } catch (emailError) {
+            customerEmailStatus = 'failed';
+            console.error('Failed to send order confirmation email:', emailError.message);
+        }
+
         res.status(201).json({
             success: true,
             message: 'Order created successfully',
@@ -318,25 +355,14 @@ router.post('/', async (req, res) => {
                 total,
                 itemCount: cartItems.length,
                 status: 'pending'
+            },
+            email: {
+                customer: customerEmailStatus
             }
         });
 
-        // Send emails asynchronously so checkout response is not blocked by SMTP latency/timeouts
+        // Send owner notification asynchronously to keep checkout responsive
         setImmediate(async () => {
-            try {
-                await sendOrderConfirmationEmail(
-                    customerEmail,
-                    customerName,
-                    orderNumber,
-                    orderItems,
-                    total,
-                    emailContext
-                );
-                console.log(`Order confirmation email sent to ${customerEmail} for order ${orderNumber}`);
-            } catch (emailError) {
-                console.error('Failed to send order confirmation email:', emailError.message);
-            }
-
             try {
                 const ownerEmail = process.env.OWNER_NOTIFY_EMAIL || 'djsamu.jb@gmail.com';
                 await sendNewOrderNotificationEmail(

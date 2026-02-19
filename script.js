@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', function() {
         pages: document.querySelectorAll('.page'),
         navPageLinks: document.querySelectorAll('[data-page]'),
         langToggle: document.getElementById('langToggle'),
+        cookieConsent: document.getElementById('cookieConsent'),
+        cookieAcceptBtn: document.getElementById('cookieAcceptBtn'),
+        cookieDeclineBtn: document.getElementById('cookieDeclineBtn'),
         
         // Auth elements
         loginModal: document.getElementById('loginModal'),
@@ -94,6 +97,10 @@ document.addEventListener('DOMContentLoaded', function() {
             'Cancel': 'Zrusit',
             'Send Email': 'Odeslat e-mail',
             'Terms & Conditions': 'Podminky a ustanoveni',
+            'Cookie Preferences': 'Nastavení cookies',
+            'We use cookies to improve your experience. Do you accept cookies?': 'Používáme cookies pro zlepšení vašeho zážitku. Souhlasíte s cookies?',
+            'Accept': 'Přijmout',
+            'Decline': 'Odmítnout',
             'By placing an order, you agree to the following terms:': 'Odeslanim objednavky souhlasite s nasledujicimi podminkami:',
             'Diagnostics are free unless otherwise stated.': 'Diagnostika je zdarma, pokud neni uvedeno jinak.',
             'Repair timelines are estimates and may change.': 'Casy oprav jsou orientacni a mohou se zmenit.',
@@ -275,23 +282,24 @@ document.addEventListener('DOMContentLoaded', function() {
             'Years Experience': 'let zkusenosti',
             'Find Us': 'Najdete nas',
             'Address': 'Adresa',
-            'Hours': 'Oteviraci doba',
+            'Hours': 'Otevírací doba',
             'Phone': 'Telefon',
+            'Cart': 'Košík',
             'Mon - Fri: 9AM - 7PM': 'Po - Pa: 9:00 - 19:00',
             'Sat: 10AM - 5PM': 'So: 10:00 - 17:00',
-            'Sun: Closed': 'Ne: Zavreno',
-            'Your Cart': 'Vas kosik',
-            'Review your repair services': 'Zkontrolujte opravarske sluzby',
-            'Your cart is empty': 'Vas kosik je prazdny',
-            'Add repair services to get started': 'Pridejte sluzby opravy a zacte',
-            'Order Summary': 'Souhrn objednavky',
-            'Subtotal': 'Mezisoucet',
-            'Diagnostic Fee': 'Diagnosticky poplatek',
+            'Sun: Closed': 'Ne: Zavřeno',
+            'Your Cart': 'Váš košík',
+            'Review your repair services': 'Zkontrolujte opravárenské služby',
+            'Your cart is empty': 'Váš košík je prázdný',
+            'Add repair services to get started': 'Přidejte služby opravy a začněte',
+            'Order Summary': 'Souhrn objednávky',
+            'Subtotal': 'Mezisoučet',
+            'Diagnostic Fee': 'Diagnostický poplatek',
             'FREE': 'ZDARMA',
             'Total': 'Celkem',
-            '* Final price may vary based on diagnosis': '* Konecna cena se muze lisit podle diagnostiky',
-            'Proceed to Checkout': 'Pokracovat k pokladne',
-            'Add More Services': 'Pridat dalsi sluzby',
+            '* Final price may vary based on diagnosis': '* Konečná cena se může lišit podle diagnostiky',
+            'Proceed to Checkout': 'Pokračovat k pokladně',
+            'Add More Services': 'Přidat další služby',
             'Checkout': 'Pokladna',
             'Complete your repair order': 'Dokoncete objednavku opravy',
             'Email Address': 'E-mailova adresa',
@@ -314,11 +322,13 @@ document.addEventListener('DOMContentLoaded', function() {
             'Country': 'Zeme',
             'Notes (Optional)': 'Poznamka (volitelne)',
             'Special instructions or notes...': 'Specialni pokyny nebo poznamky...',
-            'I agree with the ': 'Souhlasim s ',
+            'I agree with the': 'Souhlasím s',
+            'I agree with the ': 'Souhlasím s ',
             'terms and conditions': 'podminkami a ustanovenimi',
             'Place Order': 'Odeslat objednavku',
             'Your Order': 'Vase objednavka',
             'Pickup Fee': 'Poplatek za vyzvednuti',
+            'Zasilkovna Fee': 'Zasilkovna',
             'Track Your Order': 'Sledovat objednavku',
             'Check the latest status on your repair': 'Zkontrolujte aktualni stav opravy',
             'Find your order': 'Najdete objednavku',
@@ -398,17 +408,18 @@ document.addEventListener('DOMContentLoaded', function() {
             'Reset to Default': 'Obnovit vychozi',
             'Reset all credentials to the default (admin / admin123)': 'Obnovit vychozi udaje (admin / admin123)',
             'Reset Credentials': 'Obnovit udaje',
-            'Your trusted partner for all device repairs.': 'Vas spolehlivy partner pro opravy zarizeni.',
-            'Quick Links': 'Rychle odkazy',
-            'Track Order': 'Sledovat objednavku',
-            'Services': 'Sluzby',
-            'Contact Us': 'Kontaktujte nas',
-            'All rights reserved.': 'Vsechna prava vyhrazena.',
+            'Your trusted partner for all device repairs.': 'Váš spolehlivý partner pro všechny opravy zařízení.',
+            'Quick Links': 'Rychlé odkazy',
+            'Track Order': 'Sledovat objednávku',
+            'Services': 'Služby',
+            'Contact Us': 'Kontaktujte nás',
+            'All rights reserved.': 'Všechna práva vyhrazena.',
+            'Active Visitors': 'Aktivní návštěvníci',
             'Search parts, brands, or options': 'Hledejte dily, znacky nebo volby',
             'Clear': 'Vymazat',
-            'Order Shipped': 'Objednavka odeslana',
+            'Order Shipped': 'Objednávka odeslána',
             'Screen Fixed': 'Displej opraven',
-            'Battery Kit': 'Baterie sada',
+            'Battery Kit': 'Bateriová sada',
             // Toasts / dialogs
             'Session expired. Please login again.': 'Relace vyprsela. Prihlaste se znovu.',
             'Cannot reach API — is the backend server running?': 'Nelze se spojit s API — bezi backend server?',
@@ -527,8 +538,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'No orders': 'Zadne objednavky',
             'No': 'Zadne',
             'orders': 'objednavky',
-            'Thank You!': 'Dekujeme!',
-            'Your repair order has been placed successfully.': 'Vase opravna objednavka byla uspesne odeslana.',
+            'Thank You!': 'Děkujeme!',
+            'Your repair order has been placed successfully.': 'Vaše opravná objednávka byla úspěšně odeslána.',
             "We'll contact you shortly to confirm the details.": 'Brzy vas budeme kontaktovat pro potvrzeni detailu.',
             'Back to Home': 'Zpet na uvod',
             'Continue Shopping': 'Pokracovat v nakupu',
@@ -814,7 +825,8 @@ document.addEventListener('DOMContentLoaded', function() {
         dpdFee: 0,
         glsFee: 0,
         gopayFee: 0,
-        packetaApiKey: ''
+        packetaApiKey: '',
+        termsAdditionalText: ''
     };
 
     let printingOptions = {
@@ -1413,6 +1425,7 @@ document.addEventListener('DOMContentLoaded', function() {
             checkoutOptions = { ...defaultCheckoutOptions };
         }
         updateCheckoutPickupFeeUi();
+        renderTermsModalContent();
         renderAnnouncementBanner(catalog.announcement || {});
     }
 
@@ -1435,6 +1448,28 @@ document.addEventListener('DOMContentLoaded', function() {
             checkout: checkoutOptions,
             announcement: catalogState?.announcement || { active: false, text: '' }
         }));
+    }
+
+    function renderTermsModalContent() {
+        const container = document.getElementById('termsCustomText');
+        if (!container) return;
+
+        container.innerHTML = '';
+        const customText = (checkoutOptions && typeof checkoutOptions.termsAdditionalText === 'string')
+            ? checkoutOptions.termsAdditionalText.trim()
+            : '';
+
+        if (!customText) return;
+
+        customText
+            .split(/\r?\n+/)
+            .map(line => line.trim())
+            .filter(Boolean)
+            .forEach(line => {
+                const paragraph = document.createElement('p');
+                paragraph.textContent = line;
+                container.appendChild(paragraph);
+            });
     }
 
     function renderAnnouncementBanner(announcement) {
@@ -1537,6 +1572,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const glsFeeInput = document.getElementById('catalogGLSFee');
         const gopayFeeInput = document.getElementById('catalogGopayFee');
         const packetaKeyInput = document.getElementById('catalogPacketaApiKey');
+        const termsAdditionalTextInput = document.getElementById('catalogTermsAdditionalText');
         
         if (!pickupInput || !packetaFeeInput || !packetaKeyInput) return;
 
@@ -1552,6 +1588,9 @@ document.addEventListener('DOMContentLoaded', function() {
         glsFeeInput.value = catalogDraft.checkout.glsFee ?? defaultCheckoutOptions.glsFee;
         if (gopayFeeInput) gopayFeeInput.value = catalogDraft.checkout.gopayFee ?? defaultCheckoutOptions.gopayFee;
         packetaKeyInput.value = catalogDraft.checkout.packetaApiKey ?? '';
+        if (termsAdditionalTextInput) {
+            termsAdditionalTextInput.value = catalogDraft.checkout.termsAdditionalText ?? '';
+        }
 
         pickupInput.oninput = () => {
             const parsed = parseFloat(pickupInput.value);
@@ -1586,6 +1625,11 @@ document.addEventListener('DOMContentLoaded', function() {
         packetaKeyInput.oninput = () => {
             catalogDraft.checkout.packetaApiKey = packetaKeyInput.value.trim();
         };
+        if (termsAdditionalTextInput) {
+            termsAdditionalTextInput.oninput = () => {
+                catalogDraft.checkout.termsAdditionalText = termsAdditionalTextInput.value;
+            };
+        }
     }
 
     function renderCatalogRepairs() {
@@ -2993,6 +3037,20 @@ document.addEventListener('DOMContentLoaded', function() {
         storage: null, psu: null, case: null, cooler: null, rack: null
     };
 
+    const adminPageNode = document.getElementById('admin');
+    const adminPageParent = adminPageNode ? adminPageNode.parentNode : null;
+    const adminPageNextSibling = adminPageNode ? adminPageNode.nextSibling : null;
+
+    function mountAdminPageNode() {
+        if (!adminPageNode || !adminPageParent || adminPageNode.parentNode) return;
+        adminPageParent.insertBefore(adminPageNode, adminPageNextSibling);
+    }
+
+    function unmountAdminPageNode() {
+        if (!adminPageNode || !adminPageNode.parentNode) return;
+        adminPageNode.parentNode.removeChild(adminPageNode);
+    }
+
 
     // ========================================================================
     // MODULE 7: UI & NAVIGATION FUNCTIONS
@@ -3010,6 +3068,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showSupportDialog();
                 return;
             }
+            mountAdminPageNode();
             if (!window.location.hash || !window.location.hash.includes('email=')) {
                 window.adminEmailFilter = null;
             }
@@ -3623,6 +3682,68 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(toast);
 
         setTimeout(() => toast.remove(), 3000);
+    }
+
+    const VISITOR_ID_KEY = 'visitor_id';
+
+    function getOrCreateVisitorId() {
+        let visitorId = localStorage.getItem(VISITOR_ID_KEY);
+        if (visitorId) return visitorId;
+        visitorId = `v_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        localStorage.setItem(VISITOR_ID_KEY, visitorId);
+        return visitorId;
+    }
+
+    async function sendPresenceHeartbeat() {
+        try {
+            const visitorId = getOrCreateVisitorId();
+            await fetch(`${API_BASE_URL}/presence/heartbeat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ visitorId })
+            });
+        } catch {
+            // Presence tracking should never block app UX
+        }
+    }
+
+    async function refreshActiveVisitorsStat() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/presence/active`);
+            if (!response.ok) return;
+            const result = await response.json();
+            if (!result || !result.success) return;
+            const activeVisitorsEl = document.getElementById('activeVisitors');
+            if (activeVisitorsEl) {
+                activeVisitorsEl.textContent = String(result.activeVisitors || 0);
+            }
+        } catch {
+            // Ignore if presence endpoint is temporarily unavailable
+        }
+    }
+
+    const COOKIE_CONSENT_KEY = 'cookie_consent_choice';
+
+    function hideCookieConsent() {
+        if (!DOM.cookieConsent) return;
+        DOM.cookieConsent.classList.add('hidden');
+    }
+
+    function saveCookieConsent(choice) {
+        localStorage.setItem(COOKIE_CONSENT_KEY, choice);
+        hideCookieConsent();
+    }
+
+    function initCookieConsent() {
+        if (!DOM.cookieConsent) return;
+        const savedChoice = localStorage.getItem(COOKIE_CONSENT_KEY);
+        if (savedChoice === 'accepted' || savedChoice === 'declined') {
+            hideCookieConsent();
+            return;
+        }
+        DOM.cookieConsent.classList.remove('hidden');
     }
 
     // ========================================================================
@@ -4435,6 +4556,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function renderAdminOrders() {
         try {
+            await refreshActiveVisitorsStat();
             // Fetch all orders from API (admin view)
             const result = await apiCall('GET', '/orders');
             const orders = result.orders || [];
@@ -5054,6 +5176,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const role = Storage.getUser()?.role;
         const isOwner = isOwnerRole(role);
         const canCatalog = canManageCatalog(role);
+
+        if (isAdmin) {
+            mountAdminPageNode();
+        } else {
+            unmountAdminPageNode();
+            if ((window.location.hash || '').startsWith('#admin')) {
+                window.location.hash = '#home';
+            }
+        }
+
         const credentialsTabBtn = document.querySelector('.admin-tab-btn[data-tab="credentials"]');
         const credentialsContent = document.getElementById('credentials-content');
         const catalogTabBtn = document.querySelector('.admin-tab-btn[data-tab="catalog"]');
@@ -5199,8 +5331,16 @@ document.addEventListener('DOMContentLoaded', function() {
             window.adminUsersCache = users;
 
             const usersList = document.getElementById('usersList');
-            if (usersList) {
-                usersList.innerHTML = users.map(user => `
+            const usersListCustomers = document.getElementById('usersListCustomers');
+            const adminRoles = new Set(['owner', 'manager', 'worker']);
+            const adminUsers = users.filter(user => adminRoles.has(String(user.role || '').toLowerCase()));
+            const customerUsers = users.filter(user => !adminRoles.has(String(user.role || '').toLowerCase()));
+
+            const renderUserRows = (list) => {
+                if (!Array.isArray(list) || list.length === 0) {
+                    return `<div class="user-item users-empty"><div class="user-info"><span class="user-name">No users found</span></div></div>`;
+                }
+                return list.map(user => `
                     <div class="user-item" data-user-id="${user.id}">
                         <div class="user-info">
                             <span class="user-name">${user.username}</span>
@@ -5213,8 +5353,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 `).join('');
+            };
 
-                usersList.querySelectorAll('.user-edit-btn').forEach(btn => {
+            const bindUserActions = (container) => {
+                if (!container) return;
+                container.querySelectorAll('.user-edit-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const userId = parseInt(btn.dataset.editId, 10);
                         if (Number.isFinite(userId)) {
@@ -5223,7 +5366,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 });
 
-                usersList.querySelectorAll('.user-delete-btn').forEach(btn => {
+                container.querySelectorAll('.user-delete-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const username = btn.dataset.deleteUsername || '';
                         if (username) {
@@ -5231,6 +5374,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 });
+            };
+
+            if (usersList) {
+                usersList.innerHTML = renderUserRows(adminUsers);
+                bindUserActions(usersList);
+            }
+
+            if (usersListCustomers) {
+                usersListCustomers.innerHTML = renderUserRows(customerUsers);
+                bindUserActions(usersListCustomers);
             }
         } catch (error) {
             showToast('Failed to load users: ' + error.message);
@@ -7669,17 +7822,30 @@ document.addEventListener('DOMContentLoaded', function() {
         applyTranslations();
     });
 
+    DOM.cookieAcceptBtn?.addEventListener('click', () => {
+        saveCookieConsent('accepted');
+    });
+
+    DOM.cookieDeclineBtn?.addEventListener('click', () => {
+        saveCookieConsent('declined');
+    });
+
     // ========================================================================
     // INITIALIZATION
     // ========================================================================
 
     (async () => {
+        await sendPresenceHeartbeat();
+        setInterval(sendPresenceHeartbeat, 45 * 1000);
+        setInterval(refreshActiveVisitorsStat, 30 * 1000);
+        initCookieConsent();
         await loadCatalog();
         await refreshAuthState();
         updateAuthUI();
         hideLoginModal();
         updateCartCount();
         updateCheckoutPickupFeeUi();
+        renderTermsModalContent();
         applyTranslations();
         if (window.location.hash) {
             handleHashNavigation();

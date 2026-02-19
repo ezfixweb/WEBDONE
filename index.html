@@ -22,7 +22,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <a class="skip-link" href="#mainContent">Skip to content</a>
+    <div id="cookieConsent" class="cookie-consent hidden" role="dialog" aria-modal="false" aria-labelledby="cookieConsentTitle" aria-describedby="cookieConsentText">
+        <div class="cookie-consent-card">
+            <h3 id="cookieConsentTitle">Cookie Preferences</h3>
+            <p id="cookieConsentText">We use cookies to improve your experience. Do you accept cookies?</p>
+            <div class="cookie-consent-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="cookieDeclineBtn">Decline</button>
+                <button type="button" class="btn btn-primary btn-sm" id="cookieAcceptBtn">Accept</button>
+            </div>
+        </div>
+    </div>
     <div id="announcementBanner" class="announcement-banner hidden">
         <div class="container">
             <span id="announcementText"></span>
@@ -152,6 +161,7 @@
                         <li>Quoted prices may change after inspection.</li>
                         <li>Unclaimed devices may be disposed of after 60 days.</li>
                     </ul>
+                    <div id="termsCustomText" style="display:flex;flex-direction:column;gap:8px;"></div>
                     <p>If you have questions, contact support before submitting your order.</p>
                 </div>
             </div>
@@ -1629,7 +1639,7 @@
                             <span id="pickupFeeValue">15 Kč</span>
                         </div>
                         <div class="summary-row" id="packetaFeeRow" style="display:none;">
-                            <span>Zasilkovna Fee</span>
+                            <span>Zasilkovna</span>
                             <span id="packetaFeeValue">90 Kč</span>
                         </div>
                         <div class="summary-row" id="ceska-posta-fee-row" style="display:none;">
@@ -1779,6 +1789,10 @@
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                     </svg>
                                 </span>Completed</span>
+                            </div>
+                            <div class="admin-stat">
+                                <span class="admin-stat-number" id="activeVisitors">0</span>
+                                <span class="admin-stat-label">Active Visitors</span>
                             </div>
                         </div>
                         <div class="admin-filters">
@@ -2046,6 +2060,10 @@
                                         <label>Packeta API Key</label>
                                         <input class="catalog-input" id="catalogPacketaApiKey" type="text" />
                                     </div>
+                                    <div class="catalog-row">
+                                        <label>Additional Terms Text</label>
+                                        <textarea class="catalog-textarea" id="catalogTermsAdditionalText" rows="4" placeholder="Each new line will be shown as a separate paragraph in Terms &amp; Conditions"></textarea>
+                                    </div>
                                 </div>
                             </div>
 
@@ -2100,6 +2118,11 @@
                                 <div class="credentials-users">
                                     <h4>Current Admin Users</h4>
                                     <div class="users-list" id="usersList"></div>
+                                </div>
+
+                                <div class="credentials-users">
+                                    <h4>Current Users</h4>
+                                    <div class="users-list" id="usersListCustomers"></div>
                                 </div>
 
                                 <!-- Add New User -->
@@ -2225,11 +2248,11 @@
                     </ul>
                 </div>
                 <div class="footer-contact">
-                    <h4>Kontaktujte nas</h4>
-                    <p><strong>Adresa</strong><br>U rezne 361<br>Zelezna Ruda</p>
-                    <p><strong>Oteviraci doba</strong><br>Po - Pa: 10:00 - 20:00<br>So-Ne: Zavreno</p>
+                        <h4>Kontaktujte nás</h4>
+                    <p><strong>Adresa</strong><br>U Řezné 361<br>Železná Ruda</p>
+                    <p><strong>Otevírací doba</strong><br>Po - Pá: 10:00 - 20:00<br>So-Ne: Zavřeno</p>
                     <p><strong>Telefon</strong><br>+420 732 434 201</p>
-                </div>
+                        <p><i class="fas fa-clock"></i> Otevírací doba: Po-Pá 9:00-18:00<br>So-Ne: Zavřeno</p>
             </div>
             <div class="footer-bottom">
                 <p>&copy; 2026 EzFix. All rights reserved.</p>

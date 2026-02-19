@@ -170,11 +170,6 @@ router.put('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
                 message: 'At least one field is required to update'
             });
         }
-        if (role !== undefined) {
-            const nextRole = normalizeRole(role, user.role);
-            fields.push('role = ?');
-            params.push(nextRole);
-        }
 
         const user = await db.getAsync(
             'SELECT id, username, email, role FROM users WHERE id = ?',
@@ -251,6 +246,12 @@ router.put('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
 
         const fields = [];
         const params = [];
+
+        if (role !== undefined) {
+            const nextRole = normalizeRole(role, user.role);
+            fields.push('role = ?');
+            params.push(nextRole);
+        }
 
         if (nextUsername) {
             fields.push('username = ?');
