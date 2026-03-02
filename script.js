@@ -61,6 +61,19 @@ document.addEventListener('DOMContentLoaded', function() {
         previewImage: document.getElementById('previewImage')
     };
 
+    const startupLoader = document.getElementById('appLoader');
+    function hideStartupLoader() {
+        if (!startupLoader) {
+            document.body.classList.remove('app-loading');
+            return;
+        }
+        startupLoader.classList.add('is-hiding');
+        window.setTimeout(() => {
+            startupLoader.remove();
+            document.body.classList.remove('app-loading');
+        }, 360);
+    }
+
     // ========================================================================
     // MODULE 1.5: INTERNATIONALIZATION (CZ/EN)
     // ========================================================================
@@ -7991,6 +8004,8 @@ document.addEventListener('DOMContentLoaded', function() {
             applyTranslations();
             showPage('home');
             initCookieConsent();
+        } finally {
+            hideStartupLoader();
         }
     })();
 

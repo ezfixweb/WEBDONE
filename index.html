@@ -16,12 +16,18 @@
     <meta name="twitter:title" content="EzFix - Device Repair & Custom Builds">
     <meta name="twitter:description" content="Fast repairs, custom builds, and precision 3D prints with transparent pricing.">
     <title>EzFix - Phone, Tablet, Notebook & PC Repair</title>
-    <link rel="stylesheet" href="styles.css?v=20260302a">
+    <link rel="stylesheet" href="styles.css?v=20260302b">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="app-loading">
+    <div id="appLoader" class="app-loader" aria-hidden="true">
+        <div class="app-loader-content">
+            <img src="assets/logos/ezfix-logo.png" alt="" class="app-loader-logo" decoding="async">
+            <div class="app-loader-spinner"></div>
+        </div>
+    </div>
     <div id="cookieConsent" class="cookie-consent hidden" role="dialog" aria-modal="false" aria-labelledby="cookieConsentTitle" aria-describedby="cookieConsentText">
         <div class="cookie-consent-card">
             <h3 id="cookieConsentTitle">Cookie Preferences</h3>
@@ -2272,6 +2278,6 @@
     </footer>
 
     <script src="https://widget.packeta.com/v6/www/js/library.js" defer></script>
-    <script src="script.js?v=20260302a" defer></script>
+    <script src="script.js?v=20260302b" defer></script>
 </body>
 </html>

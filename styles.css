@@ -45,6 +45,63 @@ body {
     flex-direction: column;
 }
 
+.app-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, #151333 0%, #0f0e24 100%);
+    opacity: 1;
+    transition: opacity 0.35s ease;
+}
+
+.app-loader.is-hiding {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.app-loader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.app-loader-logo {
+    width: 150px;
+    height: auto;
+    filter: drop-shadow(0 8px 24px rgba(122, 44, 255, 0.35));
+    animation: loaderLogoPulse 1.6s ease-in-out infinite;
+}
+
+.app-loader-spinner {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.28);
+    border-top-color: #ffffff;
+    animation: loaderSpin 0.9s linear infinite;
+}
+
+@keyframes loaderSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes loaderLogoPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.95;
+    }
+    50% {
+        transform: scale(1.03);
+        opacity: 1;
+    }
+}
+
 .skip-link {
     position: absolute;
     left: 16px;
