@@ -2643,7 +2643,18 @@ body.has-announcement .hero {
     }
 
     .mobile-cart-item {
-        display: list-item;
+        display: block;
+        width: 100%;
+    }
+
+    .nav-links.active .mobile-cart-item {
+        display: block;
+    }
+
+    .nav-links .mobile-cart-link {
+        display: flex;
+        width: 100%;
+        justify-content: flex-start;
     }
     
     .nav-right {
