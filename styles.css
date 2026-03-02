@@ -70,30 +70,30 @@ body {
 }
 
 .app-loader-logo {
-    width: 280px;
+    width: 340px;
     height: auto;
     filter: drop-shadow(0 8px 24px rgba(122, 44, 255, 0.35));
     animation: loaderLogoPulse 1.6s ease-in-out infinite;
 }
 
 .app-loader-spinner {
-    width: 52px;
-    height: 52px;
+    width: 62px;
+    height: 62px;
     border-radius: 50%;
-    border: 5px solid rgba(255, 255, 255, 0.28);
+    border: 6px solid rgba(255, 255, 255, 0.28);
     border-top-color: #ffffff;
     animation: loaderSpin 0.9s linear infinite;
 }
 
 @media (max-width: 768px) {
     .app-loader-logo {
-        width: 220px;
+        width: 270px;
     }
 
     .app-loader-spinner {
-        width: 44px;
-        height: 44px;
-        border-width: 4px;
+        width: 52px;
+        height: 52px;
+        border-width: 5px;
     }
 }
 
