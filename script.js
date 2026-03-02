@@ -1102,6 +1102,37 @@ document.addEventListener('DOMContentLoaded', function() {
         return serviceType || t('N/A');
     }
 
+    function normalizePhoneForDisplay(phone) {
+        const raw = String(phone || '').trim();
+        if (!raw) return '';
+
+        let normalized = raw.replace(/\s+/g, '');
+
+        if (normalized.startsWith('+')) {
+            normalized = normalized.replace(/^(\+\d{1,4})(?:\1)+/, '$1');
+        }
+
+        return normalized;
+    }
+
+    function buildCustomerPhone(countryCode, phoneInput) {
+        const code = String(countryCode || '+420').replace(/\s+/g, '');
+        const input = String(phoneInput || '').trim().replace(/\s+/g, '');
+        if (!input) return '';
+
+        if (input.startsWith('+')) {
+            return normalizePhoneForDisplay(input);
+        }
+
+        const codeDigits = code.replace(/^\+/, '');
+        let localNumber = input;
+        if (codeDigits && localNumber.startsWith(codeDigits)) {
+            localNumber = localNumber.slice(codeDigits.length);
+        }
+
+        return normalizePhoneForDisplay(`${code}${localNumber}`);
+    }
+
     function normalizeOrderNumber(orderNumber) {
         return String(orderNumber || '').trim().replace(/^#/, '');
     }
@@ -4829,7 +4860,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                                 <div class="order-info-item">
                                     <span class="order-info-label">${t('Phone')}</span>
-                                    <span class="order-info-value">${escapeHtml(detail.customer_phone || order.customer_phone || t('N/A'))}</span>
+                                    <span class="order-info-value">${escapeHtml(normalizePhoneForDisplay(detail.customer_phone || order.customer_phone || '') || t('N/A'))}</span>
                                 </div>
                                 <div class="order-info-item">
                                     <span class="order-info-label">${t('Address')}</span>
@@ -5002,7 +5033,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             <div>
                                 <div class="label">${t('Phone')}</div>
-                                <div class="value">${escapeHtml(o.customer_phone || '')}</div>
+                                <div class="value">${escapeHtml(normalizePhoneForDisplay(o.customer_phone || ''))}</div>
                             </div>
                             <div>
                                 <div class="label">${t('Service')}</div>
@@ -5141,7 +5172,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <h3>${t('Customer Info')}</h3>
                             <div class="info-line"><strong>${t('Name')}:</strong> ${escapeHtml(o.customer_name || '')}</div>
                             <div class="info-line"><strong>${t('Email')}:</strong> ${escapeHtml(o.customer_email || '')}</div>
-                            <div class="info-line"><strong>${t('Phone')}:</strong> ${escapeHtml(o.customer_phone || '')}</div>
+                            <div class="info-line"><strong>${t('Phone')}:</strong> ${escapeHtml(normalizePhoneForDisplay(o.customer_phone || ''))}</div>
                             <div class="info-line"><strong>${t('Address')}:</strong> ${escapeHtml(o.customer_address || t('N/A'))}</div>
                             ${o.customer_city ? `<div class="info-line"><strong>${t('City')}:</strong> ${o.customer_city}</div>` : ''}
                             ${o.customer_zip ? `<div class="info-line"><strong>${t('ZIP Code')}:</strong> ${o.customer_zip}</div>` : ''}
@@ -6901,7 +6932,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const customerEmail = document.getElementById('checkoutEmail').value.trim();
             const countryCode = document.getElementById('countryCode')?.value || '+420';
             const phoneOnly = document.getElementById('checkoutPhone').value.trim();
-            const customerPhone = countryCode + phoneOnly;
+            const customerPhone = buildCustomerPhone(countryCode, phoneOnly);
             const customerAddress = document.getElementById('checkoutAddress')?.value.trim() || '';
             const customerCity = document.getElementById('checkoutCity')?.value.trim() || '';
             const customerZip = document.getElementById('checkoutZip')?.value.trim() || '';

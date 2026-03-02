@@ -2653,8 +2653,9 @@ body.has-announcement .hero {
 
     .nav-links .mobile-cart-link {
         display: flex;
-        width: 100%;
-        justify-content: flex-start;
+        width: auto;
+        justify-content: center;
+        margin: 0 auto;
     }
     
     .nav-right {
@@ -3130,6 +3131,9 @@ body.has-announcement .hero {
         max-width: none;
         min-height: 120px;
         padding: 24px 10px;
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
     }
 
     #buildTypeGrid .brand-card h3 {
@@ -3168,6 +3172,20 @@ body.has-announcement .hero {
     #buildTypeGrid .brand-card h3,
     #cpuBrandGrid .brand-card h3 {
         font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    #serverTypeGrid .brand-card,
+    #haBrandGrid .brand-card,
+    #haTypeGrid .brand-card,
+    #haStorageTypeGrid .brand-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-align: center;
     }
 }
 
