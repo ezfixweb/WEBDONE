@@ -3166,7 +3166,7 @@ body.has-announcement .hero {
         width: 100%;
         max-width: 100%;
         margin-bottom: 24px;
-        padding: 0 6px 8px;
+        padding: 0 12px 8px;
         justify-content: flex-start;
         flex-wrap: nowrap;
         overflow-x: auto;
@@ -3177,6 +3177,21 @@ body.has-announcement .hero {
     #customPcProgress .step-item,
     #customPcProgress .step-line {
         flex: 0 0 auto;
+    }
+
+    #customPcProgress .step-circle {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        min-height: 30px;
+        flex: 0 0 30px;
+        font-size: 0.8rem;
+    }
+
+    #customPcProgress .step-line {
+        flex-basis: 26px;
+        max-width: 26px;
+        margin: 0 4px;
     }
 
     #custompc .brand-grid {
@@ -3206,12 +3221,13 @@ body.has-announcement .hero {
     #buildTypeGrid .brand-card,
     #cpuBrandGrid .brand-card {
         width: 100%;
-        max-width: none;
+        max-width: 360px;
         min-height: 120px;
         padding: 24px 10px;
         flex-direction: column;
         gap: 10px;
         text-align: center;
+        margin: 0 auto;
     }
 
     #buildTypeGrid .brand-card h3 {
@@ -3245,6 +3261,7 @@ body.has-announcement .hero {
     #cpuBrandGrid .brand-card {
         min-height: 96px;
         padding: 18px 12px;
+        max-width: 320px;
     }
 
     #buildTypeGrid .brand-card h3,
