@@ -51,6 +51,17 @@
                 <li><a href="#" data-page="printing">3D Printing</a></li>
                 <li><a href="#" data-page="other">Other</a></li>
                 <li><a href="#" data-page="about">About</a></li>
+                <li class="mobile-cart-item">
+                    <a href="#" class="mobile-cart-link" data-page="cart" aria-label="View cart">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        <span>Cart</span>
+                        <span class="cart-count mobile-cart-count" data-role="cart-count" aria-live="polite" aria-atomic="true">0</span>
+                    </a>
+                </li>
                 <li id="adminNavLink" style="display: none;"><a href="#" data-page="admin">Admin</a></li>
             </ul>
             <div class="nav-right">
@@ -60,7 +71,7 @@
                         <circle cx="20" cy="21" r="1"></circle>
                         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                     </svg>
-                    <span class="cart-count" id="cartCount" aria-live="polite" aria-atomic="true">0</span>
+                    <span class="cart-count" id="cartCount" data-role="cart-count" aria-live="polite" aria-atomic="true">0</span>
                 </button>
                 <button class="btn btn-secondary btn-sm" id="langToggle" type="button" aria-label="Switch language">CZ</button>
                 <button class="btn btn-secondary btn-sm" id="logoutBtn" style="display: none;">Logout</button>

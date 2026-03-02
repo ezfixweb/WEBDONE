@@ -344,6 +344,25 @@ body.has-announcement .hero {
     background: rgba(255,255,255,0.08);
 }
 
+.mobile-cart-item {
+    display: none;
+}
+
+.mobile-cart-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mobile-cart-link svg {
+    width: 20px;
+    height: 20px;
+}
+
+.mobile-cart-count {
+    position: static;
+}
+
 .nav-right {
     display: flex;
     align-items: center;
@@ -2621,6 +2640,10 @@ body.has-announcement .hero {
     
     .nav-links.active {
         display: flex;
+    }
+
+    .mobile-cart-item {
+        display: list-item;
     }
     
     .nav-right {

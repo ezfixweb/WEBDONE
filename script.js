@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Cart & checkout
         cartBtn: document.getElementById('cartBtn'),
         checkoutBtn: document.getElementById('checkoutBtn'),
-        cartCount: document.getElementById('cartCount'),
+        cartCountEls: document.querySelectorAll('[data-role="cart-count"]'),
         checkoutForm: document.getElementById('checkoutForm'),
 
         // Order tracking
@@ -4052,12 +4052,14 @@ document.addEventListener('DOMContentLoaded', function() {
      * Update cart count badge in navigation
      */
     async function updateCartCount() {
-        const countEl = DOM.cartCount;
+        const countEls = DOM.cartCountEls;
         try {
             await Storage.loadCart();
-            if (countEl) {
-                countEl.textContent = Storage.cart.length;
-                countEl.setAttribute('data-count', Storage.cart.length);
+            if (countEls?.length) {
+                countEls.forEach((countEl) => {
+                    countEl.textContent = Storage.cart.length;
+                    countEl.setAttribute('data-count', Storage.cart.length);
+                });
             }
         } catch (error) {
             console.error('Error updating cart count:', error);
@@ -6999,9 +7001,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            if (DOM.cartCount) {
-                DOM.cartCount.textContent = '0';
-                DOM.cartCount.setAttribute('data-count', '0');
+            if (DOM.cartCountEls?.length) {
+                DOM.cartCountEls.forEach((countEl) => {
+                    countEl.textContent = '0';
+                    countEl.setAttribute('data-count', '0');
+                });
             }
 
             // Show success modal instead of replacing form
