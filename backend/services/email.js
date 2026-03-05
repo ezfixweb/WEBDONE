@@ -521,7 +521,7 @@ async function sendPasswordResetEmail(customerEmail, customerName, resetUrl) {
         `;
 
         const mailOptions = {
-            from: emailUser || 'ezfix.podpora@gmail.com',
+            from: emailUser || 'podpora@ezfix.cz',
             to: customerEmail,
             subject: 'Obnova hesla',
             html: emailHTML

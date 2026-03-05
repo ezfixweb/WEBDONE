@@ -48,8 +48,8 @@ Backend (Render)
 5) Env vars:
 	JWT_SECRET=your_secret
 	JWT_EXPIRE=7d
-	EMAIL_USER=ezfix.podpora@gmail.com
-	EMAIL_PASSWORD=your_gmail_app_password
+	EMAIL_USER=podpora@ezfix.cz
+	EMAIL_PASSWORD=EzfixPodpora1:?:
 	FRONTEND_URL=https://your-site.netlify.app
 	GOOGLE_CLIENT_ID=...
 	GOOGLE_CLIENT_SECRET=...
