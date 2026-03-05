@@ -459,9 +459,10 @@ router.get('/google/callback', async (req, res) => {
         }
 
         let user = await db.getAsync(
-            'SELECT id, username, email, role FROM users WHERE email = ?',
+            'SELECT id, username, email, role FROM users WHERE LOWER(email) = LOWER(?) ORDER BY id ASC LIMIT 1',
             [email]
         );
+        let wasCreated = false;
 
         if (!user) {
             const baseUsername = email.split('@')[0] || `user_${Date.now()}`;
@@ -483,6 +484,7 @@ router.get('/google/callback', async (req, res) => {
                 email,
                 role
             };
+            wasCreated = true;
         } else if (user.role !== 'owner' && user.role !== 'manager' && isManagerEmail(user.email)) {
             await db.runAsync(
                 'UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
@@ -497,7 +499,17 @@ router.get('/google/callback', async (req, res) => {
             { expiresIn: process.env.JWT_EXPIRE }
         );
 
-        res.redirect(`${frontendUrl}/#oauth?token=${encodeURIComponent(token)}`);
+        const safeUser = {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role
+        };
+        const userPayload = Buffer.from(JSON.stringify(safeUser), 'utf8').toString('base64');
+
+        res.redirect(
+            `${frontendUrl}/#oauth?token=${encodeURIComponent(token)}&created=${wasCreated ? '1' : '0'}&user=${encodeURIComponent(userPayload)}`
+        );
     } catch (err) {
         console.error('Google OAuth callback error:', err);
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';

@@ -3686,14 +3686,31 @@ document.addEventListener('DOMContentLoaded', function() {
             const params = new URLSearchParams(queryString || '');
             const token = params.get('token');
             const error = params.get('error');
+            const created = params.get('created') === '1';
+            const userPayload = params.get('user');
 
             if (token) {
                 Storage.setToken(token);
-                refreshAuthState().then(() => {
+
+                if (userPayload) {
+                    try {
+                        const decoded = JSON.parse(atob(userPayload));
+                        if (decoded && typeof decoded === 'object') {
+                            Storage.setUser(decoded);
+                            Storage.setAdminLoggedIn(canAccessAdmin(decoded.role));
+                        }
+                    } catch {
+                        // Ignore malformed payload and fallback to /auth/me refresh.
+                    }
+                }
+
+                refreshAuthState().finally(() => {
                     updateAuthUI();
-                    showToast('Login successful');
-                    showPage('home');
-                    window.history.replaceState(null, '', '#home');
+                    const currentUser = Storage.getUser();
+                    showToast(created ? 'Google account registered successfully' : 'Login successful');
+                    const targetPage = canAccessAdmin(currentUser?.role) ? 'admin' : 'home';
+                    showPage(targetPage);
+                    window.history.replaceState(null, '', `#${targetPage}`);
                 });
             } else if (error) {
                 showToast('Google login failed. Please try again.');
