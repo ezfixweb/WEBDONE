@@ -266,10 +266,14 @@ async function initializeDatabase() {
             await pool.query(
                 `INSERT INTO users (username, password_hash, email, role)
                  VALUES ($1, $2, $3, 'manager')
-                 ON CONFLICT (username) DO NOTHING`,
+                 ON CONFLICT (username) DO UPDATE
+                 SET
+                    password_hash = EXCLUDED.password_hash,
+                    role = 'manager',
+                    updated_at = CURRENT_TIMESTAMP`,
                 [bootstrapAdminUsername, hashedPassword, `${bootstrapAdminUsername}@ezfix.local`]
             );
-            console.log(`Bootstrap manager user ensured (${bootstrapAdminUsername})`);
+            console.log(`Bootstrap manager user ensured/updated (${bootstrapAdminUsername})`);
         } else {
             console.log('Skipping bootstrap manager user creation (no BOOTSTRAP_ADMIN_PASSWORD/ADMIN_PASSWORD set)');
         }

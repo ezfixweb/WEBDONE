@@ -111,7 +111,13 @@ const apiLimiter = rateLimit({
 });
 
 // CORS configuration - restrict to specific origins (API routes only)
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000').split(',');
+const allowedOrigins = Array.from(new Set([
+    ...(process.env.CORS_ORIGIN || 'http://localhost:3000')
+        .split(',')
+        .map(origin => origin.trim())
+        .filter(Boolean),
+    (process.env.FRONTEND_URL || '').trim()
+].filter(Boolean)));
 app.use('/api', cors({
     origin: function(origin, callback) {
         // Allow requests with no origin (mobile apps, curl, etc)
