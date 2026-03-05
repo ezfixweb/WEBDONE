@@ -920,13 +920,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // MODULE 2: API CONFIGURATION & HELPERS
     // API endpoints and authentication management
     // ========================================================================
-    // Determine API base dynamically:
-    // - If the page is served via file:// (or origin is 'null'), falling back to localhost API
-    //   prevents attempts to fetch `file:///api/...` which cause CORS/errors in the console.
-    // - Otherwise use a relative `/api` so the frontend works when served from the same origin.
-    const API_BASE_URL = (location.protocol === 'file:' || location.origin === 'null')
-        ? 'https://webdone-wymx.onrender.com/api'
-        : '/api';
+    // API base resolution order:
+    // 1) window.EZFIX_CONFIG.API_BASE_URL (single configurable value from index.html)
+    // 2) file:// fallback to hosted API
+    // 3) same-origin '/api'
+    const isLocalFileMode = (location.protocol === 'file:' || location.origin === 'null');
+    const configuredApiBase = (window.EZFIX_CONFIG && typeof window.EZFIX_CONFIG.API_BASE_URL === 'string')
+        ? window.EZFIX_CONFIG.API_BASE_URL.trim().replace(/\/$/, '')
+        : '';
+
+    const isEzfixWebHost = /(^|\.)ezfix\.cz$/i.test(location.hostname);
+    const API_BASE_URL = configuredApiBase || (
+        isLocalFileMode
+            ? 'https://api.ezfix.cz/api'
+            : (isEzfixWebHost ? 'https://api.ezfix.cz/api' : '/api')
+    );
 
     /**
      * Get authorization header with JWT token
