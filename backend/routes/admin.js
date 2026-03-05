@@ -4,6 +4,7 @@
  * POST /api/admin/users - Create admin user
  * DELETE /api/admin/users/:userId - Delete user
  * POST /api/admin/users/:userId/password - Reset user password
+ * POST /api/admin/users/reset-all - Reset all users and passwords
  * GET /api/admin/stats - Get platform statistics
  */
 
@@ -397,6 +398,66 @@ router.delete('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
             success: false, 
             message: 'Failed to delete user', 
             error: err.message 
+        });
+    }
+});
+
+/**
+ * Reset all users and passwords (owner only)
+ * POST /api/admin/users/reset-all
+ */
+router.post('/users/reset-all', verifyToken, verifyOwner, async (req, res) => {
+    try {
+        const confirmation = String(req.body?.confirmation || '').trim();
+        if (confirmation !== 'RESET_ALL_USERS') {
+            return res.status(400).json({
+                success: false,
+                message: 'Confirmation text must be RESET_ALL_USERS'
+            });
+        }
+
+        const bootstrapUsername = (process.env.BOOTSTRAP_ADMIN_USERNAME || process.env.ADMIN_USERNAME || 'admin').trim();
+        const bootstrapPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
+        const bootstrapEmail = `${bootstrapUsername}@ezfix.local`;
+
+        if (!bootstrapPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Set BOOTSTRAP_ADMIN_PASSWORD (or ADMIN_PASSWORD) before running reset'
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(bootstrapPassword, 10);
+
+        await db.query('BEGIN');
+        try {
+            // Orders are retained; unlink users before wiping accounts.
+            await db.query('UPDATE orders SET user_id = NULL');
+
+            // Remove all user records and recreate a single bootstrap owner account.
+            await db.query('DELETE FROM users');
+            await db.query(
+                'INSERT INTO users (username, password_hash, email, role) VALUES (?, ?, ?, ?)',
+                [bootstrapUsername, hashedPassword, bootstrapEmail, 'owner']
+            );
+
+            await db.query('COMMIT');
+        } catch (txErr) {
+            await db.query('ROLLBACK');
+            throw txErr;
+        }
+
+        res.json({
+            success: true,
+            message: 'All users were reset. Login with bootstrap credentials from environment variables.',
+            bootstrapUsername
+        });
+    } catch (err) {
+        console.error('Reset all users error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to reset all users',
+            error: err.message
         });
     }
 });

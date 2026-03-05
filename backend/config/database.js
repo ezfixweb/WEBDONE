@@ -288,6 +288,24 @@ async function initializeDatabase() {
             );
         }
 
+        const ownerPassword = process.env.OWNER_PASSWORD;
+        if (ownerUsername && ownerPassword) {
+            const ownerHash = bcrypt.hashSync(ownerPassword, 10);
+            await pool.query(
+                `INSERT INTO users (username, password_hash, email, role)
+                 VALUES ($1, $2, $3, 'owner')
+                 ON CONFLICT (username) DO UPDATE
+                 SET
+                    password_hash = EXCLUDED.password_hash,
+                    role = 'owner',
+                    updated_at = CURRENT_TIMESTAMP`,
+                [ownerUsername, ownerHash, `${ownerUsername}@ezfix.local`]
+            );
+            console.log(`Owner account ensured/updated (${ownerUsername})`);
+        } else if (ownerUsername && !ownerPassword) {
+            console.log('OWNER_USERNAME is set but OWNER_PASSWORD is missing; owner password not reset');
+        }
+
         console.log('Database tables initialized successfully');
     } catch (err) {
         console.error('Database initialization failed:', err);
