@@ -18,7 +18,7 @@ const { sendPasswordResetEmail } = require('../services/email');
 const normalizeEmail = (value = '') => value.trim().toLowerCase();
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
-const OWNER_USERNAME = (process.env.OWNER_USERNAME || 'samu').trim().toLowerCase();
+const OWNER_USERNAME = (process.env.OWNER_USERNAME || '').trim().toLowerCase();
 
 const isManagerEmail = (email) => {
     const adminEmailList = (process.env.ADMIN_EMAILS || '')

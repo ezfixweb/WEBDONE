@@ -1,10 +1,12 @@
 (async ()=>{
   try {
     const base = 'http://localhost:3000/api';
+    const username = process.env.TEST_USERNAME || process.env.BOOTSTRAP_ADMIN_USERNAME || 'admin';
+    const password = process.env.TEST_PASSWORD || process.env.BOOTSTRAP_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'admin123';
     const loginRes = await fetch(base + '/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: 'admin123' })
+      body: JSON.stringify({ username, password })
     });
     const loginText = await loginRes.text();
     console.log('LOGIN RESPONSE:', loginText);

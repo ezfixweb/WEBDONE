@@ -234,7 +234,7 @@ async function startServer() {
 ╠════════════════════════════════════════╣
 ║ Environment: ${process.env.NODE_ENV || 'development'}.padEnd(28) ║
 ║ Port:        ${PORT.toString().padEnd(28)} ║
-║ Database:    ${process.env.DB_PATH || './database/ezfix.db'} ║
+║ Database:    ${process.env.DATABASE_URL ? 'postgresql (DATABASE_URL)' : 'postgresql (PG*)'} ║
 ╠════════════════════════════════════════╣
 ║ Endpoints:                              ║
 ║   • Auth:     /api/auth                 ║

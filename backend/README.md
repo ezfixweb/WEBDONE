@@ -10,7 +10,7 @@ Node.js + Express backend for the EzFix repair services platform.
 - ✅ Admin Dashboard & User Management
 - ✅ Services/Repairs Catalog
 - ✅ Custom PC Builder with Component Library
-- ✅ SQLite Database with Persistent Storage
+- ✅ PostgreSQL Database (Neon-compatible)
 - ✅ Password Hashing with bcryptjs
 - ✅ Input Validation
 - ✅ Role-Based Access Control
@@ -26,11 +26,19 @@ npm install
 ```
 PORT=3000
 NODE_ENV=development
-DB_PATH=./database/ezfix.db
+DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
+PGSSL=true
 JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
 JWT_EXPIRE=7d
 CORS_ORIGIN=http://localhost:8000
+BOOTSTRAP_ADMIN_USERNAME=admin
+BOOTSTRAP_ADMIN_PASSWORD=change-this-strong-password
+OWNER_USERNAME=
 ```
+
+Production notes:
+- On Render, set `DATABASE_URL` to your Neon pooled connection string.
+- `BOOTSTRAP_ADMIN_*` creates the admin if it does not exist; remove those vars after first successful deploy/login.
 
 ## Running the Server
 
