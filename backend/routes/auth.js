@@ -147,7 +147,7 @@ router.post('/login', [
 
         // Find user
         const user = await db.getAsync(
-            'SELECT id, username, email, password_hash, role FROM users WHERE username = ? OR email = ?',
+            'SELECT id, username, email, password_hash, role FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)',
             [identifier, identifier]
         );
 

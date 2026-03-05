@@ -1044,13 +1044,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    clearAuth();
+                    const isSessionEndpoint = endpoint !== '/auth/login' && endpoint !== '/auth/register' && endpoint !== '/auth/forgot-password' && endpoint !== '/auth/reset-password';
+                    if (isSessionEndpoint) {
+                        clearAuth();
+                    }
                     if (endpoint === '/auth/me') {
                         return { success: false, user: null, message: 'Unauthorized' };
                     }
-                    // Admin login modal removed; show a toast instead
-                    showToast('Session expired. Please login again.');
-                    throw new Error('Session expired. Please login again.');
+
+                    if (isSessionEndpoint) {
+                        // Only show session-expired for authenticated endpoints.
+                        showToast('Session expired. Please login again.');
+                        throw new Error('Session expired. Please login again.');
+                    }
+
+                    throw new Error(result.message || 'Unauthorized');
                 } else if (response.status === 403) {
                     throw new Error('You do not have permission to perform this action');
                 } else if (response.status === 429) {
@@ -1059,7 +1067,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (!result.success) {
-                throw new Error(result.message || 'API Error');
+                const validationMessage = Array.isArray(result.errors) && result.errors.length
+                    ? result.errors.map(err => err.msg || err.message).filter(Boolean).join('; ')
+                    : '';
+                throw new Error(result.message || validationMessage || 'API Error');
             }
 
             return result;
