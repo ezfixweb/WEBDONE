@@ -16,7 +16,7 @@
     <meta name="twitter:title" content="EzFix - Device Repair & Custom Builds">
     <meta name="twitter:description" content="Fast repairs, custom builds, and precision 3D prints with transparent pricing.">
     <title>EzFix - Phone, Tablet, Notebook & PC Repair</title>
-    <link rel="stylesheet" href="styles.css?v=20260302b">
+    <link rel="stylesheet" href="styles.css?v=20260305d">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -57,6 +57,7 @@
                 <li><a href="#" data-page="printing">3D Printing</a></li>
                 <li><a href="#" data-page="other">Other</a></li>
                 <li><a href="#" data-page="about">About</a></li>
+                <li><a href="#" data-page="contact">Kontaktujte nás</a></li>
                 <li class="mobile-cart-item">
                     <a href="#" class="mobile-cart-link" data-page="cart" aria-label="View cart">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -1378,6 +1379,40 @@
             </div>
         </section>
 
+        <!-- Contact Page -->
+        <section id="contact" class="page contact-page">
+            <div class="page-header-dark">
+                <div class="container">
+                    <h1>Kontaktujte nás</h1>
+                    <p>Spojíme vás se správnou osobou</p>
+                </div>
+            </div>
+            <div class="container">
+                <div class="contact-directory">
+                    <article class="contact-card contact-card-universal">
+                        <h2>Univerzální kontakt</h2>
+                        <a class="contact-email contact-email-large" href="mailto:podpora@ezfix.cz">podpora@ezfix.cz</a>
+                    </article>
+
+                    <div class="contact-owners-grid">
+                        <article class="contact-card">
+                            <h3>Majitel</h3>
+                            <p class="contact-person">Jakub Balda</p>
+                            <a class="contact-email" href="mailto:jbalda@ezfix.cz">jbalda@ezfix.cz</a>
+                            <p class="contact-phone-label">Telefon</p>
+                            <a class="contact-phone" href="tel:+420732434201">+420 732 434 201</a>
+                        </article>
+
+                        <article class="contact-card">
+                            <h3>Spolu Majitel</h3>
+                            <p class="contact-person">Dominik Pokorný</p>
+                            <a class="contact-email" href="mailto:dpokorny@ezfix.cz">dpokorny@ezfix.cz</a>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Cart Page -->
         <section id="cart" class="page">
             <div class="page-header-dark">
@@ -1784,6 +1819,12 @@
                             </svg>
                             Admin Credentials
                         </button>
+                        <button class="admin-tab-btn" data-tab="chats">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            Chats
+                        </button>
                     </div>
 
                     <!-- Admin Header with Stats and Filters -->
@@ -2125,6 +2166,23 @@
                         </div>
                     </div>
 
+                    <!-- Chats Tab Content -->
+                    <div id="chats-content" class="admin-tab-content">
+                        <div class="admin-chat-layout">
+                            <aside class="admin-chat-sessions" id="adminChatSessions">
+                                <div class="admin-chat-empty">No chat sessions yet.</div>
+                            </aside>
+                            <section class="admin-chat-thread">
+                                <div class="admin-chat-thread-header" id="adminChatThreadHeader">Select a chat session</div>
+                                <div class="admin-chat-messages" id="adminChatMessages"></div>
+                                <form class="admin-chat-reply" id="adminChatReplyForm">
+                                    <input id="adminChatReplyInput" type="text" placeholder="Write a reply..." maxlength="300" autocomplete="off">
+                                    <button type="submit" class="btn btn-primary">Reply</button>
+                                </form>
+                            </section>
+                        </div>
+                    </div>
+
                     <!-- Admin Credentials Tab Content -->
                     <div id="credentials-content" class="admin-tab-content">
                         <div class="credentials-section" id="credentialsSection">
@@ -2280,6 +2338,23 @@
         </div>
     </footer>
 
+    <div class="support-chat" id="supportChat">
+        <button class="support-chat-toggle" id="supportChatToggle" type="button" aria-label="Open support chat" aria-expanded="false">
+            Chat
+        </button>
+        <div class="support-chat-panel" id="supportChatPanel" aria-hidden="true">
+            <div class="support-chat-header">
+                <strong>EzFix Chat</strong>
+                <button class="support-chat-close" id="supportChatClose" type="button" aria-label="Close support chat">x</button>
+            </div>
+            <div class="support-chat-body" id="supportChatBody"></div>
+            <form class="support-chat-form" id="supportChatForm">
+                <input id="supportChatInput" type="text" placeholder="Napis zpravu..." maxlength="220" autocomplete="off">
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         window.EZFIX_CONFIG = {
             // Single source of truth for API base URL.
@@ -2287,6 +2362,6 @@
         };
     </script>
     <script src="https://widget.packeta.com/v6/www/js/library.js" defer></script>
-    <script src="script.js?v=20260305a" defer></script>
+    <script src="script.js?v=20260305d" defer></script>
 </body>
 </html>

@@ -7503,6 +7503,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (toggleCredentialsBtn) toggleCredentialsBtn.textContent = t('Hide');
                 renderCredentialsUI();
             }
+            if (tabName === 'chats') {
+                loadAdminChatSessions();
+            }
             renderAdminOrders();
         });
     });
@@ -7976,6 +7979,288 @@ document.addEventListener('DOMContentLoaded', function() {
     DOM.cookieDeclineBtn?.addEventListener('click', () => {
         saveCookieConsent('declined');
     });
+
+    // Floating support chat + admin chat inbox
+    const supportChatState = {
+        sessionId: localStorage.getItem('supportChatSessionId') || '',
+        pollId: null
+    };
+
+    const adminChatState = {
+        sessions: [],
+        activeSessionId: null,
+        pollId: null
+    };
+
+    function formatChatTime(value) {
+        try {
+            return new Date(value).toLocaleString('cs-CZ', {
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit'
+            });
+        } catch {
+            return '';
+        }
+    }
+
+    async function ensureSupportChatSession() {
+        const visitorId = localStorage.getItem('visitorId') || `visitor_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        localStorage.setItem('visitorId', visitorId);
+
+        const result = await apiCall('POST', '/chat/session', {
+            sessionId: supportChatState.sessionId,
+            visitorId,
+            name: Storage.getUser()?.username || 'Visitor',
+            email: Storage.getUser()?.email || ''
+        });
+
+        supportChatState.sessionId = result.sessionId;
+        localStorage.setItem('supportChatSessionId', supportChatState.sessionId);
+        return supportChatState.sessionId;
+    }
+
+    async function loadSupportChatMessages() {
+        if (!supportChatState.sessionId) return [];
+        const result = await apiCall('GET', `/chat/messages/${supportChatState.sessionId}`);
+        return result.messages || [];
+    }
+
+    function renderSupportChatMessages(messages) {
+        const body = document.getElementById('supportChatBody');
+        if (!body) return;
+        body.innerHTML = '';
+
+        if (!Array.isArray(messages) || messages.length === 0) {
+            const item = document.createElement('div');
+            item.className = 'support-msg bot';
+            item.textContent = 'Ahoj! Napis zpravu a EzFix AI i admin tym ti odpovi.';
+            body.appendChild(item);
+            return;
+        }
+
+        messages.forEach((msg) => {
+            const type = msg.sender_type === 'admin' ? 'bot' : (msg.sender_type === 'bot' ? 'bot' : 'user');
+            const item = document.createElement('div');
+            item.className = `support-msg ${type}`;
+            item.textContent = msg.message || '';
+            body.appendChild(item);
+        });
+
+        body.scrollTop = body.scrollHeight;
+    }
+
+    async function loadAdminChatSessions() {
+        if (!Storage.getToken() || !canAccessAdmin(Storage.getUser()?.role)) return;
+
+        try {
+            const result = await apiCall('GET', '/chat/admin/sessions');
+            adminChatState.sessions = result.sessions || [];
+            renderAdminChatSessionList();
+
+            if (!adminChatState.activeSessionId && adminChatState.sessions.length > 0) {
+                await openAdminChatSession(adminChatState.sessions[0].id);
+            }
+        } catch (err) {
+            console.error('Load admin chat sessions failed:', err);
+        }
+    }
+
+    function renderAdminChatSessionList() {
+        const sessionsEl = document.getElementById('adminChatSessions');
+        if (!sessionsEl) return;
+
+        const sessions = adminChatState.sessions || [];
+        if (!sessions.length) {
+            sessionsEl.innerHTML = '<div class="admin-chat-empty">No chat sessions yet.</div>';
+            return;
+        }
+
+        sessionsEl.innerHTML = sessions.map((session) => {
+            const unread = Number(session.unread_count || 0);
+            const title = escapeHtml(session.customer_name || session.customer_email || session.id || 'Session');
+            const preview = escapeHtml(String(session.last_message || '').slice(0, 68));
+            const activeClass = session.id === adminChatState.activeSessionId ? 'active' : '';
+            return `
+                <button type="button" class="admin-chat-session-item ${activeClass}" data-chat-session-id="${escapeHtml(session.id)}">
+                    <div class="admin-chat-session-top">
+                        <strong>${title}</strong>
+                        ${unread > 0 ? `<span class="admin-chat-badge">${unread}</span>` : ''}
+                    </div>
+                    <div class="admin-chat-session-last">${preview || 'No messages yet'}</div>
+                </button>
+            `;
+        }).join('');
+    }
+
+    function renderAdminChatThread(messages, session) {
+        const headerEl = document.getElementById('adminChatThreadHeader');
+        const messagesEl = document.getElementById('adminChatMessages');
+        if (!headerEl || !messagesEl) return;
+
+        const label = session?.customer_name || session?.customer_email || session?.id || 'Chat session';
+        headerEl.textContent = `Chat: ${label}`;
+
+        messagesEl.innerHTML = (messages || []).map((msg) => {
+            const sender = msg.sender_type === 'admin' ? 'admin' : (msg.sender_type === 'bot' ? 'bot' : 'user');
+            const senderLabel = msg.sender_name ? escapeHtml(msg.sender_name) : escapeHtml(msg.sender_type || 'message');
+            const text = escapeHtml(msg.message || '');
+            const when = formatChatTime(msg.created_at);
+            return `
+                <div class="admin-chat-msg ${sender}">
+                    <div>${text}</div>
+                    <div class="admin-chat-msg-meta">${senderLabel}${when ? ` • ${when}` : ''}</div>
+                </div>
+            `;
+        }).join('');
+
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    async function openAdminChatSession(sessionId) {
+        if (!sessionId) return;
+        adminChatState.activeSessionId = sessionId;
+        renderAdminChatSessionList();
+
+        const result = await apiCall('GET', `/chat/admin/sessions/${sessionId}/messages`);
+        renderAdminChatThread(result.messages || [], result.session || { id: sessionId });
+    }
+
+    function initSupportChat() {
+        const chatRoot = document.getElementById('supportChat');
+        const toggleBtn = document.getElementById('supportChatToggle');
+        const closeBtn = document.getElementById('supportChatClose');
+        const panel = document.getElementById('supportChatPanel');
+        const form = document.getElementById('supportChatForm');
+        const input = document.getElementById('supportChatInput');
+
+        if (!chatRoot || !toggleBtn || !closeBtn || !panel || !form || !input) return;
+
+        const pollSupportChat = async () => {
+            try {
+                const messages = await loadSupportChatMessages();
+                renderSupportChatMessages(messages);
+            } catch {
+                // ignore polling failures
+            }
+        };
+
+        const openChat = async () => {
+            chatRoot.classList.add('open');
+            panel.setAttribute('aria-hidden', 'false');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+
+            try {
+                await ensureSupportChatSession();
+                const messages = await loadSupportChatMessages();
+                renderSupportChatMessages(messages);
+            } catch (err) {
+                console.error('Support chat init failed:', err);
+            }
+
+            input.focus();
+
+            if (!supportChatState.pollId) {
+                supportChatState.pollId = setInterval(pollSupportChat, 12000);
+            }
+        };
+
+        const closeChat = () => {
+            chatRoot.classList.remove('open');
+            panel.setAttribute('aria-hidden', 'true');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+
+            if (supportChatState.pollId) {
+                clearInterval(supportChatState.pollId);
+                supportChatState.pollId = null;
+            }
+        };
+
+        toggleBtn.addEventListener('click', () => {
+            if (chatRoot.classList.contains('open')) closeChat();
+            else openChat();
+        });
+
+        closeBtn.addEventListener('click', closeChat);
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = (input.value || '').trim();
+            if (!text) return;
+
+            try {
+                if (!supportChatState.sessionId) {
+                    await ensureSupportChatSession();
+                }
+                const result = await apiCall('POST', `/chat/messages/${supportChatState.sessionId}`, {
+                    message: text,
+                    senderName: Storage.getUser()?.username || 'Visitor'
+                });
+                input.value = '';
+                renderSupportChatMessages(result.messages || []);
+            } catch (err) {
+                console.error('Support chat send failed:', err);
+                showToast('Failed to send message');
+            }
+        });
+    }
+
+    function initAdminChatInbox() {
+        const sessionsEl = document.getElementById('adminChatSessions');
+        const replyForm = document.getElementById('adminChatReplyForm');
+        const replyInput = document.getElementById('adminChatReplyInput');
+
+        sessionsEl?.addEventListener('click', async (event) => {
+            const item = event.target.closest('[data-chat-session-id]');
+            if (!item) return;
+            const sessionId = item.getAttribute('data-chat-session-id');
+            if (!sessionId) return;
+            try {
+                await openAdminChatSession(sessionId);
+                await loadAdminChatSessions();
+            } catch (err) {
+                console.error('Open admin chat session failed:', err);
+            }
+        });
+
+        replyForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = (replyInput?.value || '').trim();
+            if (!message || !adminChatState.activeSessionId) return;
+
+            try {
+                const result = await apiCall('POST', `/chat/admin/sessions/${adminChatState.activeSessionId}/reply`, { message });
+                if (replyInput) replyInput.value = '';
+                const session = adminChatState.sessions.find(s => s.id === adminChatState.activeSessionId) || { id: adminChatState.activeSessionId };
+                renderAdminChatThread(result.messages || [], session);
+                await loadAdminChatSessions();
+            } catch (err) {
+                console.error('Admin chat reply failed:', err);
+                showToast('Failed to send admin reply');
+            }
+        });
+
+        if (adminChatState.pollId) clearInterval(adminChatState.pollId);
+        adminChatState.pollId = setInterval(async () => {
+            if (!Storage.getToken() || !canAccessAdmin(Storage.getUser()?.role)) return;
+            const chatsTabActive = document.getElementById('chats-content')?.classList.contains('active');
+            if (!chatsTabActive) return;
+            await loadAdminChatSessions();
+            if (adminChatState.activeSessionId) {
+                try {
+                    const result = await apiCall('GET', `/chat/admin/sessions/${adminChatState.activeSessionId}/messages`);
+                    const session = adminChatState.sessions.find(s => s.id === adminChatState.activeSessionId) || result.session;
+                    renderAdminChatThread(result.messages || [], session);
+                } catch {
+                    // ignore poll failures
+                }
+            }
+        }, 12000);
+    }
+
+    initSupportChat();
+    initAdminChatInbox();
 
     // ========================================================================
     // INITIALIZATION

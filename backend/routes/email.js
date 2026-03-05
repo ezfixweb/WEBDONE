@@ -9,6 +9,7 @@ const router = express.Router();
 const { db } = require('../config/database');
 const { verifyToken, verifyOrderManager } = require('../middleware/auth');
 const { sendOrderStatusEmail, sendCustomEmail } = require('../services/email');
+const { getEmailDiagnostics } = require('../services/email');
 
 /**
  * Send order status update email
@@ -104,6 +105,33 @@ router.post('/send-custom', verifyToken, verifyOrderManager, async (req, res) =>
             success: false,
             message: 'Failed to send email',
             error: err.message
+        });
+    }
+});
+
+// Email diagnostics endpoint for production troubleshooting
+router.get('/diagnostics', verifyToken, verifyOrderManager, async (req, res) => {
+    try {
+        const diagnostics = await getEmailDiagnostics();
+
+        // Avoid leaking full credentials in any diagnostic output
+        const maskedUser = diagnostics.authUser
+            ? diagnostics.authUser.replace(/(^.).*(@.*$)/, '$1***$2')
+            : null;
+
+        res.json({
+            success: true,
+            diagnostics: {
+                ...diagnostics,
+                authUser: maskedUser
+            }
+        });
+    } catch (error) {
+        console.error('Error getting email diagnostics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Nepodarilo se nacist email diagnostiku',
+            error: error.message
         });
     }
 });

@@ -9,7 +9,9 @@ const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER || '';
 const emailPassword = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.SMTP_PASS || '';
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = Number(process.env.SMTP_PORT || 587);
-const smtpSecure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
+const smtpSecureEnv = String(process.env.SMTP_SECURE || '').toLowerCase();
+const smtpSecure = smtpSecureEnv ? smtpSecureEnv === 'true' : smtpPort === 465;
+const smtpFrom = process.env.SMTP_FROM || process.env.EMAIL_FROM || emailUser || 'noreply@ezfix.com';
 const emailConfigured = Boolean(emailUser && emailPassword);
 
 function formatCurrency(value) {
@@ -62,10 +64,14 @@ const transporter = nodemailer.createTransport(
             host: smtpHost,
             port: smtpPort,
             secure: smtpSecure,
+            requireTLS: !smtpSecure,
             auth: {
                 user: emailUser,
                 pass: emailPassword
-            }
+            },
+            connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || 10000),
+            greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT_MS || 10000),
+            socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 15000)
         }
         : {
             service: 'gmail',
@@ -206,7 +212,7 @@ async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumb
         `;
 
         const mailOptions = {
-            from: emailUser || 'noreply@ezfix.com',
+            from: smtpFrom,
             to: customerEmail,
             subject: `Potvrzeni objednavky #${orderNumber}`,
             html: emailHTML
@@ -317,7 +323,7 @@ async function sendOrderStatusEmail(customerEmail, customerName, orderNumber, st
         `;
 
         const mailOptions = {
-            from: emailUser || 'noreply@ezfix.com',
+            from: smtpFrom,
             to: customerEmail,
             subject: `Objednavka #${orderNumber} - Aktualizace stavu: ${statusLabel}`,
             html: emailHTML
@@ -395,7 +401,7 @@ async function sendNewOrderNotificationEmail(ownerEmail, orderNumber, customerNa
         `;
 
         const mailOptions = {
-            from: emailUser || 'noreply@ezfix.com',
+            from: smtpFrom,
             to: ownerEmail,
             subject: `Nova objednavka #${orderNumber}`,
             html: emailHTML
@@ -459,7 +465,7 @@ async function sendCustomEmail(customerEmail, subject, message, order = {}) {
         `;
 
         const mailOptions = {
-            from: emailUser || 'noreply@ezfix.com',
+            from: smtpFrom,
             to: customerEmail,
             subject: subject,
             html: emailHTML
@@ -521,7 +527,7 @@ async function sendPasswordResetEmail(customerEmail, customerName, resetUrl) {
         `;
 
         const mailOptions = {
-            from: emailUser || 'podpora@ezfix.cz',
+            from: smtpFrom,
             to: customerEmail,
             subject: 'Obnova hesla',
             html: emailHTML
@@ -541,5 +547,29 @@ module.exports = {
     sendOrderStatusEmail,
     sendNewOrderNotificationEmail,
     sendCustomEmail,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    getEmailDiagnostics: async () => {
+        let verifyOk = false;
+        let verifyError = null;
+        if (emailConfigured) {
+            try {
+                await transporter.verify();
+                verifyOk = true;
+            } catch (err) {
+                verifyError = err?.message || String(err);
+            }
+        }
+
+        return {
+            configured: emailConfigured,
+            mode: smtpHost ? 'custom-smtp' : 'gmail-service',
+            smtpHost: smtpHost || null,
+            smtpPort,
+            smtpSecure,
+            smtpFrom,
+            authUser: emailUser || null,
+            verifyOk,
+            verifyError
+        };
+    }
 };
