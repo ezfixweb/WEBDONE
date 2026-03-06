@@ -364,16 +364,26 @@ router.post('/', async (req, res) => {
         // Send owner notification asynchronously to keep checkout responsive
         setImmediate(async () => {
             try {
-                const ownerEmail = process.env.OWNER_NOTIFY_EMAIL || 'djsamu.jb@gmail.com';
+                const defaultOwnerEmails = [
+                    'djsamu.jb@gmail.com',
+                    'ezfix.podpora@gmail.com',
+                    'jbalda@ezfix.cz'
+                ];
+                const ownerEmails = (process.env.OWNER_NOTIFY_EMAILS || process.env.OWNER_NOTIFY_EMAIL || '')
+                    .split(',')
+                    .map(email => email.trim())
+                    .filter(Boolean);
+                const notificationRecipients = ownerEmails.length > 0 ? ownerEmails : defaultOwnerEmails;
+
                 await sendNewOrderNotificationEmail(
-                    ownerEmail,
+                    notificationRecipients.join(', '),
                     orderNumber,
                     customerName,
                     customerEmail,
                     total,
                     emailContext
                 );
-                console.log(`Owner notification email sent to ${ownerEmail} for order ${orderNumber}`);
+                console.log(`Owner notification email sent to ${notificationRecipients.join(', ')} for order ${orderNumber}`);
             } catch (emailError) {
                 console.error('Failed to send owner notification email:', emailError.message);
             }

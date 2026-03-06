@@ -2485,6 +2485,15 @@ body.has-announcement .hero {
     letter-spacing: 0.01em;
 }
 
+.contact-email-list .contact-email {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.contact-email-list .contact-email:last-child {
+    margin-bottom: 0;
+}
+
 .contact-phone-label {
     margin-top: 6px;
     margin-bottom: 4px;

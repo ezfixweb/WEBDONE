@@ -1,0 +1,78 @@
+name: Deploy to Active24
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.ACTIVE24_SSH_PRIVATE_KEY }}
+
+      - name: Add Active24 host key
+        env:
+          ACTIVE24_HOST: ${{ secrets.ACTIVE24_HOST }}
+          ACTIVE24_PORT: ${{ secrets.ACTIVE24_PORT }}
+        run: |
+          ACTIVE24_PORT="${ACTIVE24_PORT:-22}"
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$ACTIVE24_PORT" -H "$ACTIVE24_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        env:
+          ACTIVE24_USER: ${{ secrets.ACTIVE24_USER }}
+          ACTIVE24_HOST: ${{ secrets.ACTIVE24_HOST }}
+          ACTIVE24_PORT: ${{ secrets.ACTIVE24_PORT }}
+          ACTIVE24_APP_DIR: ${{ secrets.ACTIVE24_APP_DIR }}
+          ACTIVE24_REPO_URL: ${{ secrets.ACTIVE24_REPO_URL }}
+          DEPLOY_INSTALL_COMMAND: ${{ secrets.DEPLOY_INSTALL_COMMAND }}
+          DEPLOY_BUILD_COMMAND: ${{ secrets.DEPLOY_BUILD_COMMAND }}
+          DEPLOY_RESTART_COMMAND: ${{ secrets.DEPLOY_RESTART_COMMAND }}
+        run: |
+          ACTIVE24_PORT="${ACTIVE24_PORT:-22}"
+          ACTIVE24_REPO_URL="${ACTIVE24_REPO_URL:-git@github.com:ezfixweb/WEBDONE.git}"
+          ssh -p "$ACTIVE24_PORT" "$ACTIVE24_USER@$ACTIVE24_HOST" "
+            set -e
+            mkdir -p '$ACTIVE24_APP_DIR'
+            cd '$ACTIVE24_APP_DIR'
+            echo '[DEPLOY] In directory: ' \"\$(pwd)\"
+
+            if [ ! -d .git ]; then
+              echo '[DEPLOY] No git repo found, initializing in-place'
+              git init
+              git remote add origin '$ACTIVE24_REPO_URL'
+              git fetch origin main
+              git checkout -B main origin/main
+            fi
+
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+
+            if [ -n '$DEPLOY_INSTALL_COMMAND' ]; then
+              echo '[DEPLOY] Running install command'
+              eval '$DEPLOY_INSTALL_COMMAND'
+            fi
+
+            if [ -n '$DEPLOY_BUILD_COMMAND' ]; then
+              echo '[DEPLOY] Running build command'
+              eval '$DEPLOY_BUILD_COMMAND'
+            fi
+
+            if [ -n '$DEPLOY_RESTART_COMMAND' ]; then
+              echo '[DEPLOY] Running restart command'
+              eval '$DEPLOY_RESTART_COMMAND'
+            fi
+
+            echo '[DEPLOY] Completed successfully'
+          "
