@@ -4,6 +4,7 @@
  */
 
 const nodemailer = require('nodemailer');
+const dns = require('dns');
 
 const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER || '';
 const emailPassword = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.SMTP_PASS || '';
@@ -14,6 +15,12 @@ const smtpSecure = smtpSecureEnv ? smtpSecureEnv === 'true' : smtpPort === 465;
 const smtpFamily = Number(process.env.SMTP_FAMILY || 4);
 const smtpFrom = process.env.SMTP_FROM || process.env.EMAIL_FROM || emailUser || 'noreply@ezfix.com';
 const emailConfigured = Boolean(emailUser && emailPassword);
+const preferredSmtpFamily = Number.isNaN(smtpFamily) ? 4 : smtpFamily;
+
+function smtpLookup(hostname, options, callback) {
+    const family = preferredSmtpFamily === 6 ? 6 : 4;
+    dns.lookup(hostname, { family, all: false }, callback);
+}
 
 function formatCurrency(value) {
     const num = typeof value === 'number' ? value : parseFloat(value);
@@ -66,7 +73,11 @@ const transporter = nodemailer.createTransport(
             port: smtpPort,
             secure: smtpSecure,
             requireTLS: !smtpSecure,
-            family: Number.isNaN(smtpFamily) ? 4 : smtpFamily,
+            family: preferredSmtpFamily,
+            lookup: smtpLookup,
+            tls: {
+                servername: smtpHost
+            },
             auth: {
                 user: emailUser,
                 pass: emailPassword
@@ -76,12 +87,22 @@ const transporter = nodemailer.createTransport(
             socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 15000)
         }
         : {
-            service: 'gmail',
-            family: Number.isNaN(smtpFamily) ? 4 : smtpFamily,
+            host: 'smtp.gmail.com',
+            port: smtpPort,
+            secure: smtpSecure,
+            requireTLS: !smtpSecure,
+            family: preferredSmtpFamily,
+            lookup: smtpLookup,
+            tls: {
+                servername: 'smtp.gmail.com'
+            },
             auth: {
                 user: emailUser,
                 pass: emailPassword
-            }
+            },
+            connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || 15000),
+            greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT_MS || 15000),
+            socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 20000)
         }
 );
 
