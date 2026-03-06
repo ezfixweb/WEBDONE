@@ -1389,6 +1389,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const error = document.getElementById('packetaError');
         if (!display) return;
 
+        // Keep the pickup-point summary interactive so users can re-open selection.
+        display.setAttribute('role', 'button');
+        display.setAttribute('tabindex', '0');
+        display.style.cursor = 'pointer';
+
         if (packetaSelection && packetaSelection.name) {
             const addressParts = [packetaSelection.street, packetaSelection.city, packetaSelection.zip]
                 .filter(Boolean)
@@ -4505,12 +4510,8 @@ document.addEventListener('DOMContentLoaded', function() {
      * @returns {boolean} True if valid email
      */
     function validateEmail(email) {
-        const allowedDomains = ['gmail.com', 'seznam.cz', 'centrum.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'mail.com', 'protonmail.com', 'icloud.com'];
-        const emailRegex = /^[^\s@]+@([^\s@]+\.[^\s@]+)$/;
-        const match = email.match(emailRegex);
-        if (!match) return false;
-        const domain = match[1].toLowerCase();
-        return allowedDomains.includes(domain);
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        return emailRegex.test(String(email || '').trim());
     }
 
     /**
@@ -4603,7 +4604,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setFieldError('checkoutEmail', 'emailError', 'Email address is required');
             isValid = false;
         } else if (!validateEmail(email)) {
-            setFieldError('checkoutEmail', 'emailError', 'Please use a valid email (gmail.com, seznam.cz, centrum.com, yahoo.com, outlook.com, hotmail.com, mail.com, protonmail.com, or icloud.com)');
+            setFieldError('checkoutEmail', 'emailError', 'Please enter a valid email address');
             isValid = false;
         } else {
             clearFieldError('checkoutEmail', 'emailError');
@@ -7216,8 +7217,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Service type radio buttons
-    document.getElementById('packetaSelectBtn')?.addEventListener('click', () => {
+    document.getElementById('packetaPointDisplay')?.addEventListener('click', () => {
         openPacketaWidget();
+    });
+
+    document.getElementById('packetaPointDisplay')?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openPacketaWidget();
+        }
     });
 
     document.querySelectorAll('input[name="serviceType"]').forEach(radio => {
@@ -7232,6 +7240,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (this.value === 'zasilkovna') {
                 addressSection.style.display = 'none';
                 if (packetaSection) packetaSection.style.display = 'block';
+                openPacketaWidget();
             } else if (['ceska-posta', 'ppl', 'dpd', 'gls'].includes(this.value)) {
                 addressSection.style.display = 'block';
                 if (packetaSection) packetaSection.style.display = 'none';

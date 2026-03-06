@@ -107,6 +107,30 @@ function ensureEmailConfigured(actionName) {
     };
 }
 
+async function sendMailWithRetry(mailOptions, context = 'Email', maxAttempts = 3) {
+    let lastError = null;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+            const info = await transporter.sendMail(mailOptions);
+            if (attempt > 1) {
+                console.warn(`[EMAIL] ${context} sent on retry attempt ${attempt}.`);
+            }
+            return info;
+        } catch (error) {
+            lastError = error;
+            const isLastAttempt = attempt === maxAttempts;
+            const message = error && error.message ? error.message : String(error);
+            console.error(`[EMAIL] ${context} attempt ${attempt}/${maxAttempts} failed: ${message}`);
+            if (!isLastAttempt) {
+                const waitMs = attempt * 1200;
+                await new Promise(resolve => setTimeout(resolve, waitMs));
+            }
+        }
+    }
+
+    throw lastError;
+}
+
 /**
  * Send order confirmation email
  * @param {string} customerEmail - Customer email address
@@ -218,7 +242,7 @@ async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumb
             html: emailHTML
         };
 
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMailWithRetry(mailOptions, 'Order confirmation email');
         console.log('Order confirmation email sent:', info.response);
         return { success: true, messageId: info.messageId };
     } catch (error) {
@@ -329,7 +353,7 @@ async function sendOrderStatusEmail(customerEmail, customerName, orderNumber, st
             html: emailHTML
         };
 
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMailWithRetry(mailOptions, 'Order status email');
         console.log('Order status email sent:', info.response);
         return { success: true, messageId: info.messageId };
     } catch (error) {
@@ -407,7 +431,7 @@ async function sendNewOrderNotificationEmail(ownerEmail, orderNumber, customerNa
             html: emailHTML
         };
 
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMailWithRetry(mailOptions, 'Owner notification email');
         console.log('Owner notification email sent:', info.response);
         return { success: true, messageId: info.messageId };
     } catch (error) {
@@ -471,7 +495,7 @@ async function sendCustomEmail(customerEmail, subject, message, order = {}) {
             html: emailHTML
         };
 
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMailWithRetry(mailOptions, 'Custom email');
         console.log('Custom email sent:', info.response);
         return { success: true, messageId: info.messageId };
     } catch (error) {
@@ -533,7 +557,7 @@ async function sendPasswordResetEmail(customerEmail, customerName, resetUrl) {
             html: emailHTML
         };
 
-        const info = await transporter.sendMail(mailOptions);
+        const info = await sendMailWithRetry(mailOptions, 'Password reset email');
         console.log('Password reset email sent:', info.response);
         return { success: true, messageId: info.messageId };
     } catch (error) {

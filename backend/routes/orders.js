@@ -330,7 +330,7 @@ router.post('/', async (req, res) => {
                     total,
                     emailContext
                 ),
-                8000,
+                Number(process.env.ORDER_CONFIRM_EMAIL_TIMEOUT_MS || 20000),
                 'Order confirmation email timeout'
             );
 
