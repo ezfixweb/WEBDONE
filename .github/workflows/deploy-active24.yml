@@ -40,7 +40,7 @@ jobs:
           DEPLOY_RESTART_COMMAND: ${{ secrets.DEPLOY_RESTART_COMMAND }}
         run: |
           ACTIVE24_PORT="${ACTIVE24_PORT:-22}"
-          ACTIVE24_REPO_URL="${ACTIVE24_REPO_URL:-git@github.com:ezfixweb/WEBDONE.git}"
+          ACTIVE24_REPO_URL="${ACTIVE24_REPO_URL:-https://github.com/ezfixweb/WEBDONE.git}"
           ssh -p "$ACTIVE24_PORT" "$ACTIVE24_USER@$ACTIVE24_HOST" "
             set -e
             mkdir -p '$ACTIVE24_APP_DIR'
@@ -50,9 +50,12 @@ jobs:
             if [ ! -d .git ]; then
               echo '[DEPLOY] No git repo found, initializing in-place'
               git init
+            fi
+
+            if git remote get-url origin >/dev/null 2>&1; then
+              git remote set-url origin '$ACTIVE24_REPO_URL'
+            else
               git remote add origin '$ACTIVE24_REPO_URL'
-              git fetch origin main
-              git checkout -B main origin/main
             fi
 
             git fetch origin main

@@ -47,7 +47,7 @@ Required:
 
 Optional:
 - `ACTIVE24_PORT`: SSH port (default is 22)
-- `ACTIVE24_REPO_URL`: defaults to `git@github.com:ezfixweb/WEBDONE.git`
+- `ACTIVE24_REPO_URL`: defaults to `https://github.com/ezfixweb/WEBDONE.git`
 - `DEPLOY_INSTALL_COMMAND`: e.g. `npm --prefix backend ci --omit=dev`
 - `DEPLOY_BUILD_COMMAND`: e.g. `npm --prefix backend run build`
 - `DEPLOY_RESTART_COMMAND`: e.g. `pm2 restart ezfix-backend`
@@ -65,5 +65,6 @@ Recommended for your project:
 
 ## Notes
 
-- If your server cannot use SSH key for `git pull` from GitHub, switch the server repo remote to HTTPS with a Personal Access Token.
+- For public repositories, HTTPS remote works without configuring GitHub SSH keys on the server.
+- For private repositories, set `ACTIVE24_REPO_URL` to an authenticated URL (for example with a fine-grained PAT).
 - You can also run deploy manually with `workflow_dispatch` from the Actions tab.
