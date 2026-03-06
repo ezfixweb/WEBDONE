@@ -11,6 +11,7 @@ const smtpHost = process.env.SMTP_HOST;
 const smtpPort = Number(process.env.SMTP_PORT || 587);
 const smtpSecureEnv = String(process.env.SMTP_SECURE || '').toLowerCase();
 const smtpSecure = smtpSecureEnv ? smtpSecureEnv === 'true' : smtpPort === 465;
+const smtpFamily = Number(process.env.SMTP_FAMILY || 4);
 const smtpFrom = process.env.SMTP_FROM || process.env.EMAIL_FROM || emailUser || 'noreply@ezfix.com';
 const emailConfigured = Boolean(emailUser && emailPassword);
 
@@ -65,6 +66,7 @@ const transporter = nodemailer.createTransport(
             port: smtpPort,
             secure: smtpSecure,
             requireTLS: !smtpSecure,
+            family: Number.isNaN(smtpFamily) ? 4 : smtpFamily,
             auth: {
                 user: emailUser,
                 pass: emailPassword
@@ -75,6 +77,7 @@ const transporter = nodemailer.createTransport(
         }
         : {
             service: 'gmail',
+            family: Number.isNaN(smtpFamily) ? 4 : smtpFamily,
             auth: {
                 user: emailUser,
                 pass: emailPassword

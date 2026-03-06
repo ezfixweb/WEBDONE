@@ -7228,6 +7228,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    let lastPacketaOpenAt = 0;
+    const openPacketaFromSelection = () => {
+        const now = Date.now();
+        // Avoid double-opening when click + change fire back-to-back.
+        if (now - lastPacketaOpenAt < 500) return;
+        lastPacketaOpenAt = now;
+        openPacketaWidget();
+    };
+
     document.querySelectorAll('input[name="serviceType"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const addressSection = document.getElementById('addressSection');
@@ -7240,7 +7249,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (this.value === 'zasilkovna') {
                 addressSection.style.display = 'none';
                 if (packetaSection) packetaSection.style.display = 'block';
-                openPacketaWidget();
+                openPacketaFromSelection();
             } else if (['ceska-posta', 'ppl', 'dpd', 'gls'].includes(this.value)) {
                 addressSection.style.display = 'block';
                 if (packetaSection) packetaSection.style.display = 'none';
@@ -7250,6 +7259,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             updateCheckoutTotals(subtotal);
         });
+    });
+
+    document.querySelector('input[name="serviceType"][value="zasilkovna"]')?.addEventListener('click', () => {
+        const addressSection = document.getElementById('addressSection');
+        const packetaSection = document.getElementById('packetaSection');
+        const subtotal = Storage.cart.reduce((sum, item) => sum + item.price, 0);
+        if (addressSection) addressSection.style.display = 'none';
+        if (packetaSection) packetaSection.style.display = 'block';
+        updateCheckoutTotals(subtotal);
+        openPacketaFromSelection();
     });
 
     document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {

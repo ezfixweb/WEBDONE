@@ -30,6 +30,14 @@ const chatRoutes = require('./routes/chat');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Hosted platforms (Render/Heroku/etc.) terminate TLS and forward real client IP via proxy headers.
+if (process.env.TRUST_PROXY) {
+    const parsedTrustProxy = Number(process.env.TRUST_PROXY);
+    app.set('trust proxy', Number.isNaN(parsedTrustProxy) ? process.env.TRUST_PROXY : parsedTrustProxy);
+} else if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+}
+
 const ACTIVE_VISITOR_WINDOW_MS = Number(process.env.ACTIVE_VISITOR_WINDOW_MS || 2 * 60 * 1000);
 const activeVisitors = new Map();
 
