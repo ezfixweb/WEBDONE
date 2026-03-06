@@ -48,6 +48,12 @@ jobs:
             echo '[DEPLOY] In directory: ' \"\$(pwd)\"
 
             if [ ! -d .git ]; then
+              if [ -n \"\$(find . -mindepth 1 -maxdepth 1 -print -quit)\" ]; then
+                BACKUP_DIR=\"${ACTIVE24_APP_DIR}_pre_git_backup_\$(date +%Y%m%d%H%M%S)\"
+                mkdir -p \"$BACKUP_DIR\"
+                find . -mindepth 1 -maxdepth 1 -exec mv {} \"$BACKUP_DIR\"/ \;
+                echo '[DEPLOY] Existing files moved to backup: ' \"$BACKUP_DIR\"
+              fi
               echo '[DEPLOY] No git repo found, initializing in-place'
               git init
             fi
@@ -59,8 +65,8 @@ jobs:
             fi
 
             git fetch origin main
-            git checkout main
-            git pull --ff-only origin main
+            git checkout -B main origin/main --force
+            git reset --hard origin/main
 
             if [ -n '$DEPLOY_INSTALL_COMMAND' ]; then
               echo '[DEPLOY] Running install command'
