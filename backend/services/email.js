@@ -106,6 +106,12 @@ const transporter = nodemailer.createTransport(
         }
 );
 
+const effectiveSmtpHost = smtpHost || 'smtp.gmail.com';
+const effectiveSmtpMode = smtpHost ? 'custom-smtp' : 'gmail-smtp';
+console.log(
+    `[EMAIL] Transport config: mode=${effectiveSmtpMode}, host=${effectiveSmtpHost}, port=${smtpPort}, secure=${smtpSecure}, family=${preferredSmtpFamily}, configured=${emailConfigured}`
+);
+
 // Verify transporter on startup to surface auth/connectivity issues early
 if (emailConfigured) {
     transporter.verify()
