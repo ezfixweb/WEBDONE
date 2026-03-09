@@ -1803,8 +1803,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!deviceSelect || !brandList || !brandSelect || !modelList || !repairList) return;
 
         const serviceKeys = getServiceKeys().slice().sort(catalogSortByText);
+        if (!serviceKeys.includes(catalogUiState.deviceKey)) {
+            catalogUiState.deviceKey = serviceKeys[0] || null;
+        }
         deviceSelect.innerHTML = serviceKeys.map(key => `<option value="${key}">${formatLabel(key)}</option>`).join('');
-        deviceSelect.value = catalogUiState.deviceKey;
+        deviceSelect.value = catalogUiState.deviceKey || '';
 
         const device = catalogDraft.services[catalogUiState.deviceKey] || {};
         const brands = device.brands || [];
@@ -1996,8 +1999,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!categorySelect || !list) return;
 
         const categories = getBuildCategories().slice().sort(catalogSortByText);
+        if (!categories.includes(catalogUiState.buildCategory)) {
+            catalogUiState.buildCategory = categories[0] || null;
+        }
         categorySelect.innerHTML = categories.map(key => `<option value="${key}">${formatLabel(key)}</option>`).join('');
-        categorySelect.value = catalogUiState.buildCategory || categories[0] || '';
+        categorySelect.value = catalogUiState.buildCategory || '';
         catalogUiState.buildCategory = categorySelect.value;
 
         const items = catalogDraft.customBuilds[catalogUiState.buildCategory] || [];
