@@ -27,17 +27,28 @@ function buildAiReply(userText = '') {
     return 'Dekuji za zpravu. Tym EzFix vam odpovi co nejdrive.';
 }
 
-async function ensureSession(sessionId, visitorId, name, email) {
+async function ensureSession(sessionId, visitorId, name, email, helpTopic) {
     if (sessionId) {
         const existing = await db.getAsync('SELECT id FROM chat_sessions WHERE id = ?', [sessionId]);
-        if (existing) return sessionId;
+        if (existing) {
+            await db.runAsync(
+                `UPDATE chat_sessions
+                 SET customer_name = COALESCE(NULLIF(?, ''), customer_name),
+                     customer_email = COALESCE(NULLIF(?, ''), customer_email),
+                     help_topic = COALESCE(NULLIF(?, ''), help_topic),
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = ?`,
+                [name || '', email || '', helpTopic || '', sessionId]
+            );
+            return sessionId;
+        }
     }
 
     const newId = crypto.randomUUID();
     await db.runAsync(
-        `INSERT INTO chat_sessions (id, visitor_id, customer_name, customer_email, status)
-         VALUES (?, ?, ?, ?, 'open')`,
-        [newId, visitorId || null, name || null, email || null]
+        `INSERT INTO chat_sessions (id, visitor_id, customer_name, customer_email, help_topic, status)
+         VALUES (?, ?, ?, ?, ?, 'open')`,
+        [newId, visitorId || null, name || null, email || null, helpTopic || null]
     );
 
     return newId;
@@ -49,8 +60,9 @@ router.post('/session', async (req, res) => {
         const visitorId = String(req.body?.visitorId || '').trim();
         const name = String(req.body?.name || '').trim();
         const email = String(req.body?.email || '').trim().toLowerCase();
+        const helpTopic = String(req.body?.helpTopic || '').trim();
 
-        const ensuredId = await ensureSession(sessionId, visitorId, name, email);
+        const ensuredId = await ensureSession(sessionId, visitorId, name, email, helpTopic);
 
         res.json({
             success: true,
@@ -153,6 +165,7 @@ router.get('/admin/sessions', verifyToken, verifyOrderManager, async (req, res) 
                 s.id,
                 s.customer_name,
                 s.customer_email,
+                s.help_topic,
                 s.status,
                 s.last_message_at,
                 s.created_at,

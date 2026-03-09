@@ -26,6 +26,21 @@
         <div class="app-loader-content">
             <img src="assets/logos/ezfix-logo.png" alt="" class="app-loader-logo" decoding="async">
             <div class="app-loader-spinner"></div>
+            <p class="app-loader-kicker">Preparing your repair dashboard...</p>
+            <div class="app-loader-info-grid" aria-hidden="true">
+                <div class="app-loader-info-card">
+                    <span class="app-loader-info-title">Fast Intake</span>
+                    <span class="app-loader-info-value">2 min checkout</span>
+                </div>
+                <div class="app-loader-info-card">
+                    <span class="app-loader-info-title">Live Status</span>
+                    <span class="app-loader-info-value">Track every update</span>
+                </div>
+                <div class="app-loader-info-card">
+                    <span class="app-loader-info-title">Trusted Support</span>
+                    <span class="app-loader-info-value">EzFix team online</span>
+                </div>
+            </div>
         </div>
     </div>
     <div id="cookieConsent" class="cookie-consent hidden" role="dialog" aria-modal="false" aria-labelledby="cookieConsentTitle" aria-describedby="cookieConsentText">
@@ -1980,14 +1995,6 @@
                                     </div>
                                 </div>
                                 <textarea id="catalogAnnouncementText" class="catalog-textarea" rows="3" placeholder="Enter announcement text..."></textarea>
-                                <div class="catalog-row">
-                                    <label>Admin Email Subject</label>
-                                    <input class="catalog-input" id="catalogAdminEmailSubject" type="text" placeholder="Order Update - EzFix" />
-                                </div>
-                                <div class="catalog-row">
-                                    <label>Admin Email Message Template</label>
-                                    <textarea class="catalog-textarea" id="catalogAdminEmailMessage" rows="10" placeholder="Use {{customerName}} as a placeholder for the customer name"></textarea>
-                                </div>
                                 <div class="catalog-actions catalog-actions-top">
                                     <button class="btn btn-primary" id="catalogSaveBtnTop">Save Catalog</button>
                                 </div>
@@ -1998,6 +2005,7 @@
                                 <button class="catalog-tab-btn" data-catalog-tab="printing">3D Printing</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="other-items">Other Items</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="checkout">Checkout</button>
+                                <button class="catalog-tab-btn" data-catalog-tab="email">Email Templates</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="advanced">Advanced JSON</button>
                             </div>
 
@@ -2133,6 +2141,26 @@
                                     <div class="catalog-row">
                                         <label>Additional Terms Text</label>
                                         <textarea class="catalog-textarea" id="catalogTermsAdditionalText" rows="4" placeholder="Each new line will be shown as a separate paragraph in Terms &amp; Conditions"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="catalog-panel" id="catalog-email">
+                                <div class="catalog-section">
+                                    <div class="catalog-header">
+                                        <h3>Email Templates</h3>
+                                        <p>Edit the default text used when admins send custom emails to customers.</p>
+                                    </div>
+                                    <div class="catalog-email-layout">
+                                        <div class="catalog-row catalog-row-stack">
+                                            <label for="catalogAdminEmailSubject">Admin Email Subject</label>
+                                            <input class="catalog-input" id="catalogAdminEmailSubject" type="text" placeholder="Order Update - EzFix" />
+                                        </div>
+                                        <div class="catalog-row catalog-row-stack">
+                                            <label for="catalogAdminEmailMessage">Admin Email Message Template</label>
+                                            <textarea class="catalog-textarea" id="catalogAdminEmailMessage" rows="12" placeholder="Hi {{customerName}},&#10;&#10;We wanted to follow up on your order.&#10;&#10;Best regards,&#10;EzFix Team"></textarea>
+                                            <p class="catalog-helper-text">Available placeholder: <strong>{{customerName}}</strong></p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2357,6 +2385,22 @@
                 <strong>EzFix Chat</strong>
                 <button class="support-chat-close" id="supportChatClose" type="button" aria-label="Close support chat">x</button>
             </div>
+            <form class="support-chat-intake" id="supportChatIntakeForm">
+                <p class="support-chat-intake-title">Než začneme, vyplňte prosím krátké info:</p>
+                <input id="supportChatName" type="text" placeholder="Jméno" maxlength="80" autocomplete="name" required>
+                <input id="supportChatEmail" type="email" placeholder="E-mail" maxlength="120" autocomplete="email" required>
+                <select id="supportChatTopic" required>
+                    <option value="">Vyberte, s čím potřebujete pomoci</option>
+                    <option value="repair-service">Oprava zařízení</option>
+                    <option value="order-status">Stav objednávky</option>
+                    <option value="pricing">Ceny a nabídka</option>
+                    <option value="custom-build">Vlastní sestava / server</option>
+                    <option value="3d-printing">3D tisk</option>
+                    <option value="other">Jiné</option>
+                </select>
+                <div class="support-chat-intake-error" id="supportChatIntakeError"></div>
+                <button type="submit">Pokračovat do chatu</button>
+            </form>
             <div class="support-chat-body" id="supportChatBody"></div>
             <form class="support-chat-form" id="supportChatForm">
                 <input id="supportChatInput" type="text" placeholder="Napis zpravu..." maxlength="220" autocomplete="off">

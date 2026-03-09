@@ -8081,6 +8081,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Floating support chat + admin chat inbox
     const supportChatState = {
         sessionId: localStorage.getItem('supportChatSessionId') || '',
+        profile: {
+            name: localStorage.getItem('supportChatName') || Storage.getUser()?.username || '',
+            email: localStorage.getItem('supportChatEmail') || Storage.getUser()?.email || '',
+            helpTopic: localStorage.getItem('supportChatHelpTopic') || ''
+        },
         pollId: null
     };
 
@@ -8103,6 +8108,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function saveSupportChatProfile() {
+        localStorage.setItem('supportChatName', supportChatState.profile.name || '');
+        localStorage.setItem('supportChatEmail', supportChatState.profile.email || '');
+        localStorage.setItem('supportChatHelpTopic', supportChatState.profile.helpTopic || '');
+    }
+
+    function getHelpTopicLabel(value) {
+        const map = {
+            'repair-service': 'Oprava zařízení',
+            'order-status': 'Stav objednávky',
+            'pricing': 'Ceny a nabídka',
+            'custom-build': 'Vlastní sestava / server',
+            '3d-printing': '3D tisk',
+            'other': 'Jiné'
+        };
+        return map[value] || value || '';
+    }
+
+    function hasSupportChatProfile() {
+        return Boolean(
+            String(supportChatState.profile.name || '').trim() &&
+            String(supportChatState.profile.email || '').trim() &&
+            String(supportChatState.profile.helpTopic || '').trim()
+        );
+    }
+
     async function ensureSupportChatSession() {
         const visitorId = localStorage.getItem('visitorId') || `visitor_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         localStorage.setItem('visitorId', visitorId);
@@ -8110,8 +8141,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const result = await apiCall('POST', '/chat/session', {
             sessionId: supportChatState.sessionId,
             visitorId,
-            name: Storage.getUser()?.username || 'Visitor',
-            email: Storage.getUser()?.email || ''
+            name: supportChatState.profile.name || Storage.getUser()?.username || 'Visitor',
+            email: supportChatState.profile.email || Storage.getUser()?.email || '',
+            helpTopic: supportChatState.profile.helpTopic || ''
         });
 
         supportChatState.sessionId = result.sessionId;
@@ -8178,6 +8210,8 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionsEl.innerHTML = sessions.map((session) => {
             const unread = Number(session.unread_count || 0);
             const title = escapeHtml(session.customer_name || session.customer_email || session.id || 'Session');
+            const email = escapeHtml(session.customer_email || '');
+            const helpTopic = escapeHtml(getHelpTopicLabel(session.help_topic || ''));
             const preview = escapeHtml(String(session.last_message || '').slice(0, 68));
             const activeClass = session.id === adminChatState.activeSessionId ? 'active' : '';
             return `
@@ -8186,6 +8220,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <strong>${title}</strong>
                         ${unread > 0 ? `<span class="admin-chat-badge">${unread}</span>` : ''}
                     </div>
+                    ${(email || helpTopic) ? `<div class="admin-chat-session-meta">${email}${email && helpTopic ? ' • ' : ''}${helpTopic}</div>` : ''}
                     <div class="admin-chat-session-last">${preview || 'No messages yet'}</div>
                 </button>
             `;
@@ -8198,7 +8233,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!headerEl || !messagesEl) return;
 
         const label = session?.customer_name || session?.customer_email || session?.id || 'Chat session';
-        headerEl.textContent = `Chat: ${label}`;
+        const topic = getHelpTopicLabel(session?.help_topic || '');
+        headerEl.textContent = topic ? `Chat: ${label} (${topic})` : `Chat: ${label}`;
 
         messagesEl.innerHTML = (messages || []).map((msg) => {
             const sender = msg.sender_type === 'admin' ? 'admin' : (msg.sender_type === 'bot' ? 'bot' : 'user');
@@ -8230,10 +8266,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const toggleBtn = document.getElementById('supportChatToggle');
         const closeBtn = document.getElementById('supportChatClose');
         const panel = document.getElementById('supportChatPanel');
+        const intakeForm = document.getElementById('supportChatIntakeForm');
+        const intakeName = document.getElementById('supportChatName');
+        const intakeEmail = document.getElementById('supportChatEmail');
+        const intakeTopic = document.getElementById('supportChatTopic');
+        const intakeError = document.getElementById('supportChatIntakeError');
         const form = document.getElementById('supportChatForm');
         const input = document.getElementById('supportChatInput');
+        const body = document.getElementById('supportChatBody');
 
-        if (!chatRoot || !toggleBtn || !closeBtn || !panel || !form || !input) return;
+        if (!chatRoot || !toggleBtn || !closeBtn || !panel || !form || !input || !body || !intakeForm || !intakeName || !intakeEmail || !intakeTopic || !intakeError) return;
+
+        intakeName.value = supportChatState.profile.name || '';
+        intakeEmail.value = supportChatState.profile.email || '';
+        intakeTopic.value = supportChatState.profile.helpTopic || '';
+
+        const setChatMode = (mode) => {
+            const intakeVisible = mode === 'intake';
+            intakeForm.classList.toggle('hidden', !intakeVisible);
+            body.style.display = intakeVisible ? 'none' : 'flex';
+            form.style.display = intakeVisible ? 'none' : 'flex';
+        };
 
         const pollSupportChat = async () => {
             try {
@@ -8244,10 +8297,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
+        // Keep accessibility state aligned for both visibility and focus handling.
+        panel.inert = true;
+
         const openChat = async () => {
             chatRoot.classList.add('open');
+            panel.inert = false;
             panel.setAttribute('aria-hidden', 'false');
             toggleBtn.setAttribute('aria-expanded', 'true');
+
+            if (!hasSupportChatProfile()) {
+                setChatMode('intake');
+                intakeError.textContent = '';
+                intakeName.focus();
+                return;
+            }
+
+            setChatMode('chat');
 
             try {
                 await ensureSupportChatSession();
@@ -8265,7 +8331,13 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         const closeChat = () => {
+            const activeElement = document.activeElement;
+            if (activeElement && panel.contains(activeElement)) {
+                toggleBtn.focus();
+            }
+
             chatRoot.classList.remove('open');
+            panel.inert = true;
             panel.setAttribute('aria-hidden', 'true');
             toggleBtn.setAttribute('aria-expanded', 'false');
 
@@ -8282,6 +8354,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
         closeBtn.addEventListener('click', closeChat);
 
+        intakeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = String(intakeName.value || '').trim();
+            const email = String(intakeEmail.value || '').trim().toLowerCase();
+            const helpTopic = String(intakeTopic.value || '').trim();
+            const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+            if (!name || !emailOk || !helpTopic) {
+                intakeError.textContent = 'Vyplňte jméno, platný e-mail a vyberte téma.';
+                return;
+            }
+
+            supportChatState.profile = { name, email, helpTopic };
+            saveSupportChatProfile();
+            intakeError.textContent = '';
+            setChatMode('chat');
+
+            try {
+                await ensureSupportChatSession();
+                const messages = await loadSupportChatMessages();
+                renderSupportChatMessages(messages);
+                input.focus();
+
+                if (!supportChatState.pollId) {
+                    supportChatState.pollId = setInterval(pollSupportChat, 12000);
+                }
+            } catch (err) {
+                console.error('Support chat session init failed:', err);
+                intakeError.textContent = 'Nepodařilo se spustit chat. Zkuste to prosím znovu.';
+                setChatMode('intake');
+            }
+        });
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const text = (input.value || '').trim();
@@ -8293,7 +8398,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 const result = await apiCall('POST', `/chat/messages/${supportChatState.sessionId}`, {
                     message: text,
-                    senderName: Storage.getUser()?.username || 'Visitor'
+                    senderName: supportChatState.profile.name || Storage.getUser()?.username || 'Visitor'
                 });
                 input.value = '';
                 renderSupportChatMessages(result.messages || []);

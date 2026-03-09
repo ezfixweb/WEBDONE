@@ -67,6 +67,7 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 14px;
+    width: min(92vw, 760px);
 }
 
 .app-loader-logo {
@@ -85,6 +86,53 @@ body {
     animation: loaderSpin 0.9s linear infinite;
 }
 
+.app-loader-kicker {
+    color: rgba(255, 255, 255, 0.92);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.app-loader-info-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.app-loader-info-card {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    backdrop-filter: blur(3px);
+    animation: loaderCardFloat 2.2s ease-in-out infinite;
+}
+
+.app-loader-info-card:nth-child(2) {
+    animation-delay: 0.25s;
+}
+
+.app-loader-info-card:nth-child(3) {
+    animation-delay: 0.45s;
+}
+
+.app-loader-info-title {
+    color: rgba(255, 255, 255, 0.76);
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.app-loader-info-value {
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
 @media (max-width: 768px) {
     .app-loader-logo {
         width: 270px;
@@ -94,6 +142,20 @@ body {
         width: 52px;
         height: 52px;
         border-width: 5px;
+    }
+
+    .app-loader-info-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .app-loader-info-card {
+        padding: 10px 12px;
+    }
+
+    .app-loader-kicker {
+        font-size: 0.95rem;
+        text-align: center;
     }
 }
 
@@ -111,6 +173,15 @@ body {
     50% {
         transform: scale(1.03);
         opacity: 1;
+    }
+}
+
+@keyframes loaderCardFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-2px);
     }
 }
 
@@ -1947,14 +2018,17 @@ body.has-announcement .hero {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+    align-items: center;
+    padding: 2px 0;
 }
 
 .catalog-tab-btn {
     border: 1px solid var(--border);
     background: white;
     border-radius: 999px;
-    padding: 8px 16px;
+    padding: 10px 18px;
     font-weight: 600;
+    font-size: 0.98rem;
     cursor: pointer;
     transition: 0.2s ease;
 }
@@ -1963,6 +2037,7 @@ body.has-announcement .hero {
     background: var(--primary);
     color: white;
     border-color: var(--primary);
+    box-shadow: 0 8px 20px rgba(122, 44, 255, 0.2);
 }
 
 .catalog-panel {
@@ -2085,6 +2160,33 @@ body.has-announcement .hero {
 #catalogAdminEmailMessage {
     min-height: 260px;
     resize: vertical;
+}
+
+.catalog-email-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+
+.catalog-row-stack {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.catalog-row-stack label {
+    min-width: 0;
+}
+
+.catalog-row-stack .catalog-input,
+.catalog-row-stack .catalog-textarea {
+    width: 100%;
+}
+
+.catalog-helper-text {
+    margin: 2px 0 0;
+    color: var(--text-light);
+    font-size: 0.9rem;
 }
 
 .catalog-actions {
@@ -2577,6 +2679,52 @@ body.has-announcement .hero {
     gap: 10px;
 }
 
+.support-chat-intake {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 12px;
+    border-bottom: 1px solid #ece9ff;
+    background: #fcfbff;
+}
+
+.support-chat-intake.hidden {
+    display: none;
+}
+
+.support-chat-intake-title {
+    margin: 0 0 2px;
+    color: #2a225b;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.support-chat-intake input,
+.support-chat-intake select {
+    width: 100%;
+    border: 1px solid #d8d2ff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    background: #fff;
+}
+
+.support-chat-intake button {
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 13px;
+    font-weight: 700;
+    color: #fff;
+    background: #5d39ff;
+    cursor: pointer;
+}
+
+.support-chat-intake-error {
+    min-height: 16px;
+    font-size: 0.82rem;
+    color: #b91c1c;
+}
+
 .support-msg {
     max-width: 85%;
     padding: 9px 12px;
@@ -2672,6 +2820,12 @@ body.has-announcement .hero {
 .admin-chat-session-last {
     color: var(--text-light);
     font-size: 0.88rem;
+}
+
+.admin-chat-session-meta {
+    color: #4b3f83;
+    font-size: 0.8rem;
+    margin-bottom: 5px;
 }
 
 .admin-chat-thread {
@@ -3728,9 +3882,6 @@ body.has-announcement .hero {
     margin-top: 12px;
     margin-bottom: 16px;
     line-height: 1.5;
-}
-
-    margin-bottom: 0;
 }
 
 /* Checkout Page */
