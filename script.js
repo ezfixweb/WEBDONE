@@ -1831,10 +1831,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="toggle">
                     <input type="checkbox" data-field="active" ${brand.active === false ? '' : 'checked'} />
-                    <span>Active</span>
+                    <span>Aktivní</span>
                 </div>
                 <div class="inline-actions">
-                    <button class="btn btn-sm btn-secondary" data-action="delete">Delete</button>
+                    <button class="btn btn-sm btn-secondary" data-action="delete">Smazat</button>
                 </div>
             </div>
         `).join('');
@@ -1855,10 +1855,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="toggle">
                         <input type="checkbox" data-field="active" ${modelActive ? 'checked' : ''} />
-                        <span>Active</span>
+                        <span>Aktivní</span>
                     </div>
                     <div class="inline-actions">
-                        <button class="btn btn-sm btn-secondary" data-action="delete">Delete</button>
+                        <button class="btn btn-sm btn-secondary" data-action="delete">Smazat</button>
                     </div>
                 </div>
             `;
@@ -1890,10 +1890,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="toggle">
                     <input type="checkbox" data-field="active" ${repair.active === false ? '' : 'checked'} />
-                    <span>Active</span>
+                    <span>Aktivní</span>
                 </div>
                 <div class="inline-actions">
-                    <button class="btn btn-sm btn-secondary" data-action="delete">Delete</button>
+                    <button class="btn btn-sm btn-secondary" data-action="delete">Smazat</button>
                 </div>
             </div>
         `).join('');
