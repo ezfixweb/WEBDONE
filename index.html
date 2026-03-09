@@ -23,10 +23,21 @@
 </head>
 <body class="app-loading">
     <div id="appLoader" class="app-loader" aria-hidden="true">
+        <div class="app-loader-ambient" aria-hidden="true">
+            <span class="app-loader-orb orb-a"></span>
+            <span class="app-loader-orb orb-b"></span>
+            <span class="app-loader-orb orb-c"></span>
+            <span class="app-loader-glow-line"></span>
+        </div>
         <div class="app-loader-content">
             <img src="assets/logos/ezfix-logo.png" alt="" class="app-loader-logo" decoding="async">
             <div class="app-loader-spinner"></div>
             <p class="app-loader-kicker">Preparing your repair dashboard...</p>
+            <div class="app-loader-status-row" aria-hidden="true">
+                <span class="app-loader-pill">Diagnostics Ready</span>
+                <span class="app-loader-pill">Live Order Tracking</span>
+                <span class="app-loader-pill">Secure Checkout</span>
+            </div>
             <div class="app-loader-info-grid" aria-hidden="true">
                 <div class="app-loader-info-card">
                     <span class="app-loader-info-title">Fast Intake</span>
@@ -41,6 +52,7 @@
                     <span class="app-loader-info-value">EzFix team online</span>
                 </div>
             </div>
+            <p class="app-loader-subnote" aria-hidden="true">Tip: Keep your order number handy for faster support.</p>
         </div>
     </div>
     <div id="cookieConsent" class="cookie-consent hidden" role="dialog" aria-modal="false" aria-labelledby="cookieConsentTitle" aria-describedby="cookieConsentText">
@@ -2378,7 +2390,12 @@
 
     <div class="support-chat" id="supportChat">
         <button class="support-chat-toggle" id="supportChatToggle" type="button" aria-label="Open support chat" aria-expanded="false">
-            Chat
+            <span class="support-chat-toggle-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H8l-5 5V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </span>
+            <span class="support-chat-toggle-label">AI</span>
         </button>
         <div class="support-chat-panel" id="supportChatPanel" aria-hidden="true">
             <div class="support-chat-header">
