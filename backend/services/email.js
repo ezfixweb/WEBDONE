@@ -47,9 +47,9 @@ function formatCurrency(value) {
 }
 
 function formatServiceType(serviceType) {
-    if (serviceType === 'pickup') return 'Vyzvednuti';
-    if (serviceType === 'zasilkovna') return 'Zasilkovna';
-    return 'Osobni predani';
+    if (serviceType === 'pickup') return 'Vyzvednutí';
+    if (serviceType === 'zasilkovna') return 'Zásilkovna';
+    return 'Osobní předání';
 }
 
 function getDeliveryFeeLine(order) {
@@ -58,8 +58,8 @@ function getDeliveryFeeLine(order) {
         : parseFloat(order.delivery_fee || 0);
     if (!fee || Number.isNaN(fee) || fee <= 0) return '';
     const label = order.service_type === 'zasilkovna'
-        ? 'Poplatek za Zasilkovnu'
-        : 'Poplatek za vyzvednuti';
+        ? 'Poplatek za Zásilkovnu'
+        : 'Poplatek za vyzvednutí';
     return `<p>${label}: <strong>${formatCurrency(fee)}</strong></p>`;
 }
 
@@ -291,6 +291,7 @@ async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumb
             <!DOCTYPE html>
             <html>
             <head>
+                <meta charset="UTF-8" />
                 <style>
                     body { font-family: Arial, sans-serif; color: #333; }
                     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -309,17 +310,17 @@ async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumb
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1>Potvrzeni objednavky</h1>
+                        <h1>Potvrzení objednávky</h1>
                     </div>
                     <div class="content">
-                        <p>Dobry den ${customerName},</p>
-                        <p>Dekujeme za objednavku u EzFix! Vasi zadost jsme prijali a co nejdrive se ji budeme venovat.</p>
+                        <p>Dobrý den ${customerName},</p>
+                        <p>Děkujeme za objednávku u EzFix! Vaši žádost jsme přijali a co nejdříve se jí budeme věnovat.</p>
                         
                         <div class="order-box">
-                            <h3>Cislo objednavky</h3>
+                            <h3>Číslo objednávky</h3>
                             <div class="order-number">#${orderNumber}</div>
-                            <p><strong>Datum objednavky:</strong> ${order.created_at ? new Date(order.created_at).toLocaleDateString() : new Date().toLocaleDateString()}</p>
-                            <p><strong>Typ sluzby:</strong> ${formatServiceType(order.service_type)}</p>
+                            <p><strong>Datum objednávky:</strong> ${order.created_at ? new Date(order.created_at).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+                            <p><strong>Typ služby:</strong> ${formatServiceType(order.service_type)}</p>
                             ${getPacketaPointLine(order)}
                         </div>
 
@@ -329,7 +330,7 @@ async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumb
                                 <thead>
                                     <tr>
                                         <th>Oprava</th>
-                                        <th>Zarizeni</th>
+                                        <th>Zařízení</th>
                                         <th>Cena</th>
                                     </tr>
                                 </thead>
@@ -338,23 +339,23 @@ async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumb
                                 </tbody>
                             </table>
                             <div class="total-row">
-                                <p>Mezisoucet: <strong>${formatCurrency(items.reduce((sum, item) => sum + item.price, 0))}</strong></p>
+                                <p>Mezisoučet: <strong>${formatCurrency(items.reduce((sum, item) => sum + item.price, 0))}</strong></p>
                                 ${getDeliveryFeeLine(order)}
                                 <p class="total-amount">Celkem: ${formatCurrency(total)}</p>
                             </div>
                         </div>
 
-                        <p>O stavu opravy vas budeme prubezne informovat. Objednavku muzete kdykoliv sledovat na strance pro sledovani objednavek.</p>
+                        <p>O stavu opravy vás budeme průběžně informovat. Objednávku můžete kdykoliv sledovat na stránce pro sledování objednávek.</p>
                         <p>
-                            <a href="${trackUrl}" class="button">Sledovat objednavku</a>
+                            <a href="${trackUrl}" class="button">Sledovat objednávku</a>
                         </p>
 
-                        <p>Pokud mate dotazy, nevahejte nas kontaktovat.</p>
-                        <p>S pozdravem,<br><strong>Tym podpory EzFix</strong></p>
+                        <p>Pokud máte dotazy, neváhejte nás kontaktovat.</p>
+                        <p>S pozdravem,<br><strong>Tým podpory EzFix</strong></p>
                     </div>
                     <div class="footer">
-                        <p>© 2026 EzFix. Vsechna prava vyhrazena.</p>
-                        <p>Toto je automaticky e-mail. Neodpovidejte na tuto zpravu.</p>
+                        <p>© 2026 EzFix. Všechna práva vyhrazena.</p>
+                        <p>Toto je automatický e-mail. Neodpovídejte na tuto zprávu.</p>
                     </div>
                 </div>
             </body>
@@ -364,7 +365,7 @@ async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumb
         const mailOptions = {
             from: smtpFrom,
             to: customerEmail,
-            subject: `Potvrzeni objednavky #${orderNumber}`,
+            subject: `Potvrzení objednávky #${orderNumber}`,
             html: emailHTML
         };
 
@@ -395,26 +396,26 @@ async function sendOrderStatusEmail(customerEmail, customerName, orderNumber, st
     const encodedEmail = encodeURIComponent(customerEmail);
     const trackUrl = `${frontendUrl}/#track?order=${encodedOrder}&email=${encodedEmail}`;
         const statusMessages = {
-            'pending': 'Vasi objednavku jsme prijali a ceka na potvrzeni.',
-            'in-progress': 'Na vasi objednavce pracujeme. Oprava probiha.',
-            'waiting': 'Objednavka ceka na dalsi krok.',
-            'delivering': 'Objednavka je prave na ceste k vam.',
-            'completed': 'Objednavka je dokoncena. Zarizeni je pripraveno k vyzvednuti/doruceni.',
-            'delivered': 'Objednavka byla dorucena. Dekujeme za duveru!',
-            'cancelled': 'Objednavka byla zrusena.'
+            'pending': 'Vaši objednávku jsme přijali a čeká na potvrzení.',
+            'in-progress': 'Na vaší objednávce pracujeme. Oprava probíhá.',
+            'waiting': 'Objednávka čeká na další krok.',
+            'delivering': 'Objednávka je právě na cestě k vám.',
+            'completed': 'Objednávka je dokončena. Zařízení je připraveno k vyzvednutí/doručení.',
+            'delivered': 'Objednávka byla doručena. Děkujeme za důvěru!',
+            'cancelled': 'Objednávka byla zrušena.'
         };
 
         const statusLabels = {
-            'pending': 'Ceka',
-            'in-progress': 'V prubehu',
-            'waiting': 'Ceka',
-            'delivering': 'Dorucuje se',
-            'completed': 'Dokonceno',
-            'delivered': 'Doruceno',
-            'cancelled': 'Zruseno'
+            'pending': 'Čeká',
+            'in-progress': 'V průběhu',
+            'waiting': 'Čeká',
+            'delivering': 'Doručuje se',
+            'completed': 'Dokončeno',
+            'delivered': 'Doručeno',
+            'cancelled': 'Zrušeno'
         };
 
-        const statusMessage = statusMessages[status] || 'Stav objednavky byl aktualizovan.';
+        const statusMessage = statusMessages[status] || 'Stav objednávky byl aktualizován.';
         const statusLabel = statusLabels[status] || 'Aktualizace';
         const statusColor = status === 'completed' || status === 'delivered'
             ? '#10b981'
@@ -428,6 +429,7 @@ async function sendOrderStatusEmail(customerEmail, customerName, orderNumber, st
             <!DOCTYPE html>
             <html>
             <head>
+                <meta charset="UTF-8" />
                 <style>
                     body { font-family: Arial, sans-serif; color: #333; }
                     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -442,30 +444,30 @@ async function sendOrderStatusEmail(customerEmail, customerName, orderNumber, st
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1>Aktualizace objednavky EzFix</h1>
+                        <h1>Aktualizace objednávky EzFix</h1>
                     </div>
                     <div class="content">
-                        <p>Dobry den ${customerName},</p>
+                        <p>Dobrý den ${customerName},</p>
                         <p>${statusMessage}</p>
                         
                         <div class="order-details">
-                            <h3>Detaily objednavky</h3>
-                            <p><strong>Cislo objednavky:</strong> #${orderNumber}</p>
+                            <h3>Detaily objednávky</h3>
+                            <p><strong>Číslo objednávky:</strong> #${orderNumber}</p>
                             <p><strong>Stav:</strong> <span class="status-badge">${statusLabel}</span></p>
-                            <p><strong>Datum objednavky:</strong> ${order.created_at ? new Date(order.created_at).toLocaleDateString() : 'N/A'}</p>
-                            <p><strong>Celkova castka:</strong> ${formatCurrency(order.total || 0)}</p>
+                            <p><strong>Datum objednávky:</strong> ${order.created_at ? new Date(order.created_at).toLocaleDateString() : 'N/A'}</p>
+                            <p><strong>Celková částka:</strong> ${formatCurrency(order.total || 0)}</p>
                         </div>
 
-                        <p>Pokud mate dotazy, nevahejte nas kontaktovat.</p>
+                        <p>Pokud máte dotazy, neváhejte nás kontaktovat.</p>
                         <p>
-                            <a href="${trackUrl}" class="button">Sledovat objednavku</a>
+                            <a href="${trackUrl}" class="button">Sledovat objednávku</a>
                         </p>
 
-                        <p>S pozdravem,<br><strong>Tym podpory EzFix</strong></p>
+                        <p>S pozdravem,<br><strong>Tým podpory EzFix</strong></p>
                     </div>
                     <div class="footer">
-                        <p>© 2026 EzFix. Vsechna prava vyhrazena.</p>
-                        <p>Toto je automaticky e-mail. Neodpovidejte na tuto zpravu.</p>
+                        <p>© 2026 EzFix. Všechna práva vyhrazena.</p>
+                        <p>Toto je automatický e-mail. Neodpovídejte na tuto zprávu.</p>
                     </div>
                 </div>
             </body>
@@ -475,7 +477,7 @@ async function sendOrderStatusEmail(customerEmail, customerName, orderNumber, st
         const mailOptions = {
             from: smtpFrom,
             to: customerEmail,
-            subject: `Objednavka #${orderNumber} - Aktualizace stavu: ${statusLabel}`,
+            subject: `Objednávka #${orderNumber} - Aktualizace stavu: ${statusLabel}`,
             html: emailHTML
         };
 
@@ -514,6 +516,7 @@ async function sendNewOrderNotificationEmail(ownerEmail, orderNumber, customerNa
             <!DOCTYPE html>
             <html>
             <head>
+                <meta charset="UTF-8" />
                 <style>
                     body { font-family: Arial, sans-serif; color: #333; }
                     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -528,22 +531,22 @@ async function sendNewOrderNotificationEmail(ownerEmail, orderNumber, customerNa
             <body>
                 <div class="container">
                     <div class="header">
-                        <h2>Nova objednavka</h2>
+                        <h2>Nová objednávka</h2>
                     </div>
                     <div class="content">
                         <div class="order-box">
                             <div class="order-number">#${orderNumber}</div>
-                            <p><strong>Zakaznik:</strong> ${customerName || 'N/A'}</p>
+                            <p><strong>Zákazník:</strong> ${customerName || 'N/A'}</p>
                             <p><strong>E-mail:</strong> ${customerEmail || 'N/A'}</p>
                             <p><strong>Celkem:</strong> ${formatCurrency(total)}</p>
-                            <p><strong>Typ sluzby:</strong> ${formatServiceType(order.service_type)}</p>
+                            <p><strong>Typ služby:</strong> ${formatServiceType(order.service_type)}</p>
                             ${getPacketaPointLine(order)}
                         </div>
-                        <p>Otevrete administraci pro kontrolu a zpracovani objednavky.</p>
-                        <a href="${adminUrl}" class="button">Otevrit v administraci</a>
+                        <p>Otevřete administraci pro kontrolu a zpracování objednávky.</p>
+                        <a href="${adminUrl}" class="button">Otevřít v administraci</a>
                     </div>
                     <div class="footer">
-                        <p>Upozorneni na objednavku EzFix</p>
+                        <p>Upozornění na objednávku EzFix</p>
                     </div>
                 </div>
             </body>
@@ -553,7 +556,7 @@ async function sendNewOrderNotificationEmail(ownerEmail, orderNumber, customerNa
         const mailOptions = {
             from: smtpFrom,
             to: ownerEmail,
-            subject: `Nova objednavka #${orderNumber}`,
+            subject: `Nová objednávka #${orderNumber}`,
             html: emailHTML
         };
 
@@ -582,6 +585,7 @@ async function sendCustomEmail(customerEmail, subject, message, order = {}) {
             <!DOCTYPE html>
             <html>
             <head>
+                <meta charset="UTF-8" />
                 <style>
                     body { font-family: Arial, sans-serif; color: #333; }
                     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -601,13 +605,13 @@ async function sendCustomEmail(customerEmail, subject, message, order = {}) {
                             <p>${message.replace(/\n/g, '<br>')}</p>
                         </div>
                         ${order.order_number ? `
-                            <p><strong>Referencni objednavka:</strong> #${order.order_number}</p>
+                            <p><strong>Referenční objednávka:</strong> #${order.order_number}</p>
                         ` : ''}
-                        <p>S pozdravem,<br><strong>Tym podpory EzFix</strong></p>
+                        <p>S pozdravem,<br><strong>Tým podpory EzFix</strong></p>
                     </div>
                     <div class="footer">
-                        <p>© 2026 EzFix. Vsechna prava vyhrazena.</p>
-                        <p>Toto je automaticky e-mail. Neodpovidejte na tuto zpravu.</p>
+                        <p>© 2026 EzFix. Všechna práva vyhrazena.</p>
+                        <p>Toto je automatický e-mail. Neodpovídejte na tuto zprávu.</p>
                     </div>
                 </div>
             </body>
@@ -645,6 +649,7 @@ async function sendPasswordResetEmail(customerEmail, customerName, resetUrl) {
             <!DOCTYPE html>
             <html>
             <head>
+                <meta charset="UTF-8" />
                 <style>
                     body { font-family: Arial, sans-serif; color: #333; }
                     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -660,16 +665,16 @@ async function sendPasswordResetEmail(customerEmail, customerName, resetUrl) {
                         <h1>Obnova hesla</h1>
                     </div>
                     <div class="content">
-                        <p>Dobry den ${customerName || ''},</p>
-                        <p>Obdrzeli jsme zadost o obnovu hesla. Kliknete na tlacitko niz pro nastaveni noveho hesla.</p>
+                        <p>Dobrý den ${customerName || ''},</p>
+                        <p>Obdrželi jsme žádost o obnovu hesla. Klikněte na tlačítko níže pro nastavení nového hesla.</p>
                         <p>
-                            <a href="${resetUrl}" class="button">Nastavit nove heslo</a>
+                            <a href="${resetUrl}" class="button">Nastavit nové heslo</a>
                         </p>
-                        <p>Pokud jste o obnovu hesla nezadali vy, muzete tento e-mail ignorovat.</p>
+                        <p>Pokud jste o obnovu hesla nežádali vy, můžete tento e-mail ignorovat.</p>
                     </div>
                     <div class="footer">
-                        <p>© 2026 EzFix. Vsechna prava vyhrazena.</p>
-                        <p>Toto je automaticky e-mail. Neodpovidejte na tuto zpravu.</p>
+                        <p>© 2026 EzFix. Všechna práva vyhrazena.</p>
+                        <p>Toto je automatický e-mail. Neodpovídejte na tuto zprávu.</p>
                     </div>
                 </div>
             </body>

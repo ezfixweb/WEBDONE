@@ -882,7 +882,9 @@ document.addEventListener('DOMContentLoaded', function() {
         glsFee: 0,
         gopayFee: 0,
         packetaApiKey: '',
-        termsAdditionalText: ''
+        termsAdditionalText: '',
+        adminEmailSubject: 'Order Update - EzFix',
+        adminEmailMessage: 'Hi {{customerName}},\n\nWe wanted to follow up on your order.\n\nBest regards,\nEzFix Team'
     };
 
     let printingOptions = {
@@ -1684,6 +1686,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const gopayFeeInput = document.getElementById('catalogGopayFee');
         const packetaKeyInput = document.getElementById('catalogPacketaApiKey');
         const termsAdditionalTextInput = document.getElementById('catalogTermsAdditionalText');
+        const adminEmailSubjectInput = document.getElementById('catalogAdminEmailSubject');
+        const adminEmailMessageInput = document.getElementById('catalogAdminEmailMessage');
         
         if (!pickupInput || !packetaFeeInput || !packetaKeyInput) return;
 
@@ -1701,6 +1705,12 @@ document.addEventListener('DOMContentLoaded', function() {
         packetaKeyInput.value = catalogDraft.checkout.packetaApiKey ?? '';
         if (termsAdditionalTextInput) {
             termsAdditionalTextInput.value = catalogDraft.checkout.termsAdditionalText ?? '';
+        }
+        if (adminEmailSubjectInput) {
+            adminEmailSubjectInput.value = catalogDraft.checkout.adminEmailSubject ?? defaultCheckoutOptions.adminEmailSubject;
+        }
+        if (adminEmailMessageInput) {
+            adminEmailMessageInput.value = catalogDraft.checkout.adminEmailMessage ?? defaultCheckoutOptions.adminEmailMessage;
         }
 
         pickupInput.oninput = () => {
@@ -1741,7 +1751,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 catalogDraft.checkout.termsAdditionalText = termsAdditionalTextInput.value;
             };
         }
+        if (adminEmailSubjectInput) {
+            adminEmailSubjectInput.oninput = () => {
+                catalogDraft.checkout.adminEmailSubject = adminEmailSubjectInput.value;
+            };
+        }
+        if (adminEmailMessageInput) {
+            adminEmailMessageInput.oninput = () => {
+                catalogDraft.checkout.adminEmailMessage = adminEmailMessageInput.value;
+            };
+        }
     }
+
+    function buildAdminEmailDraft(customerName) {
+        const safeName = String(customerName || '').trim();
+        const defaultSubject = t('Order Update - EzFix');
+        const defaultMessage = `${t('Hi')} ${safeName || t('Customer')},\n\n${t('We wanted to follow up on your order.')}\n\n${t('Best regards,')}\n${t('EzFix Team')}`;
+
+        const subjectTemplate = typeof checkoutOptions?.adminEmailSubject === 'string'
+            ? checkoutOptions.adminEmailSubject
+            : '';
+        const bodyTemplate = typeof checkoutOptions?.adminEmailMessage === 'string'
+            ? checkoutOptions.adminEmailMessage
+            : '';
+
+        const replaceName = (value) => String(value || '').replace(/\{\{\s*customerName\s*\}\}/gi, safeName || t('Customer'));
+
+        const subject = replaceName(subjectTemplate).trim() || defaultSubject;
+        const message = replaceName(bodyTemplate).trim() || defaultMessage;
+
+        return { subject, message };
+    }
+
+    window.buildAdminEmailDraft = buildAdminEmailDraft;
 
     function renderCatalogRepairs() {
         const deviceSelect = document.getElementById('catalogDeviceSelect');
@@ -8386,10 +8428,14 @@ async function emailCustomer(orderId, customerEmail, customerName) {
     window.currentCustomerEmail = customerEmail;
     
     // Populate the form
+    const draft = (typeof window !== 'undefined' && typeof window.buildAdminEmailDraft === 'function')
+        ? window.buildAdminEmailDraft(customerName)
+        : null;
+
     document.getElementById('emailTo').value = customerEmail;
     document.getElementById('emailCustomerName').value = customerName;
-    document.getElementById('emailSubject').value = translate('Order Update - EzFix');
-    document.getElementById('emailMessage').value = `${translate('Hi')} ${customerName},\n\n${translate('We wanted to follow up on your order.')}\n\n${translate('Best regards,')}\n${translate('EzFix Team')}`;
+    document.getElementById('emailSubject').value = draft?.subject || translate('Order Update - EzFix');
+    document.getElementById('emailMessage').value = draft?.message || `${translate('Hi')} ${customerName},\n\n${translate('We wanted to follow up on your order.')}\n\n${translate('Best regards,')}\n${translate('EzFix Team')}`;
     document.getElementById('emailFormMessage').textContent = '';
     
     // Show the modal
