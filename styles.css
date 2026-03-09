@@ -2082,6 +2082,11 @@ body.has-announcement .hero {
     background: var(--bg-alt);
 }
 
+#catalogAdminEmailMessage {
+    min-height: 260px;
+    resize: vertical;
+}
+
 .catalog-actions {
     display: flex;
     gap: 12px;
