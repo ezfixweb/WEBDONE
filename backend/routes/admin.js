@@ -15,10 +15,38 @@ const { db } = require('../config/database');
 const { verifyToken, verifyOwner } = require('../middleware/auth');
 
 const ALLOWED_ROLES = new Set(['customer', 'worker', 'manager', 'owner']);
+const ALLOWED_PERMISSION_KEYS = new Set(['orders', 'catalog', 'chats', 'credentials']);
+const ROLE_DEFAULT_PERMISSIONS = {
+    customer: [],
+    worker: ['orders', 'chats'],
+    manager: ['orders', 'catalog', 'chats'],
+    owner: ['orders', 'catalog', 'chats', 'credentials']
+};
+
 const normalizeRole = (role, fallback = 'manager') => {
     const normalized = String(role || '').trim().toLowerCase();
     if (ALLOWED_ROLES.has(normalized)) return normalized;
     return fallback;
+};
+
+const parsePermissions = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.filter(Boolean);
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+        return [];
+    }
+};
+
+const normalizeRequestedPermissions = (value, role) => {
+    if (role === 'owner') return [...ROLE_DEFAULT_PERMISSIONS.owner];
+    const fallback = ROLE_DEFAULT_PERMISSIONS[role] || [];
+    const source = Array.isArray(value) ? value : fallback;
+    return [...new Set(source
+        .map(item => String(item || '').trim().toLowerCase())
+        .filter(item => ALLOWED_PERMISSION_KEYS.has(item) && item !== 'credentials'))];
 };
 
 /**
@@ -28,12 +56,17 @@ const normalizeRole = (role, fallback = 'manager') => {
 router.get('/users', verifyToken, verifyOwner, async (req, res) => {
     try {
         const users = await db.allAsync(
-            `SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC`
+            `SELECT id, username, email, role, permissions, created_at FROM users ORDER BY created_at DESC`
         );
+
+        const usersWithPermissions = users.map(user => ({
+            ...user,
+            permissions: parsePermissions(user.permissions)
+        }));
 
         res.json({
             success: true,
-            users
+            users: usersWithPermissions
         });
     } catch (err) {
         console.error('Get users error:', err);
@@ -51,10 +84,11 @@ router.get('/users', verifyToken, verifyOwner, async (req, res) => {
  */
 router.post('/users', verifyToken, verifyOwner, async (req, res) => {
     try {
-        const { username, password, email, role } = req.body;
+        const { username, password, email, role, permissions } = req.body;
         const normalizedEmail = (email || '').trim().toLowerCase();
         const normalizedUsername = (username || '').trim();
         const nextRole = normalizeRole(role, 'manager');
+        const nextPermissions = normalizeRequestedPermissions(permissions, nextRole);
 
         if (!normalizedUsername && !normalizedEmail) {
             return res.status(400).json({
@@ -78,8 +112,8 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
             }
 
             await db.runAsync(
-                'UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                [nextRole, existing.id]
+                'UPDATE users SET role = ?, permissions = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [nextRole, JSON.stringify(nextPermissions), existing.id]
             );
 
             return res.json({
@@ -89,7 +123,8 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
                     id: existing.id,
                     username: existing.username,
                     email: existing.email,
-                    role: nextRole
+                    role: nextRole,
+                    permissions: nextPermissions
                 }
             });
         }
@@ -132,8 +167,8 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const result = await db.runAsync(
-            'INSERT INTO users (username, password_hash, email, role) VALUES (?, ?, ?, ?)',
-            [normalizedUsername, hashedPassword, normalizedEmail || null, nextRole]
+            'INSERT INTO users (username, password_hash, email, role, permissions) VALUES (?, ?, ?, ?, ?)',
+            [normalizedUsername, hashedPassword, normalizedEmail || null, nextRole, JSON.stringify(nextPermissions)]
         );
 
         res.status(201).json({
@@ -143,7 +178,8 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
                 id: result.lastID,
                 username: normalizedUsername,
                 email: normalizedEmail || null,
-                role: nextRole
+                role: nextRole,
+                permissions: nextPermissions
             }
         });
     } catch (err) {
@@ -163,9 +199,9 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
 router.put('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
     try {
         const { userId } = req.params;
-        const { username, email, password, role } = req.body;
+        const { username, email, password, role, permissions } = req.body;
 
-        if (!username && !email && !password && role === undefined) {
+        if (!username && !email && !password && role === undefined && permissions === undefined) {
             return res.status(400).json({
                 success: false,
                 message: 'At least one field is required to update'
@@ -173,7 +209,7 @@ router.put('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
         }
 
         const user = await db.getAsync(
-            'SELECT id, username, email, role FROM users WHERE id = ?',
+            'SELECT id, username, email, role, permissions FROM users WHERE id = ?',
             [userId]
         );
 
@@ -252,6 +288,13 @@ router.put('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
             const nextRole = normalizeRole(role, user.role);
             fields.push('role = ?');
             params.push(nextRole);
+            const nextPermissions = normalizeRequestedPermissions(permissions, nextRole);
+            fields.push('permissions = ?');
+            params.push(JSON.stringify(nextPermissions));
+        } else if (permissions !== undefined) {
+            const nextPermissions = normalizeRequestedPermissions(permissions, user.role);
+            fields.push('permissions = ?');
+            params.push(JSON.stringify(nextPermissions));
         }
 
         if (nextUsername) {
@@ -280,14 +323,19 @@ router.put('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
         );
 
         const updated = await db.getAsync(
-            'SELECT id, username, email, role, created_at FROM users WHERE id = ?',
+            'SELECT id, username, email, role, permissions, created_at FROM users WHERE id = ?',
             [userId]
         );
+
+        const responseUser = {
+            ...updated,
+            permissions: parsePermissions(updated.permissions)
+        };
 
         res.json({
             success: true,
             message: 'User updated successfully',
-            user: updated
+            user: responseUser
         });
     } catch (err) {
         console.error('Update user error:', err);

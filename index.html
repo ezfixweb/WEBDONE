@@ -2223,7 +2223,10 @@
                                 <div class="admin-chat-empty">No chat sessions yet.</div>
                             </aside>
                             <section class="admin-chat-thread">
-                                <div class="admin-chat-thread-header" id="adminChatThreadHeader">Select a chat session</div>
+                                <div class="admin-chat-thread-header">
+                                    <div id="adminChatThreadHeader">Select a chat session</div>
+                                    <button type="button" class="btn btn-sm btn-secondary" id="adminTakeChatBtn" style="display:none;">Take chat</button>
+                                </div>
                                 <div class="admin-chat-messages" id="adminChatMessages"></div>
                                 <form class="admin-chat-reply" id="adminChatReplyForm">
                                     <input id="adminChatReplyInput" type="text" placeholder="Write a reply..." maxlength="300" autocomplete="off">
@@ -2286,6 +2289,14 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="form-group permissions-group" id="newPermissionsGroup">
+                                            <label>Manager Access</label>
+                                            <div class="permissions-grid">
+                                                <label class="permission-option"><input type="checkbox" id="newPermOrders" checked> Orders</label>
+                                                <label class="permission-option"><input type="checkbox" id="newPermCatalog" checked> Catalog</label>
+                                                <label class="permission-option"><input type="checkbox" id="newPermChats" checked> Chats</label>
+                                            </div>
+                                        </div>
                                         <button type="submit" class="btn btn-primary">Add User</button>
                                         <div class="form-message" id="addUserMessage"></div>
                                     </form>
@@ -2324,6 +2335,14 @@
                                                         </svg>
                                                     </button>
                                                 </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group permissions-group" id="editPermissionsGroup">
+                                            <label>Manager Access</label>
+                                            <div class="permissions-grid">
+                                                <label class="permission-option"><input type="checkbox" id="editPermOrders" checked> Orders</label>
+                                                <label class="permission-option"><input type="checkbox" id="editPermCatalog" checked> Catalog</label>
+                                                <label class="permission-option"><input type="checkbox" id="editPermChats" checked> Chats</label>
                                             </div>
                                         </div>
                                         <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -2402,22 +2421,6 @@
                 <strong>EzFix Chat</strong>
                 <button class="support-chat-close" id="supportChatClose" type="button" aria-label="Close support chat">x</button>
             </div>
-            <form class="support-chat-intake" id="supportChatIntakeForm">
-                <p class="support-chat-intake-title">Než začneme, vyplňte prosím krátké info:</p>
-                <input id="supportChatName" type="text" placeholder="Jméno" maxlength="80" autocomplete="name" required>
-                <input id="supportChatEmail" type="email" placeholder="E-mail" maxlength="120" autocomplete="email" required>
-                <select id="supportChatTopic" required>
-                    <option value="">Vyberte, s čím potřebujete pomoci</option>
-                    <option value="repair-service">Oprava zařízení</option>
-                    <option value="order-status">Stav objednávky</option>
-                    <option value="pricing">Ceny a nabídka</option>
-                    <option value="custom-build">Vlastní sestava / server</option>
-                    <option value="3d-printing">3D tisk</option>
-                    <option value="other">Jiné</option>
-                </select>
-                <div class="support-chat-intake-error" id="supportChatIntakeError"></div>
-                <button type="submit">Pokračovat do chatu</button>
-            </form>
             <div class="support-chat-body" id="supportChatBody"></div>
             <form class="support-chat-form" id="supportChatForm">
                 <input id="supportChatInput" type="text" placeholder="Napis zpravu..." maxlength="220" autocomplete="off">

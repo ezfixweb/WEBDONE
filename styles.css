@@ -117,6 +117,12 @@ body {
     width: min(92vw, 760px);
     position: relative;
     z-index: 1;
+    padding: 22px 20px 18px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(20, 16, 56, 0.72) 0%, rgba(18, 14, 44, 0.6) 100%);
+    border: 1px solid rgba(176, 145, 255, 0.34);
+    box-shadow: 0 24px 60px rgba(9, 7, 28, 0.45);
+    backdrop-filter: blur(8px);
 }
 
 .app-loader-logo {
@@ -138,6 +144,7 @@ body {
 .app-loader-kicker {
     color: #ffffff;
     font-weight: 600;
+    font-size: 1.02rem;
     letter-spacing: 0.02em;
     text-shadow: 0 1px 12px rgba(13, 10, 33, 0.52);
 }
@@ -152,11 +159,11 @@ body {
 
 .app-loader-pill {
     border: 1px solid rgba(255, 255, 255, 0.28);
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.2);
     color: #f6f3ff;
     border-radius: 999px;
-    padding: 6px 12px;
-    font-size: 0.78rem;
+    padding: 7px 13px;
+    font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.02em;
 }
@@ -171,7 +178,7 @@ body {
 
 .app-loader-info-card {
     border: 1px solid rgba(255, 255, 255, 0.24);
-    background: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.22);
     border-radius: 12px;
     padding: 12px 14px;
     display: flex;
@@ -190,25 +197,31 @@ body {
 }
 
 .app-loader-info-title {
-    color: rgba(245, 241, 255, 0.97);
-    font-size: 0.76rem;
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
 }
 
 .app-loader-info-value {
     color: #ffffff;
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 1rem;
+    font-weight: 700;
 }
 
 .app-loader-subnote {
-    color: rgba(235, 230, 255, 0.95);
-    font-size: 0.84rem;
-    font-weight: 500;
+    color: #f4eeff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-shadow: 0 1px 10px rgba(10, 8, 28, 0.45);
 }
 
 @media (max-width: 768px) {
+    .app-loader-content {
+        padding: 18px 14px 14px;
+    }
+
     .app-loader-logo {
         width: 270px;
     }
@@ -2814,52 +2827,6 @@ body.has-announcement .hero {
     gap: 10px;
 }
 
-.support-chat-intake {
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-    padding: 12px;
-    border-bottom: 1px solid #ece9ff;
-    background: #fcfbff;
-}
-
-.support-chat-intake.hidden {
-    display: none;
-}
-
-.support-chat-intake-title {
-    margin: 0 0 2px;
-    color: #2a225b;
-    font-size: 0.88rem;
-    font-weight: 600;
-}
-
-.support-chat-intake input,
-.support-chat-intake select {
-    width: 100%;
-    border: 1px solid #d8d2ff;
-    border-radius: 10px;
-    padding: 10px 12px;
-    font-size: 0.9rem;
-    background: #fff;
-}
-
-.support-chat-intake button {
-    border: 0;
-    border-radius: 10px;
-    padding: 10px 13px;
-    font-weight: 700;
-    color: #fff;
-    background: #5d39ff;
-    cursor: pointer;
-}
-
-.support-chat-intake-error {
-    min-height: 16px;
-    font-size: 0.82rem;
-    color: #b91c1c;
-}
-
 .support-msg {
     max-width: 85%;
     padding: 9px 12px;
@@ -2978,6 +2945,17 @@ body.has-announcement .hero {
     margin-bottom: 5px;
 }
 
+.admin-chat-session-actions {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.admin-chat-assign-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+}
+
 .admin-chat-thread {
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -2991,6 +2969,10 @@ body.has-announcement .hero {
     padding: 12px 14px;
     border-bottom: 1px solid #ece9ff;
     font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
 }
 
 .admin-chat-messages {
@@ -5059,6 +5041,32 @@ body.has-announcement .hero {
 
 .credentials-form button {
     margin-top: 8px;
+}
+
+.permissions-group {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    background: var(--bg-alt);
+    margin-bottom: 8px;
+}
+
+.permissions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.permission-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+
+.permission-option input {
+    margin: 0;
 }
 
 .form-message {

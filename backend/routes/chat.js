@@ -63,10 +63,12 @@ router.post('/session', async (req, res) => {
         const helpTopic = String(req.body?.helpTopic || '').trim();
 
         const ensuredId = await ensureSession(sessionId, visitorId, name, email, helpTopic);
+        const session = await db.getAsync('SELECT * FROM chat_sessions WHERE id = ?', [ensuredId]);
 
         res.json({
             success: true,
-            sessionId: ensuredId
+            sessionId: ensuredId,
+            session
         });
     } catch (err) {
         console.error('Create chat session error:', err);
@@ -81,7 +83,12 @@ router.get('/messages/:sessionId', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Session ID is required' });
         }
 
-        const session = await db.getAsync('SELECT id FROM chat_sessions WHERE id = ?', [sessionId]);
+        const session = await db.getAsync(
+            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name
+             FROM chat_sessions
+             WHERE id = ?`,
+            [sessionId]
+        );
         if (!session) {
             return res.status(404).json({ success: false, message: 'Session not found' });
         }
@@ -101,7 +108,7 @@ router.get('/messages/:sessionId', async (req, res) => {
             [sessionId]
         );
 
-        res.json({ success: true, messages });
+        res.json({ success: true, session, messages });
     } catch (err) {
         console.error('Get chat messages error:', err);
         res.status(500).json({ success: false, message: 'Failed to load messages', error: err.message });
@@ -118,7 +125,12 @@ router.post('/messages/:sessionId', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Session ID and message are required' });
         }
 
-        const session = await db.getAsync('SELECT id FROM chat_sessions WHERE id = ?', [sessionId]);
+        const session = await db.getAsync(
+            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name
+             FROM chat_sessions
+             WHERE id = ?`,
+            [sessionId]
+        );
         if (!session) {
             return res.status(404).json({ success: false, message: 'Session not found' });
         }
@@ -151,7 +163,7 @@ router.post('/messages/:sessionId', async (req, res) => {
             [sessionId]
         );
 
-        res.json({ success: true, messages, aiReply });
+        res.json({ success: true, messages, aiReply, session });
     } catch (err) {
         console.error('Send chat message error:', err);
         res.status(500).json({ success: false, message: 'Failed to send message', error: err.message });
@@ -166,6 +178,7 @@ router.get('/admin/sessions', verifyToken, verifyOrderManager, async (req, res) 
                 s.customer_name,
                 s.customer_email,
                 s.help_topic,
+                s.assigned_admin_name,
                 s.status,
                 s.last_message_at,
                 s.created_at,
@@ -227,6 +240,49 @@ router.get('/admin/sessions/:sessionId/messages', verifyToken, verifyOrderManage
     } catch (err) {
         console.error('Get admin chat messages error:', err);
         res.status(500).json({ success: false, message: 'Failed to load chat thread', error: err.message });
+    }
+});
+
+router.post('/admin/sessions/:sessionId/take', verifyToken, verifyOrderManager, async (req, res) => {
+    try {
+        const sessionId = String(req.params.sessionId || '').trim();
+        if (!sessionId) {
+            return res.status(400).json({ success: false, message: 'Session ID is required' });
+        }
+
+        const session = await db.getAsync('SELECT * FROM chat_sessions WHERE id = ?', [sessionId]);
+        if (!session) {
+            return res.status(404).json({ success: false, message: 'Session not found' });
+        }
+
+        const currentAdmin = String(req.user?.username || 'Admin').trim();
+        if (session.assigned_admin_name && session.assigned_admin_name !== currentAdmin) {
+            return res.status(409).json({
+                success: false,
+                message: `Chat is already taken by ${session.assigned_admin_name}`
+            });
+        }
+
+        await db.runAsync(
+            `UPDATE chat_sessions
+             SET assigned_admin_id = ?,
+                 assigned_admin_name = ?,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [req.user?.id || null, currentAdmin, sessionId]
+        );
+
+        await db.runAsync(
+            `INSERT INTO chat_messages (session_id, sender_type, sender_name, message, is_read_admin, is_read_user)
+             VALUES (?, 'admin', ?, ?, TRUE, FALSE)`,
+            [sessionId, currentAdmin, `Dobrý den, chat převzal admin ${currentAdmin}. Odpovím vám co nejdříve.`]
+        );
+
+        const updatedSession = await db.getAsync('SELECT * FROM chat_sessions WHERE id = ?', [sessionId]);
+        res.json({ success: true, session: updatedSession });
+    } catch (err) {
+        console.error('Take chat session error:', err);
+        res.status(500).json({ success: false, message: 'Failed to take chat session', error: err.message });
     }
 });
 

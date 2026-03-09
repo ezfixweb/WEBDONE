@@ -20,6 +20,26 @@ const hashToken = (token) => crypto.createHash('sha256').update(token).digest('h
 
 const OWNER_USERNAME = (process.env.OWNER_USERNAME || '').trim().toLowerCase();
 
+const DEFAULT_ROLE_PERMISSIONS = {
+    customer: [],
+    worker: ['orders', 'chats'],
+    manager: ['orders', 'catalog', 'chats'],
+    owner: ['orders', 'catalog', 'chats', 'credentials']
+};
+
+const rolePermissions = (role) => DEFAULT_ROLE_PERMISSIONS[String(role || '').toLowerCase()] || [];
+
+const parsePermissions = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.filter(Boolean);
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+        return [];
+    }
+};
+
 const isManagerEmail = (email) => {
     const adminEmailList = (process.env.ADMIN_EMAILS || '')
         .split(',')
@@ -91,8 +111,8 @@ router.post('/register', [
             ? 'owner'
             : (isManagerEmail(normalizedEmail) ? 'manager' : 'customer');
         const result = await db.runAsync(
-            'INSERT INTO users (username, password_hash, email, role) VALUES (?, ?, ?, ?)',
-            [normalizedUsername, hashedPassword, normalizedEmail, role]
+            'INSERT INTO users (username, password_hash, email, role, permissions) VALUES (?, ?, ?, ?, ?)',
+            [normalizedUsername, hashedPassword, normalizedEmail, role, JSON.stringify(rolePermissions(role))]
         );
 
         // Generate token
@@ -110,7 +130,8 @@ router.post('/register', [
                 id: result.lastID,
                 username,
                 email,
-                role
+                role,
+                permissions: rolePermissions(role)
             }
         });
     } catch (err) {
@@ -147,7 +168,7 @@ router.post('/login', [
 
         // Find user
         const user = await db.getAsync(
-            'SELECT id, username, email, password_hash, role FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)',
+            'SELECT id, username, email, password_hash, role, permissions FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)',
             [identifier, identifier]
         );
 
@@ -204,7 +225,8 @@ router.post('/login', [
                 id: user.id,
                 username: user.username,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                permissions: parsePermissions(user.permissions)
             }
         });
     } catch (err) {

@@ -2331,9 +2331,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    const canAccessAdmin = (role) => role === 'worker' || role === 'manager' || role === 'owner';
-    const canManageCatalog = (role) => role === 'manager' || role === 'owner';
+    const ROLE_DEFAULT_PERMISSIONS = {
+        customer: [],
+        worker: ['orders', 'chats'],
+        manager: ['orders', 'catalog', 'chats'],
+        owner: ['orders', 'catalog', 'chats', 'credentials']
+    };
+
+    function normalizePermissions(userOrRole, permissions = null) {
+        const role = typeof userOrRole === 'object'
+            ? String(userOrRole?.role || '').toLowerCase()
+            : String(userOrRole || '').toLowerCase();
+
+        const source = permissions || (typeof userOrRole === 'object' ? userOrRole?.permissions : null);
+        const normalized = Array.isArray(source)
+            ? source.map(p => String(p || '').trim().toLowerCase()).filter(Boolean)
+            : [];
+
+        if (normalized.length > 0) {
+            return [...new Set(normalized)];
+        }
+
+        return ROLE_DEFAULT_PERMISSIONS[role] ? [...ROLE_DEFAULT_PERMISSIONS[role]] : [];
+    }
+
+    function hasPermission(userOrRole, permission, permissions = null) {
+        const role = typeof userOrRole === 'object'
+            ? String(userOrRole?.role || '').toLowerCase()
+            : String(userOrRole || '').toLowerCase();
+        if (role === 'owner') return true;
+        return normalizePermissions(userOrRole, permissions).includes(String(permission || '').toLowerCase());
+    }
+
+    const canAccessAdmin = (userOrRole, permissions = null) => {
+        const role = typeof userOrRole === 'object'
+            ? String(userOrRole?.role || '').toLowerCase()
+            : String(userOrRole || '').toLowerCase();
+        if (role === 'owner') return true;
+        if (role !== 'worker' && role !== 'manager') return false;
+        return normalizePermissions(userOrRole, permissions).length > 0;
+    };
+
+    const canManageCatalog = (userOrRole, permissions = null) => hasPermission(userOrRole, 'catalog', permissions);
+    const canManageOrders = (userOrRole, permissions = null) => hasPermission(userOrRole, 'orders', permissions);
+    const canAccessChats = (userOrRole, permissions = null) => hasPermission(userOrRole, 'chats', permissions);
     const isOwnerRole = (role) => role === 'owner';
+
+    function canAccessAdminTab(tabName, user) {
+        if (!user) return false;
+        if (tabName === 'credentials') return isOwnerRole(user.role);
+        if (tabName === 'catalog') return canManageCatalog(user);
+        if (tabName === 'chats') return canAccessChats(user);
+        if (['repairs', 'custom-pc', 'printing', 'other-items'].includes(tabName)) return canManageOrders(user);
+        return false;
+    }
 
     // ========================================================================
     // MODULE 3: SERVICE DATA & CONFIGURATION
@@ -3234,7 +3285,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const credentialsContent = document.getElementById('credentials-content');
             const repairsTabBtn = document.querySelector('.admin-tab-btn[data-tab="repairs"]');
             const repairsContent = document.getElementById('repairs-content');
-            const canCatalog = canManageCatalog(Storage.getUser()?.role);
+            const canCatalog = canManageCatalog(Storage.getUser());
             const catalogTabBtn = document.querySelector('.admin-tab-btn[data-tab="catalog"]');
             const catalogContent = document.getElementById('catalog-content');
             if (!isOwner) {
@@ -3744,7 +3795,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const decoded = JSON.parse(atob(userPayload));
                         if (decoded && typeof decoded === 'object') {
                             Storage.setUser(decoded);
-                            Storage.setAdminLoggedIn(canAccessAdmin(decoded.role));
+                            Storage.setAdminLoggedIn(canAccessAdmin(decoded));
                         }
                     } catch {
                         // Ignore malformed payload and fallback to /auth/me refresh.
@@ -3755,7 +3806,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateAuthUI();
                     const currentUser = Storage.getUser();
                     showToast(created ? 'Google account registered successfully' : 'Login successful');
-                    const targetPage = canAccessAdmin(currentUser?.role) ? 'admin' : 'home';
+                    const targetPage = canAccessAdmin(currentUser) ? 'admin' : 'home';
                     showPage(targetPage);
                     window.history.replaceState(null, '', `#${targetPage}`);
                 });
@@ -5349,13 +5400,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Store token and user info
             Storage.setToken(result.token);
             Storage.setUser(result.user);
-            Storage.setAdminLoggedIn(canAccessAdmin(result.user.role));
+            Storage.setAdminLoggedIn(canAccessAdmin(result.user));
             
             hideLoginModal();
             updateAuthUI();
             document.getElementById('loginForm').reset();
             showToast('Login successful');
-            showPage(canAccessAdmin(result.user.role) ? 'admin' : 'home');
+            showPage(canAccessAdmin(result.user) ? 'admin' : 'home');
         } catch (error) {
             errorDiv.textContent = t(error.message || 'Invalid username or password');
             console.error('Login error:', error);
@@ -5388,10 +5439,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const logoutBtn = DOM.logoutBtn;
         const adminNavLink = document.getElementById('adminNavLink');
         const isLoggedIn = !!Storage.getToken();
+        const currentUser = Storage.getUser();
         const isAdmin = Storage.adminLoggedIn && isLoggedIn;
-        const role = Storage.getUser()?.role;
+        const role = currentUser?.role;
         const isOwner = isOwnerRole(role);
-        const canCatalog = canManageCatalog(role);
+        const canCatalog = canManageCatalog(currentUser);
+        const canOrders = canManageOrders(currentUser);
+        const canChats = canAccessChats(currentUser);
 
         if (isAdmin) {
             mountAdminPageNode();
@@ -5406,10 +5460,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const credentialsContent = document.getElementById('credentials-content');
         const catalogTabBtn = document.querySelector('.admin-tab-btn[data-tab="catalog"]');
         const catalogContent = document.getElementById('catalog-content');
+        const chatsTabBtn = document.querySelector('.admin-tab-btn[data-tab="chats"]');
+        const chatsContent = document.getElementById('chats-content');
+        const orderTabs = ['repairs', 'custom-pc', 'printing', 'other-items'];
 
         if (logoutBtn) logoutBtn.style.display = isLoggedIn ? 'inline-flex' : 'none';
         if (adminNavLink) adminNavLink.style.display = isAdmin ? 'list-item' : 'none';
         if (DOM.loginNavBtn) DOM.loginNavBtn.style.display = isLoggedIn ? 'none' : 'inline-flex';
+        orderTabs.forEach((tab) => {
+            const tabBtn = document.querySelector(`.admin-tab-btn[data-tab="${tab}"]`);
+            const tabContent = document.getElementById(`${tab}-content`);
+            const allowed = canOrders;
+            if (tabBtn) tabBtn.style.display = allowed ? 'inline-flex' : 'none';
+            if (!allowed && tabContent) tabContent.classList.remove('active');
+        });
         if (credentialsTabBtn) credentialsTabBtn.style.display = isOwner ? 'inline-flex' : 'none';
         if (!isOwner && credentialsContent) {
             credentialsContent.classList.remove('active');
@@ -5417,6 +5481,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (catalogTabBtn) catalogTabBtn.style.display = canCatalog ? 'inline-flex' : 'none';
         if (!canCatalog && catalogContent) {
             catalogContent.classList.remove('active');
+        }
+        if (chatsTabBtn) chatsTabBtn.style.display = canChats ? 'inline-flex' : 'none';
+        if (!canChats && chatsContent) {
+            chatsContent.classList.remove('active');
         }
     }
 
@@ -5434,7 +5502,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await apiCall('GET', '/auth/me');
             if (result && result.success) {
                 Storage.setUser(result.user);
-                Storage.setAdminLoggedIn(canAccessAdmin(result.user?.role));
+                Storage.setAdminLoggedIn(canAccessAdmin(result.user));
             } else {
                 Storage.setUser(null);
                 Storage.setAdminLoggedIn(false);
@@ -5462,7 +5530,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 username,
                 password,
                 email,
-                role
+                role,
+                permissions: getPermissionSelection('new')
             });
 
             return { success: true, message: `User "${username}" added successfully`, data: result };
@@ -5537,6 +5606,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function getPermissionSelection(prefix) {
+        const checked = [];
+        if (document.getElementById(`${prefix}PermOrders`)?.checked) checked.push('orders');
+        if (document.getElementById(`${prefix}PermCatalog`)?.checked) checked.push('catalog');
+        if (document.getElementById(`${prefix}PermChats`)?.checked) checked.push('chats');
+        return checked;
+    }
+
+    function applyPermissionSelection(prefix, permissions = [], role = 'manager') {
+        const perms = Array.isArray(permissions) ? permissions : [];
+        const owner = role === 'owner';
+        const orderInput = document.getElementById(`${prefix}PermOrders`);
+        const catalogInput = document.getElementById(`${prefix}PermCatalog`);
+        const chatsInput = document.getElementById(`${prefix}PermChats`);
+        const container = document.getElementById(`${prefix}PermissionsGroup`);
+
+        if (orderInput) orderInput.checked = owner || perms.includes('orders');
+        if (catalogInput) catalogInput.checked = owner || perms.includes('catalog');
+        if (chatsInput) chatsInput.checked = owner || perms.includes('chats');
+
+        [orderInput, catalogInput, chatsInput].forEach((input) => {
+            if (!input) return;
+            input.disabled = owner;
+        });
+
+        if (container) {
+            container.style.opacity = owner ? '0.7' : '1';
+        }
+    }
+
     /**
      * Render credentials management UI by fetching from API
      */
@@ -5562,6 +5661,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span class="user-name">${user.username}</span>
                             ${user.email ? `<span class="user-email">${user.email}</span>` : ''}
                             <span class="user-role">${t(user.role || 'customer')}</span>
+                            ${(Array.isArray(user.permissions) && user.permissions.length > 0)
+                                ? `<span class="user-email">Access: ${user.permissions.join(', ')}</span>`
+                                : ''}
                         </div>
                         <div class="user-actions">
                             <button type="button" class="user-edit-btn" data-edit-id="${user.id}">Edit</button>
@@ -5625,6 +5727,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (editEmail) editEmail.value = user.email || '';
         if (editPassword) editPassword.value = '';
         if (editRole) editRole.value = user.role || 'manager';
+        applyPermissionSelection('edit', user.permissions || [], user.role || 'manager');
     }
     async function handleDeleteUserUI(username) {
         if (confirm(`${t('Are you sure you want to delete the user')} "${username}"?`)) {
@@ -7564,13 +7667,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.admin-tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const tabName = this.dataset.tab;
-            const role = Storage.getUser()?.role;
+            const currentUser = Storage.getUser();
 
-            if (tabName === 'catalog' && !canManageCatalog(role)) {
-                showToast(t('Permission denied'));
-                return;
-            }
-            if (tabName === 'credentials' && !isOwnerRole(role)) {
+            if (!canAccessAdminTab(tabName, currentUser)) {
                 showToast(t('Permission denied'));
                 return;
             }
@@ -7876,13 +7975,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const email = document.getElementById('newEmail')?.value.trim();
         const password = document.getElementById('newPassword').value;
         const role = document.getElementById('newRole')?.value || 'manager';
+        const permissions = getPermissionSelection('new');
 
         if (!username && !email) {
             showCredentialsMessage('addUserMessage', 'Enter a username or email', false);
             return;
         }
 
-        const result = await addAdminUser(username, password, email, role);
+        const result = await addAdminUser(username, password, email, role, permissions);
         showCredentialsMessage('addUserMessage', result.message, result.success);
 
         if (result.success) {
@@ -7899,6 +7999,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const email = document.getElementById('editEmail')?.value.trim();
         const password = document.getElementById('editPassword')?.value;
         const role = document.getElementById('editRole')?.value;
+        const permissions = getPermissionSelection('edit');
 
         if (!userId) {
             showCredentialsMessage('editUserMessage', 'Select a user to edit', false);
@@ -7910,7 +8011,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const payload = { username, email, role };
+        const payload = { username, email, role, permissions };
         if (password) payload.password = password;
 
         const result = await updateAdminUserDetails(userId, payload);
@@ -7970,10 +8071,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await apiCall('POST', '/auth/login', { username, password });
             Storage.setToken(result.token);
             Storage.setUser(result.user);
-            Storage.setAdminLoggedIn(canAccessAdmin(result.user.role));
+            Storage.setAdminLoggedIn(canAccessAdmin(result.user));
             updateAuthUI();
             showToast('Login successful');
-            showPage(canAccessAdmin(result.user.role) ? 'admin' : 'home');
+            showPage(canAccessAdmin(result.user) ? 'admin' : 'home');
         } catch (error) {
             if (message) message.textContent = t(error.message || 'Login failed');
         }
@@ -8049,7 +8150,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await apiCall('POST', '/auth/register', { username, email, password });
             Storage.setToken(result.token);
             Storage.setUser(result.user);
-            Storage.setAdminLoggedIn(canAccessAdmin(result.user?.role));
+            Storage.setAdminLoggedIn(canAccessAdmin(result.user));
             updateAuthUI();
             showToast('Account created');
             showPage('home');
@@ -8086,6 +8187,8 @@ document.addEventListener('DOMContentLoaded', function() {
             email: localStorage.getItem('supportChatEmail') || Storage.getUser()?.email || '',
             helpTopic: localStorage.getItem('supportChatHelpTopic') || ''
         },
+        onboardingStage: 'name',
+        sessionMeta: null,
         pollId: null
     };
 
@@ -8126,12 +8229,35 @@ document.addEventListener('DOMContentLoaded', function() {
         return map[value] || value || '';
     }
 
+    function parseHelpTopicValue(rawValue) {
+        const value = String(rawValue || '').trim().toLowerCase();
+        if (!value) return '';
+        if (['repair-service', 'oprava', 'oprava-zarizeni', 'servis', 'service', 'repair'].includes(value)) return 'repair-service';
+        if (['order-status', 'stav', 'stav-objednavky', 'objednavka', 'order'].includes(value)) return 'order-status';
+        if (['pricing', 'cena', 'ceny', 'price', 'nabidka'].includes(value)) return 'pricing';
+        if (['custom-build', 'sestava', 'server', 'build'].includes(value)) return 'custom-build';
+        if (['3d-printing', '3d', 'tisk', '3d-tisk', 'printing'].includes(value)) return '3d-printing';
+        if (['other', 'jine', 'jine-pomoc'].includes(value)) return 'other';
+        return '';
+    }
+
     function hasSupportChatProfile() {
         return Boolean(
             String(supportChatState.profile.name || '').trim() &&
             String(supportChatState.profile.email || '').trim() &&
             String(supportChatState.profile.helpTopic || '').trim()
         );
+    }
+
+    function clearSupportChatLocalSession() {
+        supportChatState.sessionId = '';
+        supportChatState.sessionMeta = null;
+        supportChatState.onboardingStage = 'name';
+        supportChatState.profile = { name: '', email: '', helpTopic: '' };
+        localStorage.removeItem('supportChatSessionId');
+        localStorage.removeItem('supportChatName');
+        localStorage.removeItem('supportChatEmail');
+        localStorage.removeItem('supportChatHelpTopic');
     }
 
     async function ensureSupportChatSession() {
@@ -8147,32 +8273,82 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         supportChatState.sessionId = result.sessionId;
+        supportChatState.sessionMeta = result.session || null;
         localStorage.setItem('supportChatSessionId', supportChatState.sessionId);
         return supportChatState.sessionId;
     }
 
     async function loadSupportChatMessages() {
-        if (!supportChatState.sessionId) return [];
+        if (!supportChatState.sessionId) return { messages: [], session: null };
         const result = await apiCall('GET', `/chat/messages/${supportChatState.sessionId}`);
-        return result.messages || [];
+        supportChatState.sessionMeta = result.session || null;
+        return {
+            messages: result.messages || [],
+            session: result.session || null
+        };
     }
 
-    function renderSupportChatMessages(messages) {
+    function renderSupportChatMessages(messages, session = null) {
         const body = document.getElementById('supportChatBody');
         if (!body) return;
         body.innerHTML = '';
 
-        if (!Array.isArray(messages) || messages.length === 0) {
+        if (!hasSupportChatProfile()) {
             const intro = document.createElement('div');
             intro.className = 'support-msg bot';
-            intro.textContent = 'Ahoj, jsem EzFix AI asistent. Nejdriv zkousim rychle pomoct automaticky a potom se vam ozve nas tym co nejdriv.';
+            intro.textContent = 'Ahoj, jsem EzFix AI asistent. Nejdřív vás provedu krátkým úvodem.';
+            body.appendChild(intro);
+
+            if (supportChatState.profile.name) {
+                const nameAnswer = document.createElement('div');
+                nameAnswer.className = 'support-msg user';
+                nameAnswer.textContent = supportChatState.profile.name;
+                body.appendChild(nameAnswer);
+            }
+
+            if (supportChatState.profile.name && supportChatState.profile.email) {
+                const emailAnswer = document.createElement('div');
+                emailAnswer.className = 'support-msg user';
+                emailAnswer.textContent = supportChatState.profile.email;
+                body.appendChild(emailAnswer);
+            }
+
+            const prompt = document.createElement('div');
+            prompt.className = 'support-msg bot';
+            if (!supportChatState.profile.name) {
+                prompt.textContent = 'Jak se jmenujete?';
+            } else if (!supportChatState.profile.email) {
+                prompt.textContent = `Těší mě, ${supportChatState.profile.name}. Napište prosím e-mail.`;
+            } else {
+                prompt.textContent = 'S čím potřebujete pomoci? Napište: oprava, stav, cena, sestava, 3d, nebo jiné.';
+            }
+            body.appendChild(prompt);
+            return;
+        }
+
+        if (!Array.isArray(messages) || messages.length === 0) {
+            const hello = document.createElement('div');
+            hello.className = 'support-msg bot';
+            hello.textContent = `Děkuji, ${supportChatState.profile.name}. Jsem EzFix AI asistent a pokusím se pomoci hned.`;
 
             const questions = document.createElement('div');
             questions.className = 'support-msg bot';
-            questions.textContent = 'Napis prosim: 1) jake zarizeni mate, 2) co presne nefunguje, 3) od kdy problem trva, 4) jestli mate cislo objednavky.';
+            questions.textContent = 'Napište prosím: 1) zařízení, 2) co přesně nefunguje, 3) od kdy problém trvá, 4) číslo objednávky (pokud máte).';
 
-            body.appendChild(intro);
+            body.appendChild(hello);
             body.appendChild(questions);
+        }
+
+        const assignedAdmin = session?.assigned_admin_name || supportChatState.sessionMeta?.assigned_admin_name || '';
+        if (assignedAdmin) {
+            const assignment = document.createElement('div');
+            assignment.className = 'support-msg bot';
+            assignment.textContent = `Chat převzal admin ${assignedAdmin}. Odpověď dostanete co nejdříve.`;
+            body.appendChild(assignment);
+        }
+
+        if (!Array.isArray(messages) || messages.length === 0) {
+            body.scrollTop = body.scrollHeight;
             return;
         }
 
@@ -8187,8 +8363,42 @@ document.addEventListener('DOMContentLoaded', function() {
         body.scrollTop = body.scrollHeight;
     }
 
+    function refreshTakeChatButton(session) {
+        const takeBtn = document.getElementById('adminTakeChatBtn');
+        if (!takeBtn) return;
+
+        if (!session || !session.id) {
+            takeBtn.style.display = 'none';
+            takeBtn.dataset.sessionId = '';
+            takeBtn.disabled = false;
+            takeBtn.textContent = 'Take chat';
+            return;
+        }
+
+        takeBtn.dataset.sessionId = session.id;
+
+        const assigned = String(session.assigned_admin_name || '').trim();
+        const myName = String(Storage.getUser()?.username || '').trim();
+
+        if (!assigned) {
+            takeBtn.style.display = 'inline-flex';
+            takeBtn.disabled = false;
+            takeBtn.textContent = 'Take chat';
+            return;
+        }
+
+        takeBtn.style.display = 'inline-flex';
+        if (assigned === myName) {
+            takeBtn.disabled = true;
+            takeBtn.textContent = `Taken by you (${assigned})`;
+        } else {
+            takeBtn.disabled = true;
+            takeBtn.textContent = `Taken by ${assigned}`;
+        }
+    }
+
     async function loadAdminChatSessions() {
-        if (!Storage.getToken() || !canAccessAdmin(Storage.getUser()?.role)) return;
+        if (!Storage.getToken() || !canAccessAdmin(Storage.getUser())) return;
 
         try {
             const result = await apiCall('GET', '/chat/admin/sessions');
@@ -8210,6 +8420,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const sessions = adminChatState.sessions || [];
         if (!sessions.length) {
             sessionsEl.innerHTML = '<div class="admin-chat-empty">No chat sessions yet.</div>';
+            refreshTakeChatButton(null);
             return;
         }
 
@@ -8219,16 +8430,31 @@ document.addEventListener('DOMContentLoaded', function() {
             const email = escapeHtml(session.customer_email || '');
             const helpTopic = escapeHtml(getHelpTopicLabel(session.help_topic || ''));
             const preview = escapeHtml(String(session.last_message || '').slice(0, 68));
+            const rawAssigned = String(session.assigned_admin_name || '').trim();
+            const assigned = escapeHtml(rawAssigned);
+            const currentAdminName = String(Storage.getUser()?.username || '').trim();
             const activeClass = session.id === adminChatState.activeSessionId ? 'active' : '';
+
+            let assignAction = `<button type="button" class="btn btn-sm btn-secondary admin-chat-assign-btn" data-chat-assign="${escapeHtml(session.id)}">Assign to me</button>`;
+            if (rawAssigned) {
+                if (rawAssigned === currentAdminName) {
+                    assignAction = `<button type="button" class="btn btn-sm btn-secondary admin-chat-assign-btn" disabled>Taken by you</button>`;
+                } else {
+                    assignAction = `<button type="button" class="btn btn-sm btn-secondary admin-chat-assign-btn" disabled>Taken by ${assigned}</button>`;
+                }
+            }
+
             return `
-                <button type="button" class="admin-chat-session-item ${activeClass}" data-chat-session-id="${escapeHtml(session.id)}">
+                <div class="admin-chat-session-item ${activeClass}" data-chat-session-id="${escapeHtml(session.id)}" role="button" tabindex="0">
                     <div class="admin-chat-session-top">
                         <strong>${title}</strong>
                         ${unread > 0 ? `<span class="admin-chat-badge">${unread}</span>` : ''}
                     </div>
+                    ${assigned ? `<div class="admin-chat-session-meta">Assigned: ${assigned}</div>` : ''}
                     ${(email || helpTopic) ? `<div class="admin-chat-session-meta">${email}${email && helpTopic ? ' • ' : ''}${helpTopic}</div>` : ''}
                     <div class="admin-chat-session-last">${preview || 'No messages yet'}</div>
-                </button>
+                    <div class="admin-chat-session-actions">${assignAction}</div>
+                </div>
             `;
         }).join('');
     }
@@ -8240,7 +8466,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const label = session?.customer_name || session?.customer_email || session?.id || 'Chat session';
         const topic = getHelpTopicLabel(session?.help_topic || '');
-        headerEl.textContent = topic ? `Chat: ${label} (${topic})` : `Chat: ${label}`;
+        const assigned = session?.assigned_admin_name ? ` • Assigned: ${session.assigned_admin_name}` : '';
+        headerEl.textContent = topic ? `Chat: ${label} (${topic})${assigned}` : `Chat: ${label}${assigned}`;
+        refreshTakeChatButton(session || null);
 
         messagesEl.innerHTML = (messages || []).map((msg) => {
             const sender = msg.sender_type === 'admin' ? 'admin' : (msg.sender_type === 'bot' ? 'bot' : 'user');
@@ -8272,32 +8500,94 @@ document.addEventListener('DOMContentLoaded', function() {
         const toggleBtn = document.getElementById('supportChatToggle');
         const closeBtn = document.getElementById('supportChatClose');
         const panel = document.getElementById('supportChatPanel');
-        const intakeForm = document.getElementById('supportChatIntakeForm');
-        const intakeName = document.getElementById('supportChatName');
-        const intakeEmail = document.getElementById('supportChatEmail');
-        const intakeTopic = document.getElementById('supportChatTopic');
-        const intakeError = document.getElementById('supportChatIntakeError');
         const form = document.getElementById('supportChatForm');
         const input = document.getElementById('supportChatInput');
         const body = document.getElementById('supportChatBody');
 
-        if (!chatRoot || !toggleBtn || !closeBtn || !panel || !form || !input || !body || !intakeForm || !intakeName || !intakeEmail || !intakeTopic || !intakeError) return;
+        if (!chatRoot || !toggleBtn || !closeBtn || !panel || !form || !input || !body) return;
 
-        intakeName.value = supportChatState.profile.name || '';
-        intakeEmail.value = supportChatState.profile.email || '';
-        intakeTopic.value = supportChatState.profile.helpTopic || '';
+        const syncOnboardingPlaceholder = () => {
+            if (hasSupportChatProfile()) {
+                supportChatState.onboardingStage = 'done';
+                input.placeholder = 'Napis zpravu...';
+                input.maxLength = 220;
+                return;
+            }
 
-        const setChatMode = (mode) => {
-            const intakeVisible = mode === 'intake';
-            intakeForm.classList.toggle('hidden', !intakeVisible);
-            body.style.display = intakeVisible ? 'none' : 'flex';
-            form.style.display = intakeVisible ? 'none' : 'flex';
+            if (!supportChatState.profile.name) {
+                supportChatState.onboardingStage = 'name';
+                input.placeholder = 'Napište své jméno';
+                input.maxLength = 80;
+                return;
+            }
+
+            if (!supportChatState.profile.email) {
+                supportChatState.onboardingStage = 'email';
+                input.placeholder = 'Napište svůj e-mail';
+                input.maxLength = 120;
+                return;
+            }
+
+            if (!supportChatState.profile.helpTopic) {
+                supportChatState.onboardingStage = 'topic';
+                input.placeholder = 'Téma: oprava / stav / cena / sestava / 3d / jiné';
+                input.maxLength = 60;
+                return;
+            }
+
+            supportChatState.onboardingStage = 'done';
+            input.placeholder = 'Napis zpravu...';
+            input.maxLength = 220;
+        };
+
+        const processOnboardingStep = async (text) => {
+            if (supportChatState.onboardingStage === 'name') {
+                supportChatState.profile.name = text;
+                saveSupportChatProfile();
+                syncOnboardingPlaceholder();
+                renderSupportChatMessages([], null);
+                return true;
+            }
+
+            if (supportChatState.onboardingStage === 'email') {
+                const email = String(text || '').trim().toLowerCase();
+                const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+                if (!emailOk) {
+                    showToast('Zadejte prosím platný e-mail.');
+                    return true;
+                }
+                supportChatState.profile.email = email;
+                saveSupportChatProfile();
+                syncOnboardingPlaceholder();
+                renderSupportChatMessages([], null);
+                return true;
+            }
+
+            if (supportChatState.onboardingStage === 'topic') {
+                const topic = parseHelpTopicValue(text);
+                if (!topic) {
+                    showToast('Napište prosím jedno z témat: oprava, stav, cena, sestava, 3d, jiné.');
+                    return true;
+                }
+
+                supportChatState.profile.helpTopic = topic;
+                saveSupportChatProfile();
+                syncOnboardingPlaceholder();
+
+                await ensureSupportChatSession();
+                const result = await loadSupportChatMessages();
+                renderSupportChatMessages(result.messages || [], result.session || null);
+                return true;
+            }
+
+            return false;
         };
 
         const pollSupportChat = async () => {
             try {
-                const messages = await loadSupportChatMessages();
-                renderSupportChatMessages(messages);
+                if (!supportChatState.sessionId) return;
+                const result = await loadSupportChatMessages();
+                renderSupportChatMessages(result.messages || [], result.session || null);
             } catch {
                 // ignore polling failures
             }
@@ -8311,20 +8601,16 @@ document.addEventListener('DOMContentLoaded', function() {
             panel.inert = false;
             panel.setAttribute('aria-hidden', 'false');
             toggleBtn.setAttribute('aria-expanded', 'true');
-
-            if (!hasSupportChatProfile()) {
-                setChatMode('intake');
-                intakeError.textContent = '';
-                intakeName.focus();
-                return;
-            }
-
-            setChatMode('chat');
+            syncOnboardingPlaceholder();
 
             try {
-                await ensureSupportChatSession();
-                const messages = await loadSupportChatMessages();
-                renderSupportChatMessages(messages);
+                if (hasSupportChatProfile()) {
+                    await ensureSupportChatSession();
+                    const result = await loadSupportChatMessages();
+                    renderSupportChatMessages(result.messages || [], result.session || null);
+                } else {
+                    renderSupportChatMessages([], null);
+                }
             } catch (err) {
                 console.error('Support chat init failed:', err);
             }
@@ -8353,45 +8639,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
+        const closeAndResetChat = () => {
+            const confirmed = window.confirm('Do you want to close and clear this chat window for this user?');
+            if (!confirmed) return;
+
+            clearSupportChatLocalSession();
+            body.innerHTML = '';
+            input.value = '';
+            syncOnboardingPlaceholder();
+            closeChat();
+        };
+
         toggleBtn.addEventListener('click', () => {
             if (chatRoot.classList.contains('open')) closeChat();
             else openChat();
         });
 
-        closeBtn.addEventListener('click', closeChat);
-
-        intakeForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = String(intakeName.value || '').trim();
-            const email = String(intakeEmail.value || '').trim().toLowerCase();
-            const helpTopic = String(intakeTopic.value || '').trim();
-            const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-            if (!name || !emailOk || !helpTopic) {
-                intakeError.textContent = 'Vyplňte jméno, platný e-mail a vyberte téma.';
-                return;
-            }
-
-            supportChatState.profile = { name, email, helpTopic };
-            saveSupportChatProfile();
-            intakeError.textContent = '';
-            setChatMode('chat');
-
-            try {
-                await ensureSupportChatSession();
-                const messages = await loadSupportChatMessages();
-                renderSupportChatMessages(messages);
-                input.focus();
-
-                if (!supportChatState.pollId) {
-                    supportChatState.pollId = setInterval(pollSupportChat, 12000);
-                }
-            } catch (err) {
-                console.error('Support chat session init failed:', err);
-                intakeError.textContent = 'Nepodařilo se spustit chat. Zkuste to prosím znovu.';
-                setChatMode('intake');
-            }
-        });
+        closeBtn.addEventListener('click', closeAndResetChat);
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -8399,6 +8663,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!text) return;
 
             try {
+                const onboardingHandled = await processOnboardingStep(text);
+                if (onboardingHandled) {
+                    input.value = '';
+                    input.focus();
+
+                    if (hasSupportChatProfile() && !supportChatState.pollId) {
+                        supportChatState.pollId = setInterval(pollSupportChat, 12000);
+                    }
+                    return;
+                }
+
                 if (!supportChatState.sessionId) {
                     await ensureSupportChatSession();
                 }
@@ -8407,20 +8682,49 @@ document.addEventListener('DOMContentLoaded', function() {
                     senderName: supportChatState.profile.name || Storage.getUser()?.username || 'Visitor'
                 });
                 input.value = '';
-                renderSupportChatMessages(result.messages || []);
+                supportChatState.sessionMeta = result.session || supportChatState.sessionMeta;
+                renderSupportChatMessages(result.messages || [], result.session || null);
             } catch (err) {
                 console.error('Support chat send failed:', err);
                 showToast('Failed to send message');
             }
         });
+
+        syncOnboardingPlaceholder();
     }
 
     function initAdminChatInbox() {
         const sessionsEl = document.getElementById('adminChatSessions');
         const replyForm = document.getElementById('adminChatReplyForm');
         const replyInput = document.getElementById('adminChatReplyInput');
+        const takeChatBtn = document.getElementById('adminTakeChatBtn');
+
+        const takeChatSession = async (sessionId) => {
+            if (!sessionId) return;
+
+            const result = await apiCall('POST', `/chat/admin/sessions/${sessionId}/take`, {});
+            if (!result?.success) {
+                throw new Error(result?.message || 'Failed to take chat');
+            }
+
+            showToast(`Chat taken by ${result.session?.assigned_admin_name || 'current admin'}`);
+            await loadAdminChatSessions();
+            await openAdminChatSession(sessionId);
+        };
 
         sessionsEl?.addEventListener('click', async (event) => {
+            const assignBtn = event.target.closest('[data-chat-assign]');
+            if (assignBtn) {
+                const sessionId = assignBtn.getAttribute('data-chat-assign');
+                if (!sessionId) return;
+                try {
+                    await takeChatSession(sessionId);
+                } catch (err) {
+                    showToast(err?.message || 'Failed to take chat');
+                }
+                return;
+            }
+
             const item = event.target.closest('[data-chat-session-id]');
             if (!item) return;
             const sessionId = item.getAttribute('data-chat-session-id');
@@ -8450,9 +8754,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        takeChatBtn?.addEventListener('click', async () => {
+            const sessionId = takeChatBtn.dataset.sessionId || adminChatState.activeSessionId;
+            if (!sessionId) return;
+
+            try {
+                await takeChatSession(sessionId);
+            } catch (err) {
+                showToast(err?.message || 'Failed to take chat');
+            }
+        });
+
         if (adminChatState.pollId) clearInterval(adminChatState.pollId);
         adminChatState.pollId = setInterval(async () => {
-            if (!Storage.getToken() || !canAccessAdmin(Storage.getUser()?.role)) return;
+            if (!Storage.getToken() || !canAccessAdmin(Storage.getUser())) return;
             const chatsTabActive = document.getElementById('chats-content')?.classList.contains('active');
             if (!chatsTabActive) return;
             await loadAdminChatSessions();

@@ -6,6 +6,17 @@
 const jwt = require('jsonwebtoken');
 const { db } = require('../config/database');
 
+const parsePermissions = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.filter(Boolean);
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+        return [];
+    }
+};
+
 /**
  * Verify JWT token and attach user to request
  */
@@ -24,7 +35,7 @@ const verifyToken = async (req, res, next) => {
         
         // Get user from database
         const user = await db.getAsync(
-            'SELECT id, username, email, role FROM users WHERE id = ?',
+            'SELECT id, username, email, role, permissions FROM users WHERE id = ?',
             [decoded.id]
         );
 
@@ -35,7 +46,10 @@ const verifyToken = async (req, res, next) => {
             });
         }
 
-        req.user = user;
+        req.user = {
+            ...user,
+            permissions: parsePermissions(user.permissions)
+        };
         next();
     } catch (err) {
         return res.status(401).json({ 
