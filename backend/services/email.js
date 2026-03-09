@@ -179,7 +179,8 @@ async function sendMailWithRetry(mailOptions, context = 'Email', maxAttempts = 3
                 },
                 body: JSON.stringify({
                     sender: {
-                        email: mailOptions.from || brevoFrom,
+                        // Brevo requires a validated sender; prefer BREVO_FROM_EMAIL explicitly.
+                        email: brevoFrom || mailOptions.from,
                         name: brevoSenderName
                     },
                     to: toList,
@@ -214,7 +215,7 @@ async function sendMailWithRetry(mailOptions, context = 'Email', maxAttempts = 3
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    from: mailOptions.from || resendFrom,
+                    from: resendFrom || mailOptions.from,
                     to: toList,
                     subject: mailOptions.subject,
                     html: mailOptions.html
