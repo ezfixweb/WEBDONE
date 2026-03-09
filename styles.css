@@ -2958,6 +2958,88 @@ body.has-announcement .hero {
     cursor: pointer;
 }
 
+.chat-close-confirm {
+    position: fixed;
+    inset: 0;
+    z-index: 2400;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.chat-close-confirm.show {
+    display: flex;
+}
+
+.chat-close-confirm-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(9, 8, 27, 0.62);
+    backdrop-filter: blur(4px);
+}
+
+.chat-close-confirm-dialog {
+    position: relative;
+    width: min(92vw, 460px);
+    border-radius: 16px;
+    border: 1px solid rgba(132, 106, 255, 0.5);
+    background: linear-gradient(150deg, #18153d 0%, #23195c 52%, #2e1f71 100%);
+    color: #fff;
+    box-shadow: 0 28px 64px rgba(9, 8, 27, 0.55);
+    padding: 18px 18px 16px;
+    animation: chatConfirmIn 0.2s ease-out;
+}
+
+.chat-close-confirm-dialog h3 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.chat-close-confirm-dialog p {
+    margin: 9px 0 0;
+    color: rgba(245, 240, 255, 0.94);
+    line-height: 1.45;
+}
+
+.chat-close-confirm-actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+}
+
+.chat-close-btn {
+    border-radius: 10px;
+    border: 1px solid transparent;
+    padding: 9px 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.chat-close-btn-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f6f2ff;
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
+.chat-close-btn-confirm {
+    background: linear-gradient(135deg, #8d6dff 0%, #643fff 100%);
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(100, 63, 255, 0.44);
+}
+
+@keyframes chatConfirmIn {
+    from {
+        transform: translateY(8px) scale(0.98);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
 @keyframes supportChatPulse {
     0% {
         transform: scale(0.96);

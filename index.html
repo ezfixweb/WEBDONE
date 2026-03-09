@@ -2444,6 +2444,18 @@
         </div>
     </div>
 
+    <div class="chat-close-confirm" id="chatCloseConfirm" aria-hidden="true">
+        <div class="chat-close-confirm-backdrop" id="chatCloseConfirmBackdrop"></div>
+        <div class="chat-close-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="chatCloseConfirmTitle" aria-describedby="chatCloseConfirmText">
+            <h3 id="chatCloseConfirmTitle">Zavřít chat?</h3>
+            <p id="chatCloseConfirmText">Chcete zavřít a vymazat toto chatovací okno pro tohoto uživatele?</p>
+            <div class="chat-close-confirm-actions">
+                <button type="button" class="chat-close-btn chat-close-btn-cancel" id="chatCloseConfirmCancel">Zrušit</button>
+                <button type="button" class="chat-close-btn chat-close-btn-confirm" id="chatCloseConfirmOk">Zavřít a vymazat</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         window.EZFIX_CONFIG = {
             // Single source of truth for API base URL.

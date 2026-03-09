@@ -1797,8 +1797,17 @@ document.addEventListener('DOMContentLoaded', function() {
         deviceSelect.innerHTML = serviceKeys.map(key => `<option value="${key}">${formatLabel(key)}</option>`).join('');
         deviceSelect.value = catalogUiState.deviceKey;
 
+        const catalogTextSorter = new Intl.Collator('cs', { numeric: true, sensitivity: 'base' });
+        const sortByName = (a, b) => {
+            const left = String((a && a.name) || '').trim();
+            const right = String((b && b.name) || '').trim();
+            return catalogTextSorter.compare(left, right);
+        };
+        const normalizeModelName = (record) => String(typeof record === 'string' ? record : (record && record.name) || '').trim();
+
         const device = catalogDraft.services[catalogUiState.deviceKey] || {};
         const brands = device.brands || [];
+        brands.sort(sortByName);
 
         brandSelect.innerHTML = brands.map(brand => `<option value="${brand.id}">${brand.name}</option>`).join('');
         if (!brands.find(b => b.id === catalogUiState.brandId) && brands.length) {
@@ -1829,6 +1838,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const models = device.models && device.models[catalogUiState.brandId]
             ? device.models[catalogUiState.brandId]
             : [];
+        models.sort((a, b) => catalogTextSorter.compare(normalizeModelName(a), normalizeModelName(b)));
 
         modelList.innerHTML = models.map((model, index) => {
             const modelName = typeof model === 'string' ? model : (model.name || '');
@@ -8585,8 +8595,52 @@ document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('supportChatForm');
         const input = document.getElementById('supportChatInput');
         const body = document.getElementById('supportChatBody');
+        const closeConfirmModal = document.getElementById('chatCloseConfirm');
+        const closeConfirmBackdrop = document.getElementById('chatCloseConfirmBackdrop');
+        const closeConfirmCancel = document.getElementById('chatCloseConfirmCancel');
+        const closeConfirmOk = document.getElementById('chatCloseConfirmOk');
 
         if (!chatRoot || !toggleBtn || !closeBtn || !panel || !form || !input || !body) return;
+
+        let closeConfirmResolver = null;
+
+        const resolveCloseConfirm = (value) => {
+            if (!closeConfirmModal || !closeConfirmResolver) return;
+            closeConfirmModal.classList.remove('show');
+            closeConfirmModal.setAttribute('aria-hidden', 'true');
+            const resolver = closeConfirmResolver;
+            closeConfirmResolver = null;
+            resolver(Boolean(value));
+        };
+
+        const promptCloseAndClearChat = () => {
+            if (!closeConfirmModal) {
+                return Promise.resolve(window.confirm('Do you want to close and clear this chat window for this user?'));
+            }
+
+            if (closeConfirmResolver) {
+                resolveCloseConfirm(false);
+            }
+
+            closeConfirmModal.classList.add('show');
+            closeConfirmModal.setAttribute('aria-hidden', 'false');
+            closeConfirmCancel?.focus();
+
+            return new Promise((resolve) => {
+                closeConfirmResolver = resolve;
+            });
+        };
+
+        closeConfirmBackdrop?.addEventListener('click', () => resolveCloseConfirm(false));
+        closeConfirmCancel?.addEventListener('click', () => resolveCloseConfirm(false));
+        closeConfirmOk?.addEventListener('click', () => resolveCloseConfirm(true));
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && closeConfirmModal?.classList.contains('show')) {
+                event.preventDefault();
+                resolveCloseConfirm(false);
+            }
+        });
 
         const syncOnboardingPlaceholder = () => {
             if (hasSupportChatProfile()) {
@@ -8721,8 +8775,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
-        const closeAndResetChat = () => {
-            const confirmed = window.confirm('Do you want to close and clear this chat window for this user?');
+        const closeAndResetChat = async () => {
+            const confirmed = await promptCloseAndClearChat();
             if (!confirmed) return;
 
             clearSupportChatLocalSession();
