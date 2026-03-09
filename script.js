@@ -1785,6 +1785,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.buildAdminEmailDraft = buildAdminEmailDraft;
 
+    const catalogTextSorter = new Intl.Collator('cs', { numeric: true, sensitivity: 'base' });
+    const catalogSortByText = (left, right) => catalogTextSorter.compare(String(left || '').trim(), String(right || '').trim());
+    const catalogSortByName = (a, b) => {
+        const left = String(((a && a.name) || (a && a.id) || '').trim());
+        const right = String(((b && b.name) || (b && b.id) || '').trim());
+        return catalogTextSorter.compare(left, right);
+    };
+    const catalogNormalizeModelName = (record) => String(typeof record === 'string' ? record : (record && (record.name || record.id)) || '').trim();
+
     function renderCatalogRepairs() {
         const deviceSelect = document.getElementById('catalogDeviceSelect');
         const brandList = document.getElementById('catalogBrandList');
@@ -1793,21 +1802,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const repairList = document.getElementById('catalogRepairList');
         if (!deviceSelect || !brandList || !brandSelect || !modelList || !repairList) return;
 
-        const serviceKeys = getServiceKeys();
+        const serviceKeys = getServiceKeys().slice().sort(catalogSortByText);
         deviceSelect.innerHTML = serviceKeys.map(key => `<option value="${key}">${formatLabel(key)}</option>`).join('');
         deviceSelect.value = catalogUiState.deviceKey;
 
-        const catalogTextSorter = new Intl.Collator('cs', { numeric: true, sensitivity: 'base' });
-        const sortByName = (a, b) => {
-            const left = String((a && a.name) || '').trim();
-            const right = String((b && b.name) || '').trim();
-            return catalogTextSorter.compare(left, right);
-        };
-        const normalizeModelName = (record) => String(typeof record === 'string' ? record : (record && record.name) || '').trim();
-
         const device = catalogDraft.services[catalogUiState.deviceKey] || {};
         const brands = device.brands || [];
-        brands.sort(sortByName);
+        brands.sort(catalogSortByName);
 
         brandSelect.innerHTML = brands.map(brand => `<option value="${brand.id}">${brand.name}</option>`).join('');
         if (!brands.find(b => b.id === catalogUiState.brandId) && brands.length) {
@@ -1838,7 +1839,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const models = device.models && device.models[catalogUiState.brandId]
             ? device.models[catalogUiState.brandId]
             : [];
-        models.sort((a, b) => catalogTextSorter.compare(normalizeModelName(a), normalizeModelName(b)));
+        models.sort((a, b) => catalogTextSorter.compare(catalogNormalizeModelName(a), catalogNormalizeModelName(b)));
 
         modelList.innerHTML = models.map((model, index) => {
             const modelName = typeof model === 'string' ? model : (model.name || '');
@@ -1861,6 +1862,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
 
         const repairs = device.repairs || [];
+        repairs.sort(catalogSortByName);
         repairList.innerHTML = repairs.map((repair, index) => `
             <div class="catalog-item" data-index="${index}" data-type="repair">
                 <div>
@@ -1993,12 +1995,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const list = document.getElementById('catalogBuildList');
         if (!categorySelect || !list) return;
 
-        const categories = getBuildCategories();
+        const categories = getBuildCategories().slice().sort(catalogSortByText);
         categorySelect.innerHTML = categories.map(key => `<option value="${key}">${formatLabel(key)}</option>`).join('');
         categorySelect.value = catalogUiState.buildCategory || categories[0] || '';
         catalogUiState.buildCategory = categorySelect.value;
 
         const items = catalogDraft.customBuilds[catalogUiState.buildCategory] || [];
+        items.sort(catalogSortByName);
         list.innerHTML = items.map((item, index) => `
             <div class="catalog-item" data-index="${index}">
                 <div>
@@ -2069,6 +2072,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const printers = catalogDraft.printing.printers || [];
         const filaments = catalogDraft.printing.filaments || [];
         const colors = catalogDraft.printing.colors || [];
+
+        printers.sort(catalogSortByName);
+        filaments.sort(catalogSortByName);
+        colors.sort(catalogSortByName);
 
         printersList.innerHTML = printers.map((item, index) => `
             <div class="catalog-item" data-index="${index}" data-type="printer">
@@ -2180,6 +2187,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!list) return;
 
         const items = catalogDraft.printing.otherItems || [];
+        items.sort(catalogSortByName);
 
         list.innerHTML = items.map((item, index) => `
             <div class="catalog-item" data-index="${index}" data-type="other-item">
