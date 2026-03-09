@@ -6,6 +6,13 @@
 const nodemailer = require('nodemailer');
 const dns = require('dns');
 
+try {
+    // Render instances sometimes return IPv6 first for SMTP hosts even when IPv6 routing is unavailable.
+    dns.setDefaultResultOrder('ipv4first');
+} catch {
+    // Ignore on Node versions that do not support this API.
+}
+
 const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER || '';
 const emailPassword = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.SMTP_PASS || '';
 const smtpHost = process.env.SMTP_HOST;
@@ -14,7 +21,15 @@ const smtpSecureEnv = String(process.env.SMTP_SECURE || '').toLowerCase();
 const smtpSecure = smtpSecureEnv ? smtpSecureEnv === 'true' : smtpPort === 465;
 const smtpFamily = Number(process.env.SMTP_FAMILY || 4);
 const smtpFrom = process.env.SMTP_FROM || process.env.EMAIL_FROM || emailUser || 'noreply@ezfix.com';
-const emailConfigured = Boolean(emailUser && emailPassword);
+const resendApiKey = String(process.env.RESEND_API_KEY || '').trim();
+const resendFrom = String(process.env.RESEND_FROM_EMAIL || smtpFrom || '').trim();
+const brevoApiKey = String(process.env.BREVO_API_KEY || '').trim();
+const brevoFrom = String(process.env.BREVO_FROM_EMAIL || smtpFrom || '').trim();
+const brevoSenderName = String(process.env.BREVO_SENDER_NAME || 'EzFix').trim();
+const resendConfigured = Boolean(resendApiKey && resendFrom);
+const brevoConfigured = Boolean(brevoApiKey && brevoFrom);
+const smtpConfigured = Boolean(emailUser && emailPassword);
+const emailConfigured = brevoConfigured || resendConfigured || smtpConfigured;
 const preferredSmtpFamily = Number.isNaN(smtpFamily) ? 4 : smtpFamily;
 
 function smtpLookup(hostname, options, callback) {
@@ -107,13 +122,19 @@ const transporter = nodemailer.createTransport(
 );
 
 const effectiveSmtpHost = smtpHost || 'smtp.gmail.com';
-const effectiveSmtpMode = smtpHost ? 'custom-smtp' : 'gmail-smtp';
+const effectiveSmtpMode = brevoConfigured
+    ? 'brevo-api'
+    : (resendConfigured ? 'resend-api' : (smtpHost ? 'custom-smtp' : 'gmail-smtp'));
 console.log(
     `[EMAIL] Transport config: mode=${effectiveSmtpMode}, host=${effectiveSmtpHost}, port=${smtpPort}, secure=${smtpSecure}, family=${preferredSmtpFamily}, configured=${emailConfigured}`
 );
 
 // Verify transporter on startup to surface auth/connectivity issues early
-if (emailConfigured) {
+if (brevoConfigured) {
+    console.log('[EMAIL] Brevo API configured. Ready to send emails over HTTPS.');
+} else if (resendConfigured) {
+    console.log('[EMAIL] Resend API configured. Ready to send emails over HTTPS.');
+} else if (smtpConfigured) {
     transporter.verify()
         .then(() => {
             console.log('[EMAIL] SMTP transporter verified. Ready to send emails.');
@@ -122,7 +143,7 @@ if (emailConfigured) {
             console.error('[EMAIL] SMTP transporter verification failed:', err && err.message ? err.message : err);
         });
 } else {
-    console.error('[EMAIL] SMTP is not configured. Set EMAIL_USER and EMAIL_PASSWORD (or EMAIL_PASS/SMTP_USER/SMTP_PASS).');
+    console.error('[EMAIL] Email is not configured. Set BREVO_API_KEY+BREVO_FROM_EMAIL, RESEND_API_KEY+RESEND_FROM_EMAIL, or SMTP credentials.');
 }
 
 function ensureEmailConfigured(actionName) {
@@ -138,10 +159,84 @@ function ensureEmailConfigured(actionName) {
 }
 
 async function sendMailWithRetry(mailOptions, context = 'Email', maxAttempts = 3) {
+    const sendOnce = async () => {
+        if (brevoConfigured) {
+            const toList = String(mailOptions.to || '')
+                .split(',')
+                .map(email => email.trim())
+                .filter(Boolean)
+                .map(email => ({ email }));
+
+            if (toList.length === 0) {
+                throw new Error('Missing recipient address');
+            }
+
+            const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'api-key': brevoApiKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sender: {
+                        email: mailOptions.from || brevoFrom,
+                        name: brevoSenderName
+                    },
+                    to: toList,
+                    subject: mailOptions.subject,
+                    htmlContent: mailOptions.html
+                })
+            });
+
+            if (!response.ok) {
+                const bodyText = await response.text();
+                throw new Error(`Brevo API ${response.status}: ${bodyText}`);
+            }
+
+            const data = await response.json();
+            return { messageId: data?.messageId || null, response: 'brevo-api' };
+        }
+
+        if (resendConfigured) {
+            const toList = String(mailOptions.to || '')
+                .split(',')
+                .map(email => email.trim())
+                .filter(Boolean);
+
+            if (toList.length === 0) {
+                throw new Error('Missing recipient address');
+            }
+
+            const response = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${resendApiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    from: mailOptions.from || resendFrom,
+                    to: toList,
+                    subject: mailOptions.subject,
+                    html: mailOptions.html
+                })
+            });
+
+            if (!response.ok) {
+                const bodyText = await response.text();
+                throw new Error(`Resend API ${response.status}: ${bodyText}`);
+            }
+
+            const data = await response.json();
+            return { messageId: data?.id || null, response: 'resend-api' };
+        }
+
+        return transporter.sendMail(mailOptions);
+    };
+
     let lastError = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
         try {
-            const info = await transporter.sendMail(mailOptions);
+            const info = await sendOnce();
             if (attempt > 1) {
                 console.warn(`[EMAIL] ${context} sent on retry attempt ${attempt}.`);
             }
@@ -605,7 +700,9 @@ module.exports = {
     getEmailDiagnostics: async () => {
         let verifyOk = false;
         let verifyError = null;
-        if (emailConfigured) {
+        if (resendConfigured) {
+            verifyOk = true;
+        } else if (smtpConfigured) {
             try {
                 await transporter.verify();
                 verifyOk = true;
@@ -616,12 +713,16 @@ module.exports = {
 
         return {
             configured: emailConfigured,
-            mode: smtpHost ? 'custom-smtp' : 'gmail-service',
+            mode: brevoConfigured
+                ? 'brevo-api'
+                : (resendConfigured ? 'resend-api' : (smtpHost ? 'custom-smtp' : 'gmail-service')),
             smtpHost: smtpHost || null,
             smtpPort,
             smtpSecure,
             smtpFrom,
             authUser: emailUser || null,
+            brevoFrom: brevoFrom || null,
+            resendFrom: resendFrom || null,
             verifyOk,
             verifyError
         };

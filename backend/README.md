@@ -31,6 +31,26 @@ PGSSL=true
 JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
 JWT_EXPIRE=7d
 CORS_ORIGIN=http://localhost:8000
+
+# Email (choose one method)
+# Brevo API (recommended)
+BREVO_API_KEY=
+BREVO_FROM_EMAIL=podpora@ezfix.cz
+BREVO_SENDER_NAME=EzFix
+
+# Resend API
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+
+# SMTP fallback
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=your-email@gmail.com
+
 BOOTSTRAP_ADMIN_USERNAME=admin
 BOOTSTRAP_ADMIN_PASSWORD=change-this-strong-password
 OWNER_USERNAME=
