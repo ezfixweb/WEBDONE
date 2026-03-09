@@ -8163,10 +8163,16 @@ document.addEventListener('DOMContentLoaded', function() {
         body.innerHTML = '';
 
         if (!Array.isArray(messages) || messages.length === 0) {
-            const item = document.createElement('div');
-            item.className = 'support-msg bot';
-            item.textContent = 'Ahoj! Napis zpravu a EzFix AI i admin tym ti odpovi.';
-            body.appendChild(item);
+            const intro = document.createElement('div');
+            intro.className = 'support-msg bot';
+            intro.textContent = 'Ahoj, jsem EzFix AI asistent. Nejdriv zkousim rychle pomoct automaticky a potom se vam ozve nas tym co nejdriv.';
+
+            const questions = document.createElement('div');
+            questions.className = 'support-msg bot';
+            questions.textContent = 'Napis prosim: 1) jake zarizeni mate, 2) co presne nefunguje, 3) od kdy problem trva, 4) jestli mate cislo objednavky.';
+
+            body.appendChild(intro);
+            body.appendChild(questions);
             return;
         }
 

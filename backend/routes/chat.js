@@ -13,18 +13,18 @@ function buildAiReply(userText = '') {
     const text = String(userText || '').toLowerCase();
 
     if (/(email|mail|kontakt)/.test(text)) {
-        return 'Kontaktujte nas na podpora@ezfix.cz. Radi pomuzeme.';
+        return 'Muzete nas kontaktovat na podpora@ezfix.cz. Pokud chcete, napiste sem i typ zarizeni a problem a nas tym se vam ozve co nejdriv.';
     }
     if (/(telefon|phone|volat|call)/.test(text)) {
-        return 'Telefon na majitele: +420 732 434 201.';
+        return 'Telefon na majitele: +420 732 434 201. Muzete take pokracovat tady v chatu a nas tym vam odpovi co nejdrive.';
     }
     if (/(cena|price|kolik)/.test(text)) {
-        return 'Napis nam typ zarizeni a zavadu, pripravime orientacni cenu.';
+        return 'Pro orientacni cenu napiste: typ zarizeni, model a zavadu. Nas tym vam pripravi odhad a ozve se co nejdriv.';
     }
     if (/(oprava|repair|servis|service)/.test(text)) {
-        return 'Popiste prosim zarizeni a problem. Nasi technici odpovi co nejdrive.';
+        return 'Popiste prosim zarizeni, problem a od kdy trva. Nasi technici se vam ozvou co nejdriv.';
     }
-    return 'Dekuji za zpravu. Tym EzFix vam odpovi co nejdrive.';
+    return 'Dekujeme za zpravu. Pro rychlejsi pomoc muzete doplnit typ zarizeni, model a popis problemu. Tym EzFix se vam ozve co nejdriv.';
 }
 
 async function ensureSession(sessionId, visitorId, name, email, helpTopic) {
