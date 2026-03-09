@@ -5378,6 +5378,66 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function createLoginProgressController() {
+        const modal = document.getElementById('loginProgressModal');
+        const titleEl = document.getElementById('loginProgressTitle');
+        const textEl = document.getElementById('loginProgressText');
+        const fillEl = document.getElementById('loginProgressFill');
+        const stepEls = Array.from(document.querySelectorAll('#loginProgressSteps .login-progress-step'));
+
+        if (!modal || !titleEl || !textEl || !fillEl || stepEls.length === 0) {
+            return {
+                show: () => {},
+                update: () => {},
+                complete: () => {},
+                error: () => {},
+                hide: () => {}
+            };
+        }
+
+        const percentages = [18, 58, 100];
+
+        const updateStepClasses = (stepIndex) => {
+            stepEls.forEach((el, index) => {
+                el.classList.remove('active', 'done');
+                if (index < stepIndex) el.classList.add('done');
+                if (index === stepIndex) el.classList.add('active');
+            });
+        };
+
+        return {
+            show(title = 'Signing you in', text = 'Preparing secure login...') {
+                titleEl.textContent = title;
+                textEl.textContent = text;
+                fillEl.style.width = '0%';
+                updateStepClasses(0);
+                modal.classList.remove('hidden');
+                modal.setAttribute('aria-hidden', 'false');
+            },
+            update(step = 1, text = '') {
+                const idx = Math.max(0, Math.min(2, Number(step) - 1));
+                if (text) textEl.textContent = text;
+                fillEl.style.width = `${percentages[idx]}%`;
+                updateStepClasses(idx);
+            },
+            complete(text = 'Done. Redirecting...') {
+                textEl.textContent = text;
+                fillEl.style.width = '100%';
+                stepEls.forEach(el => {
+                    el.classList.remove('active');
+                    el.classList.add('done');
+                });
+            },
+            error(text = 'Login failed') {
+                textEl.textContent = text;
+            },
+            hide() {
+                modal.classList.add('hidden');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+        };
+    }
+
     /**
      * Handle user/admin login via API
      * @param {Event} e - Form submission event
@@ -5389,28 +5449,39 @@ document.addEventListener('DOMContentLoaded', function() {
         const errorDiv = document.getElementById('loginError');
         const btn = e.target.querySelector('button[type="submit"]');
         const originalText = btn.textContent;
+        const progress = createLoginProgressController();
 
         try {
             btn.disabled = true;
             btn.textContent = t('Logging in...');
             errorDiv.textContent = '';
+            progress.show('Signing you in', 'Step 1/3: Verifying credentials...');
+            progress.update(1, 'Step 1/3: Verifying credentials...');
 
             const result = await apiCall('POST', '/auth/login', { username, password });
+            progress.update(2, 'Step 2/3: Loading account permissions...');
             
             // Store token and user info
             Storage.setToken(result.token);
             Storage.setUser(result.user);
             Storage.setAdminLoggedIn(canAccessAdmin(result.user));
+
+            progress.update(3, 'Step 3/3: Preparing dashboard...');
             
             hideLoginModal();
             updateAuthUI();
             document.getElementById('loginForm').reset();
             showToast('Login successful');
+            progress.complete('Login successful. Redirecting...');
+            await new Promise(resolve => setTimeout(resolve, 260));
             showPage(canAccessAdmin(result.user) ? 'admin' : 'home');
         } catch (error) {
             errorDiv.textContent = t(error.message || 'Invalid username or password');
             console.error('Login error:', error);
+            progress.error(t(error.message || 'Login failed'));
+            await new Promise(resolve => setTimeout(resolve, 480));
         } finally {
+            progress.hide();
             btn.disabled = false;
             btn.textContent = originalText;
         }
@@ -8065,18 +8136,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const username = document.getElementById('authLoginUsername')?.value.trim();
         const password = document.getElementById('authLoginPassword')?.value || '';
         const message = document.getElementById('authLoginMessage');
+        const progress = createLoginProgressController();
         if (message) message.textContent = '';
 
         try {
+            progress.show('Signing you in', 'Step 1/3: Verifying credentials...');
+            progress.update(1, 'Step 1/3: Verifying credentials...');
             const result = await apiCall('POST', '/auth/login', { username, password });
+            progress.update(2, 'Step 2/3: Loading account permissions...');
             Storage.setToken(result.token);
             Storage.setUser(result.user);
             Storage.setAdminLoggedIn(canAccessAdmin(result.user));
             updateAuthUI();
+            progress.update(3, 'Step 3/3: Preparing your page...');
             showToast('Login successful');
+            progress.complete('Login successful. Redirecting...');
+            await new Promise(resolve => setTimeout(resolve, 260));
             showPage(canAccessAdmin(result.user) ? 'admin' : 'home');
         } catch (error) {
             if (message) message.textContent = t(error.message || 'Login failed');
+            progress.error(t(error.message || 'Login failed'));
+            await new Promise(resolve => setTimeout(resolve, 480));
+        } finally {
+            progress.hide();
         }
     });
 

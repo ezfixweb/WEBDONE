@@ -152,6 +152,21 @@
         </div>
     </div>
 
+    <div class="login-progress-modal hidden" id="loginProgressModal" aria-hidden="true">
+        <div class="login-progress-box" role="status" aria-live="polite">
+            <h3 id="loginProgressTitle">Signing you in</h3>
+            <p id="loginProgressText">Preparing secure login...</p>
+            <div class="login-progress-steps" id="loginProgressSteps">
+                <div class="login-progress-step" data-step="1">1</div>
+                <div class="login-progress-step" data-step="2">2</div>
+                <div class="login-progress-step" data-step="3">3</div>
+            </div>
+            <div class="login-progress-track" aria-hidden="true">
+                <div class="login-progress-fill" id="loginProgressFill"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Email Modal -->
     <div class="email-modal hidden" id="emailModal" style="display:none;">
         <div class="email-modal-overlay"></div>
