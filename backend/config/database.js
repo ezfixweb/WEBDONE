@@ -6,7 +6,31 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
-const connectionString = process.env.DATABASE_URL || '';
+function normalizeConnectionString(rawConnectionString) {
+    if (!rawConnectionString) return '';
+
+    try {
+        const parsed = new URL(rawConnectionString);
+        const sslMode = (parsed.searchParams.get('sslmode') || '').toLowerCase();
+        const hasLibpqCompat = parsed.searchParams.has('uselibpqcompat');
+
+        if (sslMode === 'require' && !hasLibpqCompat) {
+            parsed.searchParams.set('uselibpqcompat', 'true');
+            return parsed.toString();
+        }
+
+        return rawConnectionString;
+    } catch {
+        // Fallback for non-standard connection strings.
+        if (/sslmode=require/i.test(rawConnectionString) && !/uselibpqcompat=/i.test(rawConnectionString)) {
+            const separator = rawConnectionString.includes('?') ? '&' : '?';
+            return `${rawConnectionString}${separator}uselibpqcompat=true`;
+        }
+        return rawConnectionString;
+    }
+}
+
+const connectionString = normalizeConnectionString(process.env.DATABASE_URL || '');
 const shouldUseSsl =
     process.env.PGSSL === 'true' ||
     process.env.PGSSLMODE === 'require' ||
