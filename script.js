@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'Unclaimed devices may be disposed of after 60 days.': 'Nevyzvednuta zarizeni mohou byt po 60 dnech zlikvidovana.',
             'If you have questions, contact support before submitting your order.': 'Mate-li dotazy, kontaktujte podporu pred odeslanim objednavky.',
             'Order Details': 'Detaily objednavky',
-            'Loading...': 'Nacitam...',
+            'Loading...': 'Načítání...',
             'Part Details': 'Detaily dilu',
             'Specifications': 'Specifikace',
             'Scroll thumbnails left': 'Posunout nahledy doleva',
