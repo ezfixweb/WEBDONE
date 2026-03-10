@@ -8528,13 +8528,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function parseHelpTopicValue(rawValue) {
         const value = String(rawValue || '').trim().toLowerCase();
+        const normalized = value
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9-]/g, '');
         if (!value) return '';
-        if (['repair-service', 'oprava', 'oprava-zarizeni', 'servis', 'service', 'repair'].includes(value)) return 'repair-service';
-        if (['order-status', 'stav', 'stav-objednavky', 'objednavka', 'order'].includes(value)) return 'order-status';
-        if (['pricing', 'cena', 'ceny', 'price', 'nabidka'].includes(value)) return 'pricing';
-        if (['custom-build', 'sestava', 'server', 'build'].includes(value)) return 'custom-build';
-        if (['3d-printing', '3d', 'tisk', '3d-tisk', 'printing'].includes(value)) return '3d-printing';
-        if (['other', 'jine', 'jine-pomoc'].includes(value)) return 'other';
+        if (['repair-service', 'oprava', 'oprava-zarizeni', 'servis', 'service', 'repair'].includes(normalized)) return 'repair-service';
+        if (['order-status', 'stav', 'stav-objednavky', 'objednavka', 'order'].includes(normalized)) return 'order-status';
+        if (['pricing', 'cena', 'ceny', 'price', 'nabidka'].includes(normalized)) return 'pricing';
+        if (['custom-build', 'sestava', 'server', 'build'].includes(normalized)) return 'custom-build';
+        if (['3d-printing', '3d', 'tisk', '3d-tisk', 'printing'].includes(normalized)) return '3d-printing';
+        if (['other', 'jine', 'jine-pomoc'].includes(normalized)) return 'other';
         return '';
     }
 
@@ -8547,7 +8551,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderSupportChatHeader(session = null) {
-        const titleEl = document.getElementById('supportChatHeaderTitle');
+        const titleEl = document.getElementById('supportChatHeaderTitle') || document.querySelector('.support-chat-header strong');
         if (!titleEl) return;
 
         const assignedAdmin = String(session?.assigned_admin_name || supportChatState.sessionMeta?.assigned_admin_name || '').trim();
