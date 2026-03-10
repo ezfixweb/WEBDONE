@@ -200,6 +200,7 @@ router.get('/admin/sessions', verifyToken, verifyOrderManager, async (req, res) 
                   AND cm2.is_read_admin = FALSE
                   AND cm2.sender_type IN ('user', 'bot')
              ) unread ON TRUE
+               WHERE COALESCE(s.status, 'open') <> 'closed'
              ORDER BY s.last_message_at DESC, s.created_at DESC`
         );
 
@@ -325,6 +326,57 @@ router.post('/admin/sessions/:sessionId/reply', verifyToken, verifyOrderManager,
     } catch (err) {
         console.error('Admin reply chat error:', err);
         res.status(500).json({ success: false, message: 'Failed to send reply', error: err.message });
+    }
+});
+
+router.post('/admin/sessions/:sessionId/close', verifyToken, verifyOrderManager, async (req, res) => {
+    try {
+        const sessionId = String(req.params.sessionId || '').trim();
+        if (!sessionId) {
+            return res.status(400).json({ success: false, message: 'Session ID is required' });
+        }
+
+        const session = await db.getAsync('SELECT * FROM chat_sessions WHERE id = ?', [sessionId]);
+        if (!session) {
+            return res.status(404).json({ success: false, message: 'Session not found' });
+        }
+
+        const currentAdmin = String(req.user?.username || 'Admin').trim();
+        const assignedAdmin = String(session.assigned_admin_name || '').trim();
+        if (assignedAdmin && assignedAdmin !== currentAdmin) {
+            return res.status(409).json({ success: false, message: `Chat is taken by ${assignedAdmin}` });
+        }
+
+        const closingText = `Chat byl ukončen administrátorem ${currentAdmin}. Děkujeme za kontakt.`;
+        const ratingToken = `__RATE_ADMIN__:${currentAdmin}`;
+
+        await db.runAsync(
+            `INSERT INTO chat_messages (session_id, sender_type, sender_name, message, is_read_admin, is_read_user)
+             VALUES (?, 'admin', ?, ?, TRUE, FALSE)`,
+            [sessionId, currentAdmin, closingText]
+        );
+
+        await db.runAsync(
+            `INSERT INTO chat_messages (session_id, sender_type, sender_name, message, is_read_admin, is_read_user)
+             VALUES (?, 'admin', ?, ?, TRUE, FALSE)`,
+            [sessionId, currentAdmin, ratingToken]
+        );
+
+        await db.runAsync(
+            `UPDATE chat_sessions
+             SET status = 'closed',
+                 updated_at = CURRENT_TIMESTAMP,
+                 last_message_at = CURRENT_TIMESTAMP,
+                 assigned_admin_id = COALESCE(assigned_admin_id, ?),
+                 assigned_admin_name = COALESCE(NULLIF(assigned_admin_name, ''), ?)
+             WHERE id = ?`,
+            [req.user?.id || null, currentAdmin, sessionId]
+        );
+
+        res.json({ success: true, message: 'Chat closed' });
+    } catch (err) {
+        console.error('Close chat session error:', err);
+        res.status(500).json({ success: false, message: 'Failed to close chat session', error: err.message });
     }
 });
 

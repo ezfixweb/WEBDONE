@@ -16,7 +16,7 @@
     <meta name="twitter:title" content="EzFix - Device Repair & Custom Builds">
     <meta name="twitter:description" content="Fast repairs, custom builds, and precision 3D prints with transparent pricing.">
     <title>EzFix - Phone, Tablet, Notebook & PC Repair</title>
-    <link rel="stylesheet" href="styles.css?v=20260310c">
+    <link rel="stylesheet" href="styles.css?v=20260310e">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -2240,7 +2240,10 @@
                             <section class="admin-chat-thread">
                                 <div class="admin-chat-thread-header">
                                     <div id="adminChatThreadHeader">Select a chat session</div>
-                                    <button type="button" class="btn btn-sm btn-secondary" id="adminTakeChatBtn" style="display:none;">Take chat</button>
+                                    <div class="admin-chat-thread-actions">
+                                        <button type="button" class="btn btn-sm btn-secondary" id="adminTakeChatBtn" style="display:none;">Take chat</button>
+                                        <button type="button" class="btn btn-sm btn-secondary admin-chat-close-btn" id="adminCloseChatBtn" style="display:none;">Close chat</button>
+                                    </div>
                                 </div>
                                 <div class="admin-chat-messages" id="adminChatMessages"></div>
                                 <form class="admin-chat-reply" id="adminChatReplyForm">
@@ -2309,10 +2312,36 @@
                                         </div>
                                         <div class="form-group permissions-group" id="newPermissionsGroup">
                                             <label>Manager Access</label>
+                                            <p class="permissions-help">Vyberte, které části administrace může tento účet používat.</p>
                                             <div class="permissions-grid">
-                                                <label class="permission-option"><input type="checkbox" id="newPermOrders" checked> Orders</label>
-                                                <label class="permission-option"><input type="checkbox" id="newPermCatalog" checked> Catalog</label>
-                                                <label class="permission-option"><input type="checkbox" id="newPermChats" checked> Chats</label>
+                                                <label class="permission-option permission-card">
+                                                    <input type="checkbox" id="newPermOrders" checked>
+                                                    <span class="permission-copy">
+                                                        <span class="permission-title">Objednávky</span>
+                                                        <span class="permission-desc">Správa objednávek a jejich stavů.</span>
+                                                    </span>
+                                                </label>
+                                                <label class="permission-option permission-card">
+                                                    <input type="checkbox" id="newPermCatalog" checked>
+                                                    <span class="permission-copy">
+                                                        <span class="permission-title">Katalog</span>
+                                                        <span class="permission-desc">Úprava položek, značek a cen.</span>
+                                                    </span>
+                                                </label>
+                                                <label class="permission-option permission-card">
+                                                    <input type="checkbox" id="newPermChats" checked>
+                                                    <span class="permission-copy">
+                                                        <span class="permission-title">Chaty</span>
+                                                        <span class="permission-desc">Komunikace se zákazníky.</span>
+                                                    </span>
+                                                </label>
+                                                <label class="permission-option permission-card">
+                                                    <input type="checkbox" id="newPermCredentials">
+                                                    <span class="permission-copy">
+                                                        <span class="permission-title">Admin Credentials</span>
+                                                        <span class="permission-desc">Přístup do sekce uživatelů a oprávnění.</span>
+                                                    </span>
+                                                </label>
                                             </div>
                                         </div>
                                         <button type="submit" class="btn btn-primary">Add User</button>
@@ -2357,10 +2386,36 @@
                                         </div>
                                         <div class="form-group permissions-group" id="editPermissionsGroup">
                                             <label>Manager Access</label>
+                                            <p class="permissions-help">Vyberte, které části administrace může tento účet používat.</p>
                                             <div class="permissions-grid">
-                                                <label class="permission-option"><input type="checkbox" id="editPermOrders" checked> Orders</label>
-                                                <label class="permission-option"><input type="checkbox" id="editPermCatalog" checked> Catalog</label>
-                                                <label class="permission-option"><input type="checkbox" id="editPermChats" checked> Chats</label>
+                                                <label class="permission-option permission-card">
+                                                    <input type="checkbox" id="editPermOrders" checked>
+                                                    <span class="permission-copy">
+                                                        <span class="permission-title">Objednávky</span>
+                                                        <span class="permission-desc">Správa objednávek a jejich stavů.</span>
+                                                    </span>
+                                                </label>
+                                                <label class="permission-option permission-card">
+                                                    <input type="checkbox" id="editPermCatalog" checked>
+                                                    <span class="permission-copy">
+                                                        <span class="permission-title">Katalog</span>
+                                                        <span class="permission-desc">Úprava položek, značek a cen.</span>
+                                                    </span>
+                                                </label>
+                                                <label class="permission-option permission-card">
+                                                    <input type="checkbox" id="editPermChats" checked>
+                                                    <span class="permission-copy">
+                                                        <span class="permission-title">Chaty</span>
+                                                        <span class="permission-desc">Komunikace se zákazníky.</span>
+                                                    </span>
+                                                </label>
+                                                <label class="permission-option permission-card">
+                                                    <input type="checkbox" id="editPermCredentials">
+                                                    <span class="permission-copy">
+                                                        <span class="permission-title">Admin Credentials</span>
+                                                        <span class="permission-desc">Přístup do sekce uživatelů a oprávnění.</span>
+                                                    </span>
+                                                </label>
                                             </div>
                                         </div>
                                         <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -2447,6 +2502,41 @@
         </div>
     </div>
 
+    <div class="admin-chat-take-modal" id="adminChatTakeModal" aria-hidden="true">
+        <div class="admin-chat-take-backdrop" id="adminChatTakeBackdrop"></div>
+        <div class="admin-chat-take-dialog" role="dialog" aria-modal="true" aria-labelledby="adminChatTakeTitle">
+            <h3 id="adminChatTakeTitle">Převzít chat?</h3>
+            <p class="admin-chat-take-note">Po převzetí budete hlavní kontakt pro tohoto zákazníka.</p>
+            <div class="admin-chat-take-meta">
+                <div><strong>Jméno:</strong> <span id="adminChatTakeName">-</span></div>
+                <div><strong>E-mail:</strong> <span id="adminChatTakeEmail">-</span></div>
+            </div>
+            <div class="admin-chat-take-actions">
+                <button type="button" class="chat-close-btn chat-close-btn-cancel" id="adminChatTakeCancel">Zrušit</button>
+                <button type="button" class="chat-close-btn chat-close-btn-confirm" id="adminChatTakeConfirm">Převzít chat</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="support-rating-modal" id="supportRatingModal" aria-hidden="true">
+        <div class="support-rating-backdrop" id="supportRatingBackdrop"></div>
+        <div class="support-rating-dialog" role="dialog" aria-modal="true" aria-labelledby="supportRatingTitle">
+            <h3 id="supportRatingTitle">Jak hodnotíte admina?</h3>
+            <p>Ohodnoťte prosím komunikaci admina <strong id="supportRatingAdminName">admin</strong>.</p>
+            <div class="support-rating-stars" id="supportRatingStars">
+                <button type="button" class="support-rating-star" data-rating="1">★</button>
+                <button type="button" class="support-rating-star" data-rating="2">★</button>
+                <button type="button" class="support-rating-star" data-rating="3">★</button>
+                <button type="button" class="support-rating-star" data-rating="4">★</button>
+                <button type="button" class="support-rating-star" data-rating="5">★</button>
+            </div>
+            <div class="support-rating-actions">
+                <button type="button" class="chat-close-btn chat-close-btn-cancel" id="supportRatingSkip">Přeskočit</button>
+                <button type="button" class="chat-close-btn chat-close-btn-confirm" id="supportRatingSubmit">Odeslat hodnocení</button>
+            </div>
+        </div>
+    </div>
+
     <div class="chat-close-confirm" id="chatCloseConfirm" aria-hidden="true">
         <div class="chat-close-confirm-backdrop" id="chatCloseConfirmBackdrop"></div>
         <div class="chat-close-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="chatCloseConfirmTitle" aria-describedby="chatCloseConfirmText">
@@ -2466,6 +2556,6 @@
         };
     </script>
     <script src="https://widget.packeta.com/v6/www/js/library.js" defer></script>
-    <script src="script.js?v=20260310c" defer></script>
+    <script src="script.js?v=20260310e" defer></script>
 </body>
 </html>

@@ -2406,11 +2406,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const canManageCatalog = (userOrRole, permissions = null) => hasPermission(userOrRole, 'catalog', permissions);
     const canManageOrders = (userOrRole, permissions = null) => hasPermission(userOrRole, 'orders', permissions);
     const canAccessChats = (userOrRole, permissions = null) => hasPermission(userOrRole, 'chats', permissions);
+    const canAccessCredentials = (userOrRole, permissions = null) => hasPermission(userOrRole, 'credentials', permissions);
     const isOwnerRole = (role) => role === 'owner';
 
     function canAccessAdminTab(tabName, user) {
         if (!user) return false;
-        if (tabName === 'credentials') return isOwnerRole(user.role);
+        if (tabName === 'credentials') return canAccessCredentials(user);
         if (tabName === 'catalog') return canManageCatalog(user);
         if (tabName === 'chats') return canAccessChats(user);
         if (['repairs', 'custom-pc', 'printing', 'other-items'].includes(tabName)) return canManageOrders(user);
@@ -5548,6 +5549,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const canCatalog = canManageCatalog(currentUser);
         const canOrders = canManageOrders(currentUser);
         const canChats = canAccessChats(currentUser);
+        const canCredentials = canAccessCredentials(currentUser);
 
         if (isAdmin) {
             mountAdminPageNode();
@@ -5576,8 +5578,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tabBtn) tabBtn.style.display = allowed ? 'inline-flex' : 'none';
             if (!allowed && tabContent) tabContent.classList.remove('active');
         });
-        if (credentialsTabBtn) credentialsTabBtn.style.display = isOwner ? 'inline-flex' : 'none';
-        if (!isOwner && credentialsContent) {
+        if (credentialsTabBtn) credentialsTabBtn.style.display = canCredentials ? 'inline-flex' : 'none';
+        if (!canCredentials && credentialsContent) {
             credentialsContent.classList.remove('active');
         }
         if (catalogTabBtn) catalogTabBtn.style.display = canCatalog ? 'inline-flex' : 'none';
@@ -5713,6 +5715,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (document.getElementById(`${prefix}PermOrders`)?.checked) checked.push('orders');
         if (document.getElementById(`${prefix}PermCatalog`)?.checked) checked.push('catalog');
         if (document.getElementById(`${prefix}PermChats`)?.checked) checked.push('chats');
+        if (document.getElementById(`${prefix}PermCredentials`)?.checked) checked.push('credentials');
         return checked;
     }
 
@@ -5722,13 +5725,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const orderInput = document.getElementById(`${prefix}PermOrders`);
         const catalogInput = document.getElementById(`${prefix}PermCatalog`);
         const chatsInput = document.getElementById(`${prefix}PermChats`);
+        const credentialsInput = document.getElementById(`${prefix}PermCredentials`);
         const container = document.getElementById(`${prefix}PermissionsGroup`);
 
         if (orderInput) orderInput.checked = owner || perms.includes('orders');
         if (catalogInput) catalogInput.checked = owner || perms.includes('catalog');
         if (chatsInput) chatsInput.checked = owner || perms.includes('chats');
+        if (credentialsInput) credentialsInput.checked = owner || perms.includes('credentials');
 
-        [orderInput, catalogInput, chatsInput].forEach((input) => {
+        [orderInput, catalogInput, chatsInput, credentialsInput].forEach((input) => {
             if (!input) return;
             input.disabled = owner;
         });
@@ -8337,6 +8342,117 @@ document.addEventListener('DOMContentLoaded', function() {
         pollId: null
     };
 
+    const supportRatingState = {
+        selected: 0,
+        sessionId: '',
+        adminName: ''
+    };
+
+    function supportRatingKey(sessionId, adminName) {
+        return `supportChatRating:${sessionId}:${String(adminName || '').toLowerCase()}`;
+    }
+
+    function markSupportRatingHandled(sessionId, adminName, value) {
+        if (!sessionId || !adminName) return;
+        localStorage.setItem(supportRatingKey(sessionId, adminName), value);
+    }
+
+    function supportRatingAlreadyHandled(sessionId, adminName) {
+        if (!sessionId || !adminName) return false;
+        return Boolean(localStorage.getItem(supportRatingKey(sessionId, adminName)));
+    }
+
+    function renderSupportRatingStars() {
+        const starsWrap = document.getElementById('supportRatingStars');
+        if (!starsWrap) return;
+        starsWrap.querySelectorAll('.support-rating-star').forEach((btn) => {
+            const val = Number(btn.getAttribute('data-rating') || 0);
+            btn.classList.toggle('active', val > 0 && val <= supportRatingState.selected);
+        });
+    }
+
+    function closeSupportRatingModal() {
+        const modal = document.getElementById('supportRatingModal');
+        if (!modal) return;
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        supportRatingState.selected = 0;
+        renderSupportRatingStars();
+    }
+
+    async function submitSupportRating() {
+        const selected = Number(supportRatingState.selected || 0);
+        if (!selected || !supportRatingState.sessionId || !supportRatingState.adminName) {
+            showToast('Vyberte prosím hodnocení 1-5 hvězd.');
+            return;
+        }
+
+        try {
+            await apiCall('POST', `/chat/messages/${supportRatingState.sessionId}`, {
+                message: `Hodnocení admina ${supportRatingState.adminName}: ${selected}/5`,
+                senderName: supportChatState.profile.name || Storage.getUser()?.username || 'Visitor'
+            });
+            markSupportRatingHandled(supportRatingState.sessionId, supportRatingState.adminName, `rated:${selected}`);
+            closeSupportRatingModal();
+            showToast('Děkujeme za hodnocení.');
+        } catch (err) {
+            console.error('Submit support rating failed:', err);
+            showToast('Nepodařilo se odeslat hodnocení.');
+        }
+    }
+
+    function openSupportRatingModal(adminName, sessionId) {
+        if (!adminName || !sessionId) return;
+        if (supportRatingAlreadyHandled(sessionId, adminName)) return;
+
+        const modal = document.getElementById('supportRatingModal');
+        const adminNameEl = document.getElementById('supportRatingAdminName');
+        if (!modal || !adminNameEl) return;
+
+        supportRatingState.sessionId = sessionId;
+        supportRatingState.adminName = adminName;
+        supportRatingState.selected = 0;
+        adminNameEl.textContent = adminName;
+        renderSupportRatingStars();
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function initSupportRatingUi() {
+        const modal = document.getElementById('supportRatingModal');
+        const backdrop = document.getElementById('supportRatingBackdrop');
+        const skipBtn = document.getElementById('supportRatingSkip');
+        const submitBtn = document.getElementById('supportRatingSubmit');
+        const starsWrap = document.getElementById('supportRatingStars');
+
+        if (!modal || modal.dataset.bound === '1') return;
+
+        starsWrap?.addEventListener('click', (event) => {
+            const star = event.target.closest('.support-rating-star');
+            if (!star) return;
+            supportRatingState.selected = Number(star.getAttribute('data-rating') || 0);
+            renderSupportRatingStars();
+        });
+
+        backdrop?.addEventListener('click', () => {
+            if (supportRatingState.sessionId && supportRatingState.adminName) {
+                markSupportRatingHandled(supportRatingState.sessionId, supportRatingState.adminName, 'skipped');
+            }
+            closeSupportRatingModal();
+        });
+
+        skipBtn?.addEventListener('click', () => {
+            if (supportRatingState.sessionId && supportRatingState.adminName) {
+                markSupportRatingHandled(supportRatingState.sessionId, supportRatingState.adminName, 'skipped');
+            }
+            closeSupportRatingModal();
+        });
+
+        submitBtn?.addEventListener('click', submitSupportRating);
+
+        modal.dataset.bound = '1';
+    }
+
     function formatChatTime(value) {
         try {
             return new Date(value).toLocaleString('cs-CZ', {
@@ -8431,6 +8547,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const body = document.getElementById('supportChatBody');
         if (!body) return;
         body.innerHTML = '';
+        let pendingRatingAdmin = '';
 
         if (!hasSupportChatProfile()) {
             const intro = document.createElement('div');
@@ -8492,18 +8609,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         messages.forEach((msg) => {
+            const textValue = String(msg.message || '');
+            const ratingTokenMatch = textValue.match(/^__RATE_ADMIN__:(.+)$/);
+            if (ratingTokenMatch) {
+                pendingRatingAdmin = String(ratingTokenMatch[1] || '').trim();
+                return;
+            }
+
             const type = msg.sender_type === 'admin' ? 'bot' : (msg.sender_type === 'bot' ? 'bot' : 'user');
             const item = document.createElement('div');
             item.className = `support-msg ${type}`;
-            item.textContent = msg.message || '';
+            item.textContent = textValue;
             body.appendChild(item);
         });
+
+        if (pendingRatingAdmin && supportChatState.sessionId) {
+            openSupportRatingModal(pendingRatingAdmin, supportChatState.sessionId);
+        }
 
         body.scrollTop = body.scrollHeight;
     }
 
     function refreshTakeChatButton(session) {
         const takeBtn = document.getElementById('adminTakeChatBtn');
+        const closeBtn = document.getElementById('adminCloseChatBtn');
         if (!takeBtn) return;
 
         if (!session || !session.id) {
@@ -8511,6 +8640,10 @@ document.addEventListener('DOMContentLoaded', function() {
             takeBtn.dataset.sessionId = '';
             takeBtn.disabled = false;
             takeBtn.textContent = 'Take chat';
+            if (closeBtn) {
+                closeBtn.style.display = 'none';
+                closeBtn.dataset.sessionId = '';
+            }
             return;
         }
 
@@ -8523,6 +8656,10 @@ document.addEventListener('DOMContentLoaded', function() {
             takeBtn.style.display = 'inline-flex';
             takeBtn.disabled = false;
             takeBtn.textContent = 'Take chat';
+            if (closeBtn) {
+                closeBtn.style.display = 'none';
+                closeBtn.dataset.sessionId = '';
+            }
             return;
         }
 
@@ -8530,9 +8667,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (assigned === myName) {
             takeBtn.disabled = true;
             takeBtn.textContent = `Taken by you (${assigned})`;
+            if (closeBtn) {
+                closeBtn.style.display = 'inline-flex';
+                closeBtn.dataset.sessionId = session.id;
+            }
         } else {
             takeBtn.disabled = true;
             takeBtn.textContent = `Taken by ${assigned}`;
+            if (closeBtn) {
+                closeBtn.style.display = 'none';
+                closeBtn.dataset.sessionId = '';
+            }
         }
     }
 
@@ -8603,10 +8748,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const messagesEl = document.getElementById('adminChatMessages');
         if (!headerEl || !messagesEl) return;
 
-        const label = session?.customer_name || session?.customer_email || session?.id || 'Chat session';
+        const customerName = String(session?.customer_name || '').trim();
+        const customerEmail = String(session?.customer_email || '').trim();
+        const label = customerName || customerEmail || session?.id || 'Chat session';
         const topic = getHelpTopicLabel(session?.help_topic || '');
         const assigned = session?.assigned_admin_name ? ` • Assigned: ${session.assigned_admin_name}` : '';
-        headerEl.textContent = topic ? `Chat: ${label} (${topic})${assigned}` : `Chat: ${label}${assigned}`;
+        const identity = customerName && customerEmail ? `${customerName} <${customerEmail}>` : label;
+        headerEl.textContent = topic ? `Chat: ${identity} (${topic})${assigned}` : `Chat: ${identity}${assigned}`;
         refreshTakeChatButton(session || null);
 
         messagesEl.innerHTML = (messages || []).map((msg) => {
@@ -8648,6 +8796,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const closeConfirmOk = document.getElementById('chatCloseConfirmOk');
 
         if (!chatRoot || !toggleBtn || !closeBtn || !panel || !form || !input || !body) return;
+
+        initSupportRatingUi();
 
         let closeConfirmResolver = null;
 
@@ -8881,6 +9031,40 @@ document.addEventListener('DOMContentLoaded', function() {
         const replyForm = document.getElementById('adminChatReplyForm');
         const replyInput = document.getElementById('adminChatReplyInput');
         const takeChatBtn = document.getElementById('adminTakeChatBtn');
+        const closeChatBtn = document.getElementById('adminCloseChatBtn');
+        const takeModal = document.getElementById('adminChatTakeModal');
+        const takeBackdrop = document.getElementById('adminChatTakeBackdrop');
+        const takeCancelBtn = document.getElementById('adminChatTakeCancel');
+        const takeConfirmBtn = document.getElementById('adminChatTakeConfirm');
+        const takeName = document.getElementById('adminChatTakeName');
+        const takeEmail = document.getElementById('adminChatTakeEmail');
+
+        let takeModalSessionId = '';
+
+        const clearAdminChatThread = () => {
+            const headerEl = document.getElementById('adminChatThreadHeader');
+            const messagesEl = document.getElementById('adminChatMessages');
+            if (headerEl) headerEl.textContent = 'Select a chat session';
+            if (messagesEl) messagesEl.innerHTML = '<div class="admin-chat-empty">No active chat selected.</div>';
+            refreshTakeChatButton(null);
+        };
+
+        const hideTakeModal = () => {
+            if (!takeModal) return;
+            takeModal.classList.remove('show');
+            takeModal.setAttribute('aria-hidden', 'true');
+            takeModalSessionId = '';
+        };
+
+        const showTakeModal = (sessionId) => {
+            if (!takeModal || !sessionId) return;
+            const session = (adminChatState.sessions || []).find((item) => item.id === sessionId);
+            takeModalSessionId = sessionId;
+            if (takeName) takeName.textContent = session?.customer_name || 'Návštěvník';
+            if (takeEmail) takeEmail.textContent = session?.customer_email || '-';
+            takeModal.classList.add('show');
+            takeModal.setAttribute('aria-hidden', 'false');
+        };
 
         const takeChatSession = async (sessionId) => {
             if (!sessionId) return;
@@ -8895,13 +9079,35 @@ document.addEventListener('DOMContentLoaded', function() {
             await openAdminChatSession(sessionId);
         };
 
+        const closeChatSession = async (sessionId) => {
+            if (!sessionId) return;
+
+            const confirmed = window.confirm('Opravdu chcete tento chat uzavřít?');
+            if (!confirmed) return;
+
+            const result = await apiCall('POST', `/chat/admin/sessions/${sessionId}/close`, {});
+            if (!result?.success) {
+                throw new Error(result?.message || 'Failed to close chat');
+            }
+
+            adminChatState.sessions = (adminChatState.sessions || []).filter((s) => s.id !== sessionId);
+            if (adminChatState.activeSessionId === sessionId) {
+                adminChatState.activeSessionId = null;
+                clearAdminChatThread();
+            }
+
+            renderAdminChatSessionList();
+            showToast('Chat byl uzavřen.');
+            await loadAdminChatSessions();
+        };
+
         sessionsEl?.addEventListener('click', async (event) => {
             const assignBtn = event.target.closest('[data-chat-assign]');
             if (assignBtn) {
                 const sessionId = assignBtn.getAttribute('data-chat-assign');
                 if (!sessionId) return;
                 try {
-                    await takeChatSession(sessionId);
+                    showTakeModal(sessionId);
                 } catch (err) {
                     showToast(err?.message || 'Failed to take chat');
                 }
@@ -8941,10 +9147,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const sessionId = takeChatBtn.dataset.sessionId || adminChatState.activeSessionId;
             if (!sessionId) return;
 
+            showTakeModal(sessionId);
+        });
+
+        takeBackdrop?.addEventListener('click', hideTakeModal);
+        takeCancelBtn?.addEventListener('click', hideTakeModal);
+        takeConfirmBtn?.addEventListener('click', async () => {
+            if (!takeModalSessionId) return;
+
             try {
-                await takeChatSession(sessionId);
+                await takeChatSession(takeModalSessionId);
+                hideTakeModal();
             } catch (err) {
                 showToast(err?.message || 'Failed to take chat');
+            }
+        });
+
+        closeChatBtn?.addEventListener('click', async () => {
+            const sessionId = closeChatBtn.dataset.sessionId || adminChatState.activeSessionId;
+            if (!sessionId) return;
+
+            try {
+                await closeChatSession(sessionId);
+            } catch (err) {
+                showToast(err?.message || 'Failed to close chat');
             }
         });
 
