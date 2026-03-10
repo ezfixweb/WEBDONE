@@ -2229,6 +2229,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input class="catalog-input" value="${item.details || item.detail || ''}" data-field="details" />
                 </div>
                 <div>
+                    <label>Show Contact Description</label>
+                    <input class="catalog-input" value="${item.contactDescription || item.contactText || ''}" data-field="contactDescription" />
+                </div>
+                <div>
                     <label>Specs (comma)</label>
                     <input class="catalog-input" value="${Array.isArray(item.specs) ? item.specs.join(', ') : ''}" data-field="specs" />
                 </div>
@@ -2270,6 +2274,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         if (field === 'details') {
                             record.detail = value;
+                        }
+                        if (field === 'contactDescription') {
+                            record.contactText = value;
                         }
                     }
                 });
@@ -3676,7 +3683,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? `<img src="${item.image}" alt="${escapeHtml(item.name || '')}" loading="lazy" decoding="async">`
                 : `<div class="other-item-placeholder">${t('No image')}</div>`;
             const price = typeof item.price === 'number' ? formatCurrency(item.price) : '';
-            const desc = item.desc || item.description || item.details || item.detail || '';
+            const defaultDesc = item.desc || item.description || item.details || item.detail || '';
+            const contactDesc = item.contactDescription || item.contactText || '';
+            const desc = item.showContact ? (contactDesc || defaultDesc) : defaultDesc;
             const actionButtonHtml = item.showContact
                 ? `<button class="btn btn-primary" data-other-action="contact" data-other-id="${item.id}">${t('Contact')}</button>`
                 : `<button class="btn btn-primary" data-other-action="add-to-cart" data-other-id="${item.id}">${t('Add to Cart')}</button>`;
