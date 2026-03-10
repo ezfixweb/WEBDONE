@@ -84,7 +84,7 @@ router.get('/messages/:sessionId', async (req, res) => {
         }
 
         const session = await db.getAsync(
-            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name
+            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name, status
              FROM chat_sessions
              WHERE id = ?`,
             [sessionId]
@@ -126,13 +126,17 @@ router.post('/messages/:sessionId', async (req, res) => {
         }
 
         const session = await db.getAsync(
-            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name
+            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name, status
              FROM chat_sessions
              WHERE id = ?`,
             [sessionId]
         );
         if (!session) {
             return res.status(404).json({ success: false, message: 'Session not found' });
+        }
+
+        if (String(session.status || '').toLowerCase() === 'closed') {
+            return res.status(409).json({ success: false, message: 'Chat session is closed' });
         }
 
         await db.runAsync(
@@ -155,6 +159,13 @@ router.post('/messages/:sessionId', async (req, res) => {
             [sessionId]
         );
 
+        const updatedSession = await db.getAsync(
+            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name, status
+             FROM chat_sessions
+             WHERE id = ?`,
+            [sessionId]
+        );
+
         const messages = await db.allAsync(
             `SELECT id, sender_type, sender_name, message, created_at
              FROM chat_messages
@@ -163,7 +174,7 @@ router.post('/messages/:sessionId', async (req, res) => {
             [sessionId]
         );
 
-        res.json({ success: true, messages, aiReply, session });
+        res.json({ success: true, messages, aiReply, session: updatedSession || session });
     } catch (err) {
         console.error('Send chat message error:', err);
         res.status(500).json({ success: false, message: 'Failed to send message', error: err.message });

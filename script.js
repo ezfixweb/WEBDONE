@@ -8348,6 +8348,7 @@ document.addEventListener('DOMContentLoaded', function() {
             helpTopic: localStorage.getItem('supportChatHelpTopic') || ''
         },
         onboardingStage: 'name',
+        isClosed: false,
         sessionMeta: null,
         pollId: null
     };
@@ -8410,6 +8411,31 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             markSupportRatingHandled(supportRatingState.sessionId, supportRatingState.adminName, `rated:${selected}`);
             closeSupportRatingModal();
+            clearSupportChatLocalSession();
+            const body = document.getElementById('supportChatBody');
+            const input = document.getElementById('supportChatInput');
+            const form = document.getElementById('supportChatForm');
+            const panel = document.getElementById('supportChatPanel');
+            const root = document.getElementById('supportChat');
+            const toggleBtn = document.getElementById('supportChatToggle');
+            if (body) body.innerHTML = '';
+            if (input) {
+                input.value = '';
+                input.disabled = false;
+                input.placeholder = 'Napis zpravu...';
+            }
+            const sendBtn = form?.querySelector('button[type="submit"]') || form?.querySelector('button');
+            if (sendBtn) sendBtn.disabled = false;
+            if (supportChatState.pollId) {
+                clearInterval(supportChatState.pollId);
+                supportChatState.pollId = null;
+            }
+            root?.classList.remove('open');
+            if (panel) {
+                panel.inert = true;
+                panel.setAttribute('aria-hidden', 'true');
+            }
+            toggleBtn?.setAttribute('aria-expanded', 'false');
             showToast('Děkujeme za hodnocení.');
         } catch (err) {
             console.error('Submit support rating failed:', err);
@@ -8520,8 +8546,37 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     }
 
+    function renderSupportChatHeader(session = null) {
+        const titleEl = document.getElementById('supportChatHeaderTitle');
+        if (!titleEl) return;
+
+        const assignedAdmin = String(session?.assigned_admin_name || supportChatState.sessionMeta?.assigned_admin_name || '').trim();
+        titleEl.textContent = assignedAdmin ? `EzFix Chat (${assignedAdmin})` : 'EzFix Chat';
+    }
+
+    function updateSupportChatComposerState(session = null, messages = []) {
+        const input = document.getElementById('supportChatInput');
+        const form = document.getElementById('supportChatForm');
+        if (!input || !form) return;
+
+        const sendBtn = form.querySelector('button[type="submit"]') || form.querySelector('button');
+        const statusClosed = String(session?.status || supportChatState.sessionMeta?.status || '').toLowerCase() === 'closed';
+        const messageClosed = Array.isArray(messages) && messages.some((msg) => /chat byl ukoncen administratorem|chat byl ukončen administrátorem/i.test(String(msg?.message || '')));
+        const isClosed = statusClosed || messageClosed;
+
+        supportChatState.isClosed = isClosed;
+        input.disabled = isClosed;
+        if (sendBtn) sendBtn.disabled = isClosed;
+
+        if (isClosed) {
+            input.value = '';
+            input.placeholder = 'Chat byl ukoncen administratorem.';
+        }
+    }
+
     function clearSupportChatLocalSession() {
         supportChatState.sessionId = '';
+        supportChatState.isClosed = false;
         supportChatState.sessionMeta = null;
         supportChatState.onboardingStage = 'name';
         supportChatState.profile = { name: '', email: '', helpTopic: '' };
@@ -8529,6 +8584,7 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.removeItem('supportChatName');
         localStorage.removeItem('supportChatEmail');
         localStorage.removeItem('supportChatHelpTopic');
+        renderSupportChatHeader(null);
     }
 
     async function ensureSupportChatSession() {
@@ -8564,6 +8620,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!body) return;
         body.innerHTML = '';
         let pendingRatingAdmin = '';
+
+        renderSupportChatHeader(session || supportChatState.sessionMeta || null);
+        updateSupportChatComposerState(session || supportChatState.sessionMeta || null, messages || []);
 
         if (!hasSupportChatProfile()) {
             const intro = document.createElement('div');
@@ -9008,6 +9067,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (supportChatState.isClosed) {
+                showToast('Tento chat byl ukončen administrátorem.');
+                return;
+            }
             const text = (input.value || '').trim();
             if (!text) return;
 

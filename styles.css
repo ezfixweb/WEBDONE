@@ -3404,6 +3404,10 @@ body.has-announcement .hero {
     animation: chatConfirmIn 0.2s ease-out;
 }
 
+.support-rating-dialog {
+    text-align: center;
+}
+
 .admin-chat-take-dialog h3,
 .support-rating-dialog h3 {
     margin: 0;
@@ -3436,6 +3440,7 @@ body.has-announcement .hero {
 
 .support-rating-stars {
     display: flex;
+    justify-content: center;
     gap: 8px;
     margin-top: 12px;
 }
