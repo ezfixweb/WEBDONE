@@ -1800,7 +1800,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const brandSelect = document.getElementById('catalogBrandSelect');
         const modelList = document.getElementById('catalogModelList');
         const repairList = document.getElementById('catalogRepairList');
+        const addBrandBtn = document.getElementById('catalogAddBrand');
+        const addModelBtn = document.getElementById('catalogAddModel');
+        const addRepairBtn = document.getElementById('catalogAddRepair');
         if (!deviceSelect || !brandList || !brandSelect || !modelList || !repairList) return;
+
+        if (addBrandBtn) addBrandBtn.textContent = 'Přidat značku';
+        if (addModelBtn) addModelBtn.textContent = 'Přidat model';
+        if (addRepairBtn) addRepairBtn.textContent = 'Přidat opravu';
 
         const serviceKeys = getServiceKeys().slice().sort(catalogSortByText);
         if (!serviceKeys.includes(catalogUiState.deviceKey)) {
