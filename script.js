@@ -8558,6 +8558,20 @@ document.addEventListener('DOMContentLoaded', function() {
         titleEl.textContent = assignedAdmin ? `EzFix Chat (${assignedAdmin})` : 'EzFix Chat';
     }
 
+    function findAssignedAdminFromMessages(messages = []) {
+        if (!Array.isArray(messages)) return '';
+
+        for (let i = messages.length - 1; i >= 0; i -= 1) {
+            const text = String(messages[i]?.message || '').trim();
+            const match = text.match(/chat\s+převzal\s+admin\s+(.+?)[.!]?$/i) || text.match(/chat\s+prevzal\s+admin\s+(.+?)[.!]?$/i);
+            if (match && match[1]) {
+                return String(match[1]).trim();
+            }
+        }
+
+        return '';
+    }
+
     function updateSupportChatComposerState(session = null, messages = []) {
         const input = document.getElementById('supportChatInput');
         const form = document.getElementById('supportChatForm');
@@ -8625,8 +8639,18 @@ document.addEventListener('DOMContentLoaded', function() {
         body.innerHTML = '';
         let pendingRatingAdmin = '';
 
-        renderSupportChatHeader(session || supportChatState.sessionMeta || null);
-        updateSupportChatComposerState(session || supportChatState.sessionMeta || null, messages || []);
+        const sessionInfo = session || supportChatState.sessionMeta || null;
+        const derivedAdmin = String(sessionInfo?.assigned_admin_name || '').trim() || findAssignedAdminFromMessages(messages || []);
+        if (derivedAdmin) {
+            supportChatState.sessionMeta = {
+                ...(supportChatState.sessionMeta || {}),
+                ...(sessionInfo || {}),
+                assigned_admin_name: derivedAdmin
+            };
+        }
+
+        renderSupportChatHeader(derivedAdmin ? { ...(sessionInfo || {}), assigned_admin_name: derivedAdmin } : sessionInfo);
+        updateSupportChatComposerState(sessionInfo, messages || []);
 
         if (!hasSupportChatProfile()) {
             const intro = document.createElement('div');
@@ -8674,7 +8698,7 @@ document.addEventListener('DOMContentLoaded', function() {
             body.appendChild(questions);
         }
 
-        const assignedAdmin = session?.assigned_admin_name || supportChatState.sessionMeta?.assigned_admin_name || '';
+        const assignedAdmin = derivedAdmin || '';
         if (assignedAdmin) {
             const assignment = document.createElement('div');
             assignment.className = 'support-msg bot';
@@ -9121,8 +9145,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const takeConfirmBtn = document.getElementById('adminChatTakeConfirm');
         const takeName = document.getElementById('adminChatTakeName');
         const takeEmail = document.getElementById('adminChatTakeEmail');
+        const closeConfirmModal = document.getElementById('adminChatCloseConfirm');
+        const closeConfirmBackdrop = document.getElementById('adminChatCloseConfirmBackdrop');
+        const closeConfirmCancel = document.getElementById('adminChatCloseConfirmCancel');
+        const closeConfirmOk = document.getElementById('adminChatCloseConfirmOk');
 
         let takeModalSessionId = '';
+        let closeConfirmResolver = null;
 
         const clearAdminChatThread = () => {
             const headerEl = document.getElementById('adminChatThreadHeader');
@@ -9149,6 +9178,33 @@ document.addEventListener('DOMContentLoaded', function() {
             takeModal.setAttribute('aria-hidden', 'false');
         };
 
+        const resolveCloseConfirm = (value) => {
+            if (!closeConfirmModal || !closeConfirmResolver) return;
+            closeConfirmModal.classList.remove('show');
+            closeConfirmModal.setAttribute('aria-hidden', 'true');
+            const resolver = closeConfirmResolver;
+            closeConfirmResolver = null;
+            resolver(Boolean(value));
+        };
+
+        const promptCloseChatConfirm = () => {
+            if (!closeConfirmModal) {
+                return Promise.resolve(window.confirm('Opravdu chcete tento chat uzavřít?'));
+            }
+
+            if (closeConfirmResolver) {
+                resolveCloseConfirm(false);
+            }
+
+            closeConfirmModal.classList.add('show');
+            closeConfirmModal.setAttribute('aria-hidden', 'false');
+            closeConfirmCancel?.focus();
+
+            return new Promise((resolve) => {
+                closeConfirmResolver = resolve;
+            });
+        };
+
         const takeChatSession = async (sessionId) => {
             if (!sessionId) return;
 
@@ -9165,7 +9221,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const closeChatSession = async (sessionId) => {
             if (!sessionId) return;
 
-            const confirmed = window.confirm('Opravdu chcete tento chat uzavřít?');
+            const confirmed = await promptCloseChatConfirm();
             if (!confirmed) return;
 
             const result = await apiCall('POST', `/chat/admin/sessions/${sessionId}/close`, {});
@@ -9183,6 +9239,17 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast('Chat byl uzavřen.');
             await loadAdminChatSessions();
         };
+
+        closeConfirmBackdrop?.addEventListener('click', () => resolveCloseConfirm(false));
+        closeConfirmCancel?.addEventListener('click', () => resolveCloseConfirm(false));
+        closeConfirmOk?.addEventListener('click', () => resolveCloseConfirm(true));
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && closeConfirmModal?.classList.contains('show')) {
+                event.preventDefault();
+                resolveCloseConfirm(false);
+            }
+        });
 
         sessionsEl?.addEventListener('click', async (event) => {
             const assignBtn = event.target.closest('[data-chat-assign]');
