@@ -2102,7 +2102,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div>
                     <label>Description</label>
-                    <input class="catalog-input" value="${item.desc || ''}" data-field="desc" />
+                    <input class="catalog-input" value="${item.desc || item.description || ''}" data-field="desc" />
                 </div>
                 <div>
                     <label>Image URL</label>
@@ -2226,7 +2226,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div>
                     <label>Details</label>
-                    <input class="catalog-input" value="${item.details || ''}" data-field="details" />
+                    <input class="catalog-input" value="${item.details || item.detail || ''}" data-field="details" />
                 </div>
                 <div>
                     <label>Specs (comma)</label>
@@ -2265,6 +2265,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         record[field] = value;
                     } else {
                         record[field] = value;
+                        if (field === 'desc') {
+                            record.description = value;
+                        }
+                        if (field === 'details') {
+                            record.detail = value;
+                        }
                     }
                 });
             });
@@ -3670,7 +3676,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? `<img src="${item.image}" alt="${escapeHtml(item.name || '')}" loading="lazy" decoding="async">`
                 : `<div class="other-item-placeholder">${t('No image')}</div>`;
             const price = typeof item.price === 'number' ? formatCurrency(item.price) : '';
-            const desc = item.desc || '';
+            const desc = item.desc || item.description || item.details || item.detail || '';
             const actionButtonHtml = item.showContact
                 ? `<button class="btn btn-primary" data-other-action="contact" data-other-id="${item.id}">${t('Contact')}</button>`
                 : `<button class="btn btn-primary" data-other-action="add-to-cart" data-other-id="${item.id}">${t('Add to Cart')}</button>`;
@@ -3711,7 +3717,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         device: 'other-item',
                         id: item.id,
                         name: item.name,
-                        desc: item.desc,
+                        desc: item.desc || item.description || item.details || item.detail || '',
+                        details: item.details || item.detail || item.desc || item.description || '',
                         price: item.price,
                         image: item.image
                     };
@@ -3755,7 +3762,7 @@ document.addEventListener('DOMContentLoaded', function() {
         priceEl.textContent = typeof item.price === 'number' ? formatCurrency(item.price) : '';
         imageEl.src = item.image || '';
         imageEl.alt = item.name || t('Other Item');
-        descEl.textContent = item.details || item.desc || '';
+        descEl.textContent = item.details || item.detail || item.desc || item.description || '';
 
         const specs = Array.isArray(item.specs) ? item.specs : [];
         specsEl.innerHTML = specs.length
