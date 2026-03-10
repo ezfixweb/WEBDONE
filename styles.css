@@ -3005,6 +3005,25 @@ body.has-announcement .hero {
     line-height: 1;
 }
 
+.support-chat-unread {
+    position: absolute;
+    top: -5px;
+    right: -4px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #ff4a5f;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    box-shadow: 0 6px 14px rgba(255, 74, 95, 0.4);
+}
+
 .support-chat-panel {
     width: min(360px, calc(100vw - 24px));
     height: 430px;
@@ -3066,6 +3085,12 @@ body.has-announcement .hero {
     border-radius: 12px;
     line-height: 1.35;
     font-size: 0.94rem;
+}
+
+.support-msg.typing,
+.admin-chat-msg.typing {
+    font-style: italic;
+    opacity: 0.85;
 }
 
 .support-msg.bot {

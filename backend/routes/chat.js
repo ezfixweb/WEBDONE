@@ -27,6 +27,25 @@ function buildAiReply(userText = '') {
     return 'Dekujeme za zpravu. Pro rychlejsi pomoc muzete doplnit typ zarizeni, model a popis problemu. Tym EzFix se vam ozve co nejdriv.';
 }
 
+function isTypingFresh(timestampValue) {
+    if (!timestampValue) return false;
+    const ts = new Date(timestampValue).getTime();
+    if (!Number.isFinite(ts)) return false;
+    return (Date.now() - ts) <= 10000;
+}
+
+function buildTypingState(session = {}) {
+    const userName = String(session.typing_user_name || '').trim();
+    const adminName = String(session.typing_admin_name || '').trim();
+
+    return {
+        userName,
+        adminName,
+        userActive: Boolean(userName && isTypingFresh(session.typing_user_at)),
+        adminActive: Boolean(adminName && isTypingFresh(session.typing_admin_at))
+    };
+}
+
 async function ensureSession(sessionId, visitorId, name, email, helpTopic) {
     if (sessionId) {
         const existing = await db.getAsync('SELECT id FROM chat_sessions WHERE id = ?', [sessionId]);
@@ -84,7 +103,8 @@ router.get('/messages/:sessionId', async (req, res) => {
         }
 
         const session = await db.getAsync(
-            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name, status
+            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name, status,
+                    typing_user_name, typing_user_at, typing_admin_name, typing_admin_at
              FROM chat_sessions
              WHERE id = ?`,
             [sessionId]
@@ -108,7 +128,7 @@ router.get('/messages/:sessionId', async (req, res) => {
             [sessionId]
         );
 
-        res.json({ success: true, session, messages });
+        res.json({ success: true, session: { ...session, typing: buildTypingState(session) }, messages });
     } catch (err) {
         console.error('Get chat messages error:', err);
         res.status(500).json({ success: false, message: 'Failed to load messages', error: err.message });
@@ -126,7 +146,8 @@ router.post('/messages/:sessionId', async (req, res) => {
         }
 
         const session = await db.getAsync(
-            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name, status
+            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name, status,
+                    typing_user_name, typing_user_at, typing_admin_name, typing_admin_at
              FROM chat_sessions
              WHERE id = ?`,
             [sessionId]
@@ -135,8 +156,16 @@ router.post('/messages/:sessionId', async (req, res) => {
             return res.status(404).json({ success: false, message: 'Session not found' });
         }
 
-        if (String(session.status || '').toLowerCase() === 'closed') {
+        const sessionStatus = String(session.status || '').toLowerCase();
+        if (sessionStatus === 'closed') {
             return res.status(409).json({ success: false, message: 'Chat session is closed' });
+        }
+
+        if (sessionStatus === 'awaiting_rating') {
+            const isRatingMessage = /^hodnocení admina\s+.+:\s*[1-5]\/5$/i.test(message);
+            if (!isRatingMessage) {
+                return res.status(409).json({ success: false, message: 'Chat is waiting for rating' });
+            }
         }
 
         await db.runAsync(
@@ -154,13 +183,29 @@ router.post('/messages/:sessionId', async (req, res) => {
 
         await db.runAsync(
             `UPDATE chat_sessions
-             SET status = 'open', updated_at = CURRENT_TIMESTAMP, last_message_at = CURRENT_TIMESTAMP
+             SET status = 'open',
+                 typing_user_name = NULL,
+                 typing_user_at = NULL,
+                 updated_at = CURRENT_TIMESTAMP,
+                 last_message_at = CURRENT_TIMESTAMP
              WHERE id = ?`,
             [sessionId]
         );
 
+        if (sessionStatus === 'awaiting_rating') {
+            await db.runAsync(
+                `UPDATE chat_sessions
+                 SET status = 'awaiting_rating',
+                     updated_at = CURRENT_TIMESTAMP,
+                     last_message_at = CURRENT_TIMESTAMP
+                 WHERE id = ?`,
+                [sessionId]
+            );
+        }
+
         const updatedSession = await db.getAsync(
-            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name, status
+            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name, status,
+                    typing_user_name, typing_user_at, typing_admin_name, typing_admin_at
              FROM chat_sessions
              WHERE id = ?`,
             [sessionId]
@@ -174,10 +219,46 @@ router.post('/messages/:sessionId', async (req, res) => {
             [sessionId]
         );
 
-        res.json({ success: true, messages, aiReply, session: updatedSession || session });
+        const replySession = updatedSession || session;
+        res.json({ success: true, messages, aiReply, session: { ...replySession, typing: buildTypingState(replySession) } });
     } catch (err) {
         console.error('Send chat message error:', err);
         res.status(500).json({ success: false, message: 'Failed to send message', error: err.message });
+    }
+});
+
+router.post('/typing/:sessionId', async (req, res) => {
+    try {
+        const sessionId = String(req.params.sessionId || '').trim();
+        const isTyping = Boolean(req.body?.isTyping);
+        const senderName = String(req.body?.name || 'Visitor').trim() || 'Visitor';
+
+        if (!sessionId) {
+            return res.status(400).json({ success: false, message: 'Session ID is required' });
+        }
+
+        const session = await db.getAsync('SELECT id, status FROM chat_sessions WHERE id = ?', [sessionId]);
+        if (!session) {
+            return res.status(404).json({ success: false, message: 'Session not found' });
+        }
+
+        if (String(session.status || '').toLowerCase() === 'closed') {
+            return res.status(409).json({ success: false, message: 'Chat session is closed' });
+        }
+
+        await db.runAsync(
+            `UPDATE chat_sessions
+             SET typing_user_name = ?,
+                 typing_user_at = ?,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [isTyping ? senderName : null, isTyping ? new Date().toISOString() : null, sessionId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('User typing status error:', err);
+        res.status(500).json({ success: false, message: 'Failed to update typing status', error: err.message });
     }
 });
 
@@ -248,7 +329,7 @@ router.get('/admin/sessions/:sessionId/messages', verifyToken, verifyOrderManage
             [sessionId]
         );
 
-        res.json({ success: true, session, messages });
+        res.json({ success: true, session: { ...session, typing: buildTypingState(session) }, messages });
     } catch (err) {
         console.error('Get admin chat messages error:', err);
         res.status(500).json({ success: false, message: 'Failed to load chat thread', error: err.message });
@@ -320,7 +401,11 @@ router.post('/admin/sessions/:sessionId/reply', verifyToken, verifyOrderManager,
 
         await db.runAsync(
             `UPDATE chat_sessions
-             SET status = 'open', updated_at = CURRENT_TIMESTAMP, last_message_at = CURRENT_TIMESTAMP
+             SET status = 'open',
+                 typing_admin_name = NULL,
+                 typing_admin_at = NULL,
+                 updated_at = CURRENT_TIMESTAMP,
+                 last_message_at = CURRENT_TIMESTAMP
              WHERE id = ?`,
             [sessionId]
         );
@@ -337,6 +422,41 @@ router.post('/admin/sessions/:sessionId/reply', verifyToken, verifyOrderManager,
     } catch (err) {
         console.error('Admin reply chat error:', err);
         res.status(500).json({ success: false, message: 'Failed to send reply', error: err.message });
+    }
+});
+
+router.post('/admin/sessions/:sessionId/typing', verifyToken, verifyOrderManager, async (req, res) => {
+    try {
+        const sessionId = String(req.params.sessionId || '').trim();
+        const isTyping = Boolean(req.body?.isTyping);
+
+        if (!sessionId) {
+            return res.status(400).json({ success: false, message: 'Session ID is required' });
+        }
+
+        const session = await db.getAsync('SELECT id, status FROM chat_sessions WHERE id = ?', [sessionId]);
+        if (!session) {
+            return res.status(404).json({ success: false, message: 'Session not found' });
+        }
+
+        if (String(session.status || '').toLowerCase() === 'closed') {
+            return res.status(409).json({ success: false, message: 'Chat session is closed' });
+        }
+
+        const adminName = String(req.user?.username || 'Admin').trim() || 'Admin';
+        await db.runAsync(
+            `UPDATE chat_sessions
+             SET typing_admin_name = ?,
+                 typing_admin_at = ?,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [isTyping ? adminName : null, isTyping ? new Date().toISOString() : null, sessionId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Admin typing status error:', err);
+        res.status(500).json({ success: false, message: 'Failed to update typing status', error: err.message });
     }
 });
 
@@ -358,6 +478,25 @@ router.post('/admin/sessions/:sessionId/close', verifyToken, verifyOrderManager,
             return res.status(409).json({ success: false, message: `Chat is taken by ${assignedAdmin}` });
         }
 
+        const existingStatus = String(session.status || '').toLowerCase();
+        if (existingStatus === 'awaiting_rating') {
+            await db.runAsync(
+                `UPDATE chat_sessions
+                 SET status = 'closed',
+                     typing_user_name = NULL,
+                     typing_user_at = NULL,
+                     typing_admin_name = NULL,
+                     typing_admin_at = NULL,
+                     updated_at = CURRENT_TIMESTAMP,
+                     last_message_at = CURRENT_TIMESTAMP,
+                     assigned_admin_id = COALESCE(assigned_admin_id, ?),
+                     assigned_admin_name = COALESCE(NULLIF(assigned_admin_name, ''), ?)
+                 WHERE id = ?`,
+                [req.user?.id || null, currentAdmin, sessionId]
+            );
+            return res.json({ success: true, message: 'Chat fully closed', phase: 'final' });
+        }
+
         const closingText = `Chat byl ukončen administrátorem ${currentAdmin}. Děkujeme za kontakt.`;
         const ratingToken = `__RATE_ADMIN__:${currentAdmin}`;
 
@@ -375,7 +514,11 @@ router.post('/admin/sessions/:sessionId/close', verifyToken, verifyOrderManager,
 
         await db.runAsync(
             `UPDATE chat_sessions
-             SET status = 'closed',
+             SET status = 'awaiting_rating',
+                 typing_user_name = NULL,
+                 typing_user_at = NULL,
+                 typing_admin_name = NULL,
+                 typing_admin_at = NULL,
                  updated_at = CURRENT_TIMESTAMP,
                  last_message_at = CURRENT_TIMESTAMP,
                  assigned_admin_id = COALESCE(assigned_admin_id, ?),
@@ -384,7 +527,7 @@ router.post('/admin/sessions/:sessionId/close', verifyToken, verifyOrderManager,
             [req.user?.id || null, currentAdmin, sessionId]
         );
 
-        res.json({ success: true, message: 'Chat closed' });
+        res.json({ success: true, message: 'Chat closed for user, waiting for rating', phase: 'awaiting_rating' });
     } catch (err) {
         console.error('Close chat session error:', err);
         res.status(500).json({ success: false, message: 'Failed to close chat session', error: err.message });

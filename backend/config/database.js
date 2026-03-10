@@ -278,6 +278,10 @@ async function initializeDatabase() {
             `ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS assigned_admin_name TEXT`,
             `ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open'`,
             `ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP`,
+            `ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS typing_user_name TEXT`,
+            `ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS typing_user_at TIMESTAMPTZ`,
+            `ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS typing_admin_name TEXT`,
+            `ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS typing_admin_at TIMESTAMPTZ`,
             `ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS is_read_admin BOOLEAN DEFAULT FALSE`,
             `ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS is_read_user BOOLEAN DEFAULT FALSE`
         ];

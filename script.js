@@ -8342,6 +8342,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Floating support chat + admin chat inbox
     const supportChatState = {
         sessionId: localStorage.getItem('supportChatSessionId') || '',
+        lastSeenAdminMessageId: Number(localStorage.getItem('supportChatLastSeenAdminMessageId') || 0),
         profile: {
             name: localStorage.getItem('supportChatName') || Storage.getUser()?.username || '',
             email: localStorage.getItem('supportChatEmail') || Storage.getUser()?.email || '',
@@ -8350,13 +8351,17 @@ document.addEventListener('DOMContentLoaded', function() {
         onboardingStage: 'name',
         isClosed: false,
         sessionMeta: null,
-        pollId: null
+        pollId: null,
+        typingStopTimer: null,
+        typingActive: false
     };
 
     const adminChatState = {
         sessions: [],
         activeSessionId: null,
-        pollId: null
+        pollId: null,
+        typingStopTimer: null,
+        typingActive: false
     };
 
     const supportRatingState = {
@@ -8514,6 +8519,61 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('supportChatHelpTopic', supportChatState.profile.helpTopic || '');
     }
 
+    function renderSupportChatUnreadBadge(count) {
+        const badge = document.getElementById('supportChatUnreadBadge');
+        if (!badge) return;
+
+        const safeCount = Math.max(0, Number(count || 0));
+        if (safeCount <= 0) {
+            badge.style.display = 'none';
+            badge.textContent = '0';
+            return;
+        }
+
+        badge.style.display = 'inline-flex';
+        badge.textContent = safeCount > 99 ? '99+' : String(safeCount);
+    }
+
+    function updateSupportChatUnread(messages = [], isOpen = false) {
+        if (!Array.isArray(messages)) {
+            renderSupportChatUnreadBadge(0);
+            return;
+        }
+
+        const adminMessages = messages.filter((msg) => {
+            const text = String(msg?.message || '');
+            if (/^__RATE_ADMIN__:/.test(text)) return false;
+            return String(msg?.sender_type || '') === 'admin';
+        });
+
+        const latestAdminId = adminMessages.reduce((maxId, msg) => Math.max(maxId, Number(msg?.id || 0)), 0);
+
+        if (isOpen) {
+            if (latestAdminId > supportChatState.lastSeenAdminMessageId) {
+                supportChatState.lastSeenAdminMessageId = latestAdminId;
+                localStorage.setItem('supportChatLastSeenAdminMessageId', String(latestAdminId));
+            }
+            renderSupportChatUnreadBadge(0);
+            return;
+        }
+
+        const unreadCount = adminMessages.filter((msg) => Number(msg?.id || 0) > supportChatState.lastSeenAdminMessageId).length;
+        renderSupportChatUnreadBadge(unreadCount);
+    }
+
+    async function sendSupportTypingStatus(isTyping) {
+        if (!supportChatState.sessionId) return;
+        try {
+            await apiCall('POST', `/chat/typing/${supportChatState.sessionId}`, {
+                isTyping,
+                name: supportChatState.profile.name || Storage.getUser()?.username || 'Visitor'
+            });
+            supportChatState.typingActive = Boolean(isTyping);
+        } catch {
+            // ignore transient typing status failures
+        }
+    }
+
     function getHelpTopicLabel(value) {
         const map = {
             'repair-service': 'Oprava zařízení',
@@ -8594,15 +8654,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function clearSupportChatLocalSession() {
         supportChatState.sessionId = '';
+        supportChatState.lastSeenAdminMessageId = 0;
+        supportChatState.typingActive = false;
+        if (supportChatState.typingStopTimer) {
+            clearTimeout(supportChatState.typingStopTimer);
+            supportChatState.typingStopTimer = null;
+        }
+        if (supportChatState.pollId) {
+            clearInterval(supportChatState.pollId);
+            supportChatState.pollId = null;
+        }
         supportChatState.isClosed = false;
         supportChatState.sessionMeta = null;
         supportChatState.onboardingStage = 'name';
         supportChatState.profile = { name: '', email: '', helpTopic: '' };
         localStorage.removeItem('supportChatSessionId');
+        localStorage.removeItem('supportChatLastSeenAdminMessageId');
         localStorage.removeItem('supportChatName');
         localStorage.removeItem('supportChatEmail');
         localStorage.removeItem('supportChatHelpTopic');
         renderSupportChatHeader(null);
+        renderSupportChatUnreadBadge(0);
     }
 
     async function ensureSupportChatSession() {
@@ -8638,6 +8710,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!body) return;
         body.innerHTML = '';
         let pendingRatingAdmin = '';
+        const chatOpen = Boolean(document.getElementById('supportChat')?.classList.contains('open'));
 
         const sessionInfo = session || supportChatState.sessionMeta || null;
         const derivedAdmin = String(sessionInfo?.assigned_admin_name || '').trim() || findAssignedAdminFromMessages(messages || []);
@@ -8651,6 +8724,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         renderSupportChatHeader(derivedAdmin ? { ...(sessionInfo || {}), assigned_admin_name: derivedAdmin } : sessionInfo);
         updateSupportChatComposerState(sessionInfo, messages || []);
+        updateSupportChatUnread(messages || [], chatOpen);
 
         if (!hasSupportChatProfile()) {
             const intro = document.createElement('div');
@@ -8726,6 +8800,14 @@ document.addEventListener('DOMContentLoaded', function() {
             body.appendChild(item);
         });
 
+        const adminTyping = sessionInfo?.typing;
+        if (adminTyping?.adminActive) {
+            const typingMsg = document.createElement('div');
+            typingMsg.className = 'support-msg bot typing';
+            typingMsg.textContent = `${adminTyping.adminName || 'Admin'} typing...`;
+            body.appendChild(typingMsg);
+        }
+
         if (pendingRatingAdmin && supportChatState.sessionId) {
             openSupportRatingModal(pendingRatingAdmin, supportChatState.sessionId);
         }
@@ -8746,6 +8828,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (closeBtn) {
                 closeBtn.style.display = 'none';
                 closeBtn.dataset.sessionId = '';
+                closeBtn.textContent = 'Ukončit chat';
             }
             return;
         }
@@ -8762,6 +8845,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (closeBtn) {
                 closeBtn.style.display = 'none';
                 closeBtn.dataset.sessionId = '';
+                closeBtn.textContent = 'Ukončit chat';
             }
             return;
         }
@@ -8773,6 +8857,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (closeBtn) {
                 closeBtn.style.display = 'inline-flex';
                 closeBtn.dataset.sessionId = session.id;
+                closeBtn.textContent = String(session?.status || '').toLowerCase() === 'awaiting_rating' ? 'Uzavřít trvale' : 'Ukončit chat';
             }
         } else {
             takeBtn.disabled = true;
@@ -8780,7 +8865,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (closeBtn) {
                 closeBtn.style.display = 'none';
                 closeBtn.dataset.sessionId = '';
+                closeBtn.textContent = 'Ukončit chat';
             }
+        }
+    }
+
+    async function sendAdminTypingStatus(sessionId, isTyping) {
+        if (!sessionId || !Storage.getToken() || !canAccessAdmin(Storage.getUser())) return;
+        try {
+            await apiCall('POST', `/chat/admin/sessions/${sessionId}/typing`, { isTyping: Boolean(isTyping) });
+            adminChatState.typingActive = Boolean(isTyping);
+        } catch {
+            // ignore transient typing status failures
         }
     }
 
@@ -8872,6 +8968,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         }).join('');
+
+        if (session?.typing?.userActive) {
+            const typingName = escapeHtml(session.typing.userName || customerName || 'Uživatel');
+            messagesEl.insertAdjacentHTML('beforeend', `
+                <div class="admin-chat-msg user typing">
+                    <div>${typingName} typing...</div>
+                </div>
+            `);
+        }
 
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
@@ -9054,7 +9159,7 @@ document.addEventListener('DOMContentLoaded', function() {
             input.focus();
 
             if (!supportChatState.pollId) {
-                supportChatState.pollId = setInterval(pollSupportChat, 12000);
+                supportChatState.pollId = setInterval(pollSupportChat, 3000);
             }
         };
 
@@ -9068,16 +9173,38 @@ document.addEventListener('DOMContentLoaded', function() {
             panel.inert = true;
             panel.setAttribute('aria-hidden', 'true');
             toggleBtn.setAttribute('aria-expanded', 'false');
+        };
 
-            if (supportChatState.pollId) {
-                clearInterval(supportChatState.pollId);
-                supportChatState.pollId = null;
+        const handleSupportTypingInput = async () => {
+            const text = String(input.value || '').trim();
+            if (!supportChatState.sessionId || !hasSupportChatProfile()) return;
+
+            if (text && !supportChatState.typingActive) {
+                await sendSupportTypingStatus(true);
+            }
+
+            if (!text && supportChatState.typingActive) {
+                await sendSupportTypingStatus(false);
+            }
+
+            if (supportChatState.typingStopTimer) {
+                clearTimeout(supportChatState.typingStopTimer);
+            }
+
+            if (text) {
+                supportChatState.typingStopTimer = setTimeout(() => {
+                    sendSupportTypingStatus(false);
+                }, 1500);
             }
         };
 
         const closeAndResetChat = async () => {
             const confirmed = await promptCloseAndClearChat();
             if (!confirmed) return;
+
+            if (supportChatState.typingActive) {
+                await sendSupportTypingStatus(false);
+            }
 
             clearSupportChatLocalSession();
             body.innerHTML = '';
@@ -9092,6 +9219,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         closeBtn.addEventListener('click', closeAndResetChat);
+        input.addEventListener('input', handleSupportTypingInput);
+        input.addEventListener('blur', () => {
+            if (supportChatState.typingActive) {
+                sendSupportTypingStatus(false);
+            }
+        });
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -9109,7 +9242,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     input.focus();
 
                     if (hasSupportChatProfile() && !supportChatState.pollId) {
-                        supportChatState.pollId = setInterval(pollSupportChat, 12000);
+                        supportChatState.pollId = setInterval(pollSupportChat, 3000);
                     }
                     return;
                 }
@@ -9121,6 +9254,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     message: text,
                     senderName: supportChatState.profile.name || Storage.getUser()?.username || 'Visitor'
                 });
+                if (supportChatState.typingActive) {
+                    await sendSupportTypingStatus(false);
+                }
                 input.value = '';
                 supportChatState.sessionMeta = result.session || supportChatState.sessionMeta;
                 renderSupportChatMessages(result.messages || [], result.session || null);
@@ -9131,6 +9267,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         syncOnboardingPlaceholder();
+
+        if (!supportChatState.pollId) {
+            supportChatState.pollId = setInterval(pollSupportChat, 3000);
+        }
     }
 
     function initAdminChatInbox() {
@@ -9159,6 +9299,30 @@ document.addEventListener('DOMContentLoaded', function() {
             if (headerEl) headerEl.textContent = 'Select a chat session';
             if (messagesEl) messagesEl.innerHTML = '<div class="admin-chat-empty">No active chat selected.</div>';
             refreshTakeChatButton(null);
+        };
+
+        const handleAdminTypingInput = async () => {
+            const sessionId = adminChatState.activeSessionId;
+            if (!sessionId) return;
+
+            const text = String(replyInput?.value || '').trim();
+            if (text && !adminChatState.typingActive) {
+                await sendAdminTypingStatus(sessionId, true);
+            }
+
+            if (!text && adminChatState.typingActive) {
+                await sendAdminTypingStatus(sessionId, false);
+            }
+
+            if (adminChatState.typingStopTimer) {
+                clearTimeout(adminChatState.typingStopTimer);
+            }
+
+            if (text) {
+                adminChatState.typingStopTimer = setTimeout(() => {
+                    sendAdminTypingStatus(sessionId, false);
+                }, 1500);
+            }
         };
 
         const hideTakeModal = () => {
@@ -9229,15 +9393,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(result?.message || 'Failed to close chat');
             }
 
-            adminChatState.sessions = (adminChatState.sessions || []).filter((s) => s.id !== sessionId);
-            if (adminChatState.activeSessionId === sessionId) {
-                adminChatState.activeSessionId = null;
-                clearAdminChatThread();
+            const isFinalClose = String(result.phase || '').toLowerCase() === 'final';
+            if (isFinalClose) {
+                adminChatState.sessions = (adminChatState.sessions || []).filter((s) => s.id !== sessionId);
+                if (adminChatState.activeSessionId === sessionId) {
+                    adminChatState.activeSessionId = null;
+                    clearAdminChatThread();
+                }
+                renderAdminChatSessionList();
+                showToast('Chat byl trvale uzavřen.');
+            } else {
+                showToast('Chat je ukončen pro uživatele. Čeká se na hodnocení.');
             }
 
-            renderAdminChatSessionList();
-            showToast('Chat byl uzavřen.');
             await loadAdminChatSessions();
+            if (!isFinalClose && adminChatState.activeSessionId === sessionId) {
+                await openAdminChatSession(sessionId);
+            }
         };
 
         closeConfirmBackdrop?.addEventListener('click', () => resolveCloseConfirm(false));
@@ -9269,6 +9441,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const sessionId = item.getAttribute('data-chat-session-id');
             if (!sessionId) return;
             try {
+                if (adminChatState.typingActive && adminChatState.activeSessionId && adminChatState.activeSessionId !== sessionId) {
+                    await sendAdminTypingStatus(adminChatState.activeSessionId, false);
+                }
                 await openAdminChatSession(sessionId);
                 await loadAdminChatSessions();
             } catch (err) {
@@ -9283,6 +9458,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             try {
                 const result = await apiCall('POST', `/chat/admin/sessions/${adminChatState.activeSessionId}/reply`, { message });
+                if (adminChatState.typingActive) {
+                    await sendAdminTypingStatus(adminChatState.activeSessionId, false);
+                }
                 if (replyInput) replyInput.value = '';
                 const session = adminChatState.sessions.find(s => s.id === adminChatState.activeSessionId) || { id: adminChatState.activeSessionId };
                 renderAdminChatThread(result.messages || [], session);
@@ -9324,6 +9502,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        replyInput?.addEventListener('input', handleAdminTypingInput);
+        replyInput?.addEventListener('blur', () => {
+            const sessionId = adminChatState.activeSessionId;
+            if (sessionId && adminChatState.typingActive) {
+                sendAdminTypingStatus(sessionId, false);
+            }
+        });
+
         if (adminChatState.pollId) clearInterval(adminChatState.pollId);
         adminChatState.pollId = setInterval(async () => {
             if (!Storage.getToken() || !canAccessAdmin(Storage.getUser())) return;
@@ -9339,7 +9525,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // ignore poll failures
                 }
             }
-        }, 12000);
+        }, 3000);
     }
 
     initSupportChat();
