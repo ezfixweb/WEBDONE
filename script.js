@@ -883,8 +883,8 @@ document.addEventListener('DOMContentLoaded', function() {
         gopayFee: 0,
         packetaApiKey: '',
         termsAdditionalText: '',
-        adminEmailSubject: 'Order Update - EzFix',
-        adminEmailMessage: 'Hi {{customerName}},\n\nWe wanted to follow up on your order.\n\nBest regards,\nEzFix Team'
+        adminEmailSubject: 'Aktualizace objednávky - EzFix',
+        adminEmailMessage: 'Dobrý den {{customerName}},\n\nozýváme se ohledně vaší objednávky.\n\nS pozdravem,\nTým EzFix'
     };
 
     let printingOptions = {
@@ -8655,7 +8655,7 @@ document.addEventListener('DOMContentLoaded', function() {
             takeBtn.style.display = 'none';
             takeBtn.dataset.sessionId = '';
             takeBtn.disabled = false;
-            takeBtn.textContent = 'Take chat';
+            takeBtn.textContent = 'Převzít chat';
             if (closeBtn) {
                 closeBtn.style.display = 'none';
                 closeBtn.dataset.sessionId = '';
@@ -8671,7 +8671,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!assigned) {
             takeBtn.style.display = 'inline-flex';
             takeBtn.disabled = false;
-            takeBtn.textContent = 'Take chat';
+            takeBtn.textContent = 'Převzít chat';
             if (closeBtn) {
                 closeBtn.style.display = 'none';
                 closeBtn.dataset.sessionId = '';
@@ -8682,14 +8682,14 @@ document.addEventListener('DOMContentLoaded', function() {
         takeBtn.style.display = 'inline-flex';
         if (assigned === myName) {
             takeBtn.disabled = true;
-            takeBtn.textContent = `Taken by you (${assigned})`;
+            takeBtn.textContent = `Převzato vámi (${assigned})`;
             if (closeBtn) {
                 closeBtn.style.display = 'inline-flex';
                 closeBtn.dataset.sessionId = session.id;
             }
         } else {
             takeBtn.disabled = true;
-            takeBtn.textContent = `Taken by ${assigned}`;
+            takeBtn.textContent = `Převzal ${assigned}`;
             if (closeBtn) {
                 closeBtn.style.display = 'none';
                 closeBtn.dataset.sessionId = '';
@@ -8735,12 +8735,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentAdminName = String(Storage.getUser()?.username || '').trim();
             const activeClass = session.id === adminChatState.activeSessionId ? 'active' : '';
 
-            let assignAction = `<button type="button" class="btn btn-sm btn-secondary admin-chat-assign-btn" data-chat-assign="${escapeHtml(session.id)}">Assign to me</button>`;
+            let assignAction = `<button type="button" class="btn btn-sm btn-secondary admin-chat-assign-btn" data-chat-assign="${escapeHtml(session.id)}">Převzít chat</button>`;
             if (rawAssigned) {
                 if (rawAssigned === currentAdminName) {
-                    assignAction = `<button type="button" class="btn btn-sm btn-secondary admin-chat-assign-btn" disabled>Taken by you</button>`;
+                    assignAction = `<button type="button" class="btn btn-sm btn-secondary admin-chat-assign-btn" disabled>Převzato vámi</button>`;
                 } else {
-                    assignAction = `<button type="button" class="btn btn-sm btn-secondary admin-chat-assign-btn" disabled>Taken by ${assigned}</button>`;
+                    assignAction = `<button type="button" class="btn btn-sm btn-secondary admin-chat-assign-btn" disabled>Převzal ${assigned}</button>`;
                 }
             }
 
@@ -9087,10 +9087,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const result = await apiCall('POST', `/chat/admin/sessions/${sessionId}/take`, {});
             if (!result?.success) {
-                throw new Error(result?.message || 'Failed to take chat');
+                throw new Error(result?.message || 'Nepodařilo se převzít chat');
             }
 
-            showToast(`Chat taken by ${result.session?.assigned_admin_name || 'current admin'}`);
+            showToast(`Chat převzal ${result.session?.assigned_admin_name || 'aktuální admin'}`);
             await loadAdminChatSessions();
             await openAdminChatSession(sessionId);
         };
@@ -9125,7 +9125,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     showTakeModal(sessionId);
                 } catch (err) {
-                    showToast(err?.message || 'Failed to take chat');
+                    showToast(err?.message || 'Nepodařilo se převzít chat');
                 }
                 return;
             }
@@ -9175,7 +9175,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 await takeChatSession(takeModalSessionId);
                 hideTakeModal();
             } catch (err) {
-                showToast(err?.message || 'Failed to take chat');
+                showToast(err?.message || 'Nepodařilo se převzít chat');
             }
         });
 

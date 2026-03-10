@@ -3387,8 +3387,8 @@ body.has-announcement .hero {
 .support-rating-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(11, 9, 31, 0.62);
-    backdrop-filter: blur(6px);
+    background: rgba(11, 9, 31, 0.68);
+    backdrop-filter: blur(8px);
 }
 
 .admin-chat-take-dialog,
@@ -3430,7 +3430,7 @@ body.has-announcement .hero {
 .support-rating-actions {
     margin-top: 14px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 8px;
 }
 
