@@ -186,7 +186,7 @@ body {
     gap: 2px;
     backdrop-filter: blur(3px);
     position: relative;
-    animation: loaderCardFloat 2.2s ease-in-out infinite, loaderCardReady 2.8s ease-out forwards;
+    animation: loaderCardFloat 2.2s ease-in-out infinite, loaderCardReady 2.0s ease-out forwards;
 }
 
 .app-loader-info-card::after {
@@ -206,23 +206,23 @@ body {
     font-size: 0.72rem;
     font-weight: 800;
     line-height: 1;
-    animation: loaderCheckReady 2.8s ease-out forwards;
+    animation: loaderCheckReady 2.0s ease-out forwards;
 }
 
 .app-loader-info-card:nth-child(2) {
-    animation-delay: 0.25s, 0.8s;
+    animation-delay: 0.2s, 0.55s;
 }
 
 .app-loader-info-card:nth-child(2)::after {
-    animation-delay: 0.8s;
+    animation-delay: 0.55s;
 }
 
 .app-loader-info-card:nth-child(3) {
-    animation-delay: 0.45s, 1.35s;
+    animation-delay: 0.35s, 0.95s;
 }
 
 .app-loader-info-card:nth-child(3)::after {
-    animation-delay: 1.35s;
+    animation-delay: 0.95s;
 }
 
 .app-loader-info-title {
@@ -2358,6 +2358,11 @@ body.has-announcement .hero {
     min-width: 0;
 }
 
+.catalog-item .catalog-input {
+    min-width: 0;
+    width: 100%;
+}
+
 .catalog-item[data-type="brand"] {
     grid-template-columns: minmax(120px, 1fr) minmax(160px, 1fr) auto auto;
     align-items: end;
@@ -2365,6 +2370,31 @@ body.has-announcement .hero {
 
 .catalog-item[data-type="model"] {
     grid-template-columns: minmax(180px, 1fr) auto auto;
+    align-items: end;
+}
+
+.catalog-item[data-type="repair"] {
+    grid-template-columns: minmax(110px, 1fr) minmax(170px, 1.3fr) minmax(220px, 1.8fr) 90px minmax(110px, 1fr) auto auto;
+    align-items: end;
+}
+
+.catalog-item[data-type="build-item"] {
+    grid-template-columns: minmax(110px, 1fr) minmax(170px, 1.3fr) 90px minmax(220px, 1.8fr) auto auto;
+    align-items: end;
+}
+
+.catalog-item[data-type="printer"] {
+    grid-template-columns: minmax(110px, 1fr) minmax(150px, 1.2fr) minmax(180px, 1.5fr) minmax(220px, 1.7fr) auto auto auto;
+    align-items: end;
+}
+
+.catalog-item[data-type="filament"] {
+    grid-template-columns: minmax(110px, 1fr) minmax(170px, 1.3fr) auto auto;
+    align-items: end;
+}
+
+.catalog-item[data-type="color"] {
+    grid-template-columns: minmax(110px, 1fr) minmax(170px, 1.3fr) 110px auto auto;
     align-items: end;
 }
 
@@ -2376,14 +2406,37 @@ body.has-announcement .hero {
 
 .catalog-item[data-type="brand"] .toggle,
 .catalog-item[data-type="model"] .toggle,
+.catalog-item[data-type="repair"] .toggle,
+.catalog-item[data-type="build-item"] .toggle,
+.catalog-item[data-type="printer"] .toggle,
+.catalog-item[data-type="filament"] .toggle,
+.catalog-item[data-type="color"] .toggle,
 .catalog-item[data-type="brand"] .inline-actions,
-.catalog-item[data-type="model"] .inline-actions {
+.catalog-item[data-type="model"] .inline-actions,
+.catalog-item[data-type="repair"] .inline-actions,
+.catalog-item[data-type="build-item"] .inline-actions,
+.catalog-item[data-type="printer"] .inline-actions,
+.catalog-item[data-type="filament"] .inline-actions,
+.catalog-item[data-type="color"] .inline-actions {
     align-self: end;
+}
+
+.catalog-item .inline-actions {
+    justify-content: flex-end;
+}
+
+.catalog-item .inline-actions .btn {
+    white-space: nowrap;
 }
 
 @media (max-width: 1100px) {
     .catalog-item[data-type="brand"],
-    .catalog-item[data-type="model"] {
+    .catalog-item[data-type="model"],
+    .catalog-item[data-type="repair"],
+    .catalog-item[data-type="build-item"],
+    .catalog-item[data-type="printer"],
+    .catalog-item[data-type="filament"],
+    .catalog-item[data-type="color"] {
         grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         align-items: center;
     }
@@ -5124,6 +5177,22 @@ body.has-announcement .hero {
     font-size: 1rem;
     margin-bottom: 16px;
     color: var(--text);
+}
+
+.credentials-users-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.credentials-users-header h4 {
+    margin-bottom: 0;
+}
+
+#credentialsCustomerUsersSection.is-collapsed .users-list {
+    display: none;
 }
 
 .users-list {

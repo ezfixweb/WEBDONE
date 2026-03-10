@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.setTimeout(() => {
             startupLoader.remove();
             document.body.classList.remove('app-loading');
-        }, 360);
+        }, 280);
     }
 
     // ========================================================================
@@ -2016,7 +2016,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const items = catalogDraft.customBuilds[catalogUiState.buildCategory] || [];
         items.sort(catalogSortByName);
         list.innerHTML = items.map((item, index) => `
-            <div class="catalog-item" data-index="${index}">
+            <div class="catalog-item" data-index="${index}" data-type="build-item">
                 <div>
                     <label>ID</label>
                     <input class="catalog-input" value="${item.id || ''}" data-field="id" readonly />
@@ -5737,11 +5737,35 @@ document.addEventListener('DOMContentLoaded', function() {
             container.style.opacity = owner ? '0.7' : '1';
         }
     }
+    let isCustomerUsersHidden = false;
+
+    function syncCustomerUsersVisibility() {
+        const section = document.getElementById('credentialsCustomerUsersSection');
+        const toggleBtn = document.getElementById('toggleCustomerUsersBtn');
+        if (!section || !toggleBtn) return;
+
+        section.classList.toggle('is-collapsed', isCustomerUsersHidden);
+        toggleBtn.textContent = isCustomerUsersHidden ? t('Show') : t('Hide');
+    }
+
+    function initCustomerUsersToggle() {
+        const toggleBtn = document.getElementById('toggleCustomerUsersBtn');
+        if (!toggleBtn || toggleBtn.dataset.bound === '1') return;
+
+        toggleBtn.addEventListener('click', () => {
+            isCustomerUsersHidden = !isCustomerUsersHidden;
+            syncCustomerUsersVisibility();
+        });
+
+        toggleBtn.dataset.bound = '1';
+        syncCustomerUsersVisibility();
+    }
 
     /**
      * Render credentials management UI by fetching from API
      */
     async function renderCredentialsUI() {
+        initCustomerUsersToggle();
         try {
             const result = await apiCall('GET', '/admin/users');
             const users = result.users || [];
@@ -5805,6 +5829,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 usersListCustomers.innerHTML = renderUserRows(customerUsers);
                 bindUserActions(usersListCustomers);
             }
+
+            syncCustomerUsersVisibility();
         } catch (error) {
             showToast('Failed to load users: ' + error.message);
         }
