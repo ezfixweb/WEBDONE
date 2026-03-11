@@ -640,6 +640,10 @@ body.has-announcement .hero {
     display: none;
 }
 
+.mobile-quick-actions {
+    display: none;
+}
+
 .mobile-cart-link {
     display: inline-flex;
     align-items: center;
@@ -1588,6 +1592,135 @@ body.has-announcement .hero {
     color: var(--text-light);
 }
 
+.home-news {
+    padding: 26px 0 86px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.home-news-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.home-news-header h2 {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.home-news-header p {
+    color: var(--text-light);
+}
+
+.home-news-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.home-news-card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 14px 32px rgba(18, 28, 68, 0.1);
+    display: flex;
+    flex-direction: column;
+    content-visibility: auto;
+    contain-intrinsic-size: 360px;
+}
+
+.home-news-card.no-image {
+    padding-top: 8px;
+}
+
+.home-news-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background: linear-gradient(145deg, #dbeafe 0%, #f1f5f9 100%);
+}
+
+.home-news-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 220px;
+}
+
+.home-news-card.no-image .home-news-body {
+    min-height: 0;
+    gap: 12px;
+}
+
+.home-news-title {
+    margin: 0;
+    font-size: 1.08rem;
+    color: #111827;
+}
+
+.home-news-date {
+    margin: 0;
+    font-size: 0.76rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.home-news-summary {
+    color: var(--text-light);
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.home-news-summary p {
+    margin: 0 0 8px;
+}
+
+.home-news-summary p:last-child {
+    margin-bottom: 0;
+}
+
+.home-news-actions {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.news-details-hero {
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 14px;
+}
+
+.news-details-content {
+    color: #1f2937;
+    line-height: 1.7;
+    font-size: 0.95rem;
+}
+
+.news-details-date {
+    margin: 0 0 12px;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.news-details-content p {
+    margin: 0 0 10px;
+}
+
+@media (max-width: 980px) {
+    .home-news-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Services Page */
 .services-header {
     background: var(--bg-dark);
@@ -2270,6 +2403,22 @@ body.has-announcement .hero {
     transition: 0.2s ease;
 }
 
+.catalog-tab-btn.has-unsaved {
+    position: relative;
+    border-color: #f59e0b;
+}
+
+.catalog-tab-btn.has-unsaved::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f59e0b;
+}
+
 .catalog-tab-btn.active {
     background: var(--primary);
     color: white;
@@ -2398,6 +2547,11 @@ body.has-announcement .hero {
     align-items: end;
 }
 
+.catalog-item[data-type="news-item"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+
 .catalog-item[data-type="brand"] .catalog-input,
 .catalog-item[data-type="model"] .catalog-input {
     min-width: 0;
@@ -2411,13 +2565,15 @@ body.has-announcement .hero {
 .catalog-item[data-type="printer"] .toggle,
 .catalog-item[data-type="filament"] .toggle,
 .catalog-item[data-type="color"] .toggle,
+.catalog-item[data-type="news-item"] .toggle,
 .catalog-item[data-type="brand"] .inline-actions,
 .catalog-item[data-type="model"] .inline-actions,
 .catalog-item[data-type="repair"] .inline-actions,
 .catalog-item[data-type="build-item"] .inline-actions,
 .catalog-item[data-type="printer"] .inline-actions,
 .catalog-item[data-type="filament"] .inline-actions,
-.catalog-item[data-type="color"] .inline-actions {
+.catalog-item[data-type="color"] .inline-actions,
+.catalog-item[data-type="news-item"] .inline-actions {
     align-self: end;
 }
 
@@ -2471,6 +2627,114 @@ body.has-announcement .hero {
     font-size: 0.95rem;
 }
 
+.catalog-news-toolbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.catalog-news-sort-label {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--text-light);
+}
+
+.catalog-news-sort-select {
+    min-width: 170px;
+}
+
+.catalog-news-state {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.catalog-news-state.is-published {
+    color: #15803d;
+}
+
+.catalog-news-state.is-scheduled {
+    color: #1d4ed8;
+}
+
+.catalog-news-state.is-inactive {
+    color: #64748b;
+}
+
+.catalog-news-warning {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    color: #b45309;
+    font-weight: 700;
+}
+
+.catalog-news-preview-wrap label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.catalog-news-preview {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
+
+.catalog-news-preview.no-image {
+    padding-top: 6px;
+}
+
+.catalog-news-preview-image {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    background: linear-gradient(145deg, #dbeafe 0%, #f1f5f9 100%);
+}
+
+.catalog-news-preview-body {
+    padding: 12px;
+}
+
+.catalog-news-preview-date {
+    margin: 0 0 6px;
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.catalog-news-preview-title {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    color: #111827;
+}
+
+.catalog-news-preview-summary {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.catalog-news-preview-summary p {
+    margin: 0;
+}
+
+.catalog-item[data-type="news-item"] {
+    content-visibility: auto;
+    contain-intrinsic-size: 920px;
+}
+
+.catalog-news-preview-meta {
+    margin: 8px 0 0;
+    color: #64748b;
+    font-size: 0.78rem;
+}
+
 .catalog-textarea {
     width: 100%;
     border: 1px solid var(--border);
@@ -2512,6 +2776,46 @@ body.has-announcement .hero {
     margin: 2px 0 0;
     color: var(--text-light);
     font-size: 0.9rem;
+}
+
+.catalog-rich-toolbar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.catalog-rich-btn {
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.catalog-rich-editor {
+    min-height: 92px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    line-height: 1.5;
+    font-size: 0.9rem;
+    color: #111827;
+}
+
+.catalog-rich-editor:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(122, 44, 255, 0.12);
+}
+
+.catalog-rich-editor p {
+    margin: 0 0 8px;
+}
+
+.catalog-rich-editor p:last-child {
+    margin-bottom: 0;
 }
 
 .catalog-actions {
@@ -3229,6 +3533,47 @@ body.has-announcement .hero {
 }
 
 /* Admin chats */
+.admin-chat-filters {
+    display: flex;
+    align-items: end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+.admin-chat-filter-label {
+    color: #4b3f83;
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.admin-chat-filter-select {
+    min-width: 190px;
+    border: 1px solid #d8d2ff;
+    border-radius: 10px;
+    background: #fff;
+    padding: 8px 10px;
+    color: #2f2b6e;
+    font-size: 0.88rem;
+}
+
+.admin-chat-open-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    padding: 0 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: #22c55e;
+    color: #fff;
+}
+
 .admin-chat-layout {
     display: grid;
     grid-template-columns: 340px 1fr;
@@ -3303,6 +3648,71 @@ body.has-announcement .hero {
     min-height: 560px;
     display: flex;
     flex-direction: column;
+}
+
+.admin-chat-ai-config {
+    margin-top: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: #fff;
+    padding: 14px;
+}
+
+.admin-chat-ai-config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-chat-ai-config-header h3 {
+    margin: 0;
+    color: #2f2b6e;
+    font-size: 1rem;
+}
+
+.admin-chat-ai-config-note {
+    margin: 8px 0 12px;
+    color: var(--text-light);
+    font-size: 0.86rem;
+}
+
+.admin-chat-ai-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.admin-chat-ai-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.admin-chat-ai-field label {
+    font-size: 0.82rem;
+    color: #4b3f83;
+    font-weight: 700;
+}
+
+.admin-chat-ai-field input,
+.admin-chat-ai-field textarea {
+    border: 1px solid #d8d2ff;
+    border-radius: 10px;
+    padding: 9px 11px;
+    font-size: 0.88rem;
+    color: #2f2b6e;
+    background: #fff;
+}
+
+.admin-chat-ai-field textarea {
+    resize: vertical;
+}
+
+.admin-chat-ai-actions {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .admin-chat-thread-header {
@@ -3838,6 +4248,19 @@ body.has-announcement .hero {
         width: 100%;
     }
 
+    .mobile-quick-actions {
+        display: flex;
+        width: 100%;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .mobile-quick-actions .btn {
+        min-width: 92px;
+    }
+
     .nav-links.active .mobile-cart-item {
         display: block;
     }
@@ -3938,6 +4361,14 @@ body.has-announcement .hero {
     }
 
     .admin-chat-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-chat-filter-select {
+        min-width: 150px;
+    }
+
+    .admin-chat-ai-grid {
         grid-template-columns: 1fr;
     }
 
@@ -5802,6 +6233,71 @@ body.has-announcement .hero {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
+}
+
+/* Shared popup animations */
+@keyframes popupOverlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes popupDialogIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.login-modal:not(.hidden),
+.login-progress-modal:not(.hidden),
+.email-modal:not(.hidden),
+.order-details-modal:not(.hidden),
+.part-details-modal:not(.hidden),
+.modal-overlay,
+.chat-close-confirm.show,
+.admin-chat-take-modal.show,
+.support-rating-modal.show {
+    animation: popupOverlayIn 0.22s ease-out;
+}
+
+.login-modal:not(.hidden) .login-box,
+.login-progress-modal:not(.hidden) .login-progress-box,
+.email-modal:not(.hidden) .email-modal-container,
+.order-details-modal:not(.hidden) .order-details-container,
+.part-details-modal:not(.hidden) .part-details-container,
+.modal-overlay .modal,
+.chat-close-confirm.show .chat-close-confirm-dialog,
+.admin-chat-take-modal.show .admin-chat-take-dialog,
+.support-rating-modal.show .support-rating-dialog {
+    animation: popupDialogIn 0.24s ease-out;
+    transform-origin: center top;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-modal:not(.hidden),
+    .login-progress-modal:not(.hidden),
+    .email-modal:not(.hidden),
+    .order-details-modal:not(.hidden),
+    .part-details-modal:not(.hidden),
+    .modal-overlay,
+    .chat-close-confirm.show,
+    .admin-chat-take-modal.show,
+    .support-rating-modal.show,
+    .login-modal:not(.hidden) .login-box,
+    .login-progress-modal:not(.hidden) .login-progress-box,
+    .email-modal:not(.hidden) .email-modal-container,
+    .order-details-modal:not(.hidden) .order-details-container,
+    .part-details-modal:not(.hidden) .part-details-container,
+    .modal-overlay .modal,
+    .chat-close-confirm.show .chat-close-confirm-dialog,
+    .admin-chat-take-modal.show .admin-chat-take-dialog,
+    .support-rating-modal.show .support-rating-dialog {
+        animation: none !important;
+    }
 }
 
 @media (max-width: 768px) {

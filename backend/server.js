@@ -81,7 +81,11 @@ app.use(helmet({
             ],
             "connect-src": ["'self'", "https://widget.packeta.com"]
         }
-    }
+    },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    hsts: process.env.NODE_ENV === 'production'
+        ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+        : false
 }));
 
 // Gzip/brotli compression for faster responses
@@ -108,12 +112,27 @@ const authLimiter = rateLimit({
         });
     },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    skipSuccessfulRequests: true
 });
 
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // 100 requests per window
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const chatLimiter = rateLimit({
+    windowMs: Number(process.env.CHAT_RATE_WINDOW_MS || 60 * 1000),
+    max: Number(process.env.CHAT_RATE_MAX || 80),
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const presenceLimiter = rateLimit({
+    windowMs: Number(process.env.PRESENCE_RATE_WINDOW_MS || 60 * 1000),
+    max: Number(process.env.PRESENCE_RATE_MAX || 120),
     standardHeaders: true,
     legacyHeaders: false
 });
@@ -161,7 +180,7 @@ app.get('/api/health', (req, res) => {
     res.json({ success: true, message: 'Server is running' });
 });
 
-app.post('/api/presence/heartbeat', (req, res) => {
+app.post('/api/presence/heartbeat', presenceLimiter, (req, res) => {
     const rawVisitorId = typeof req.body?.visitorId === 'string' ? req.body.visitorId.trim() : '';
     const safeVisitorId = /^[a-zA-Z0-9._-]{6,100}$/.test(rawVisitorId)
         ? rawVisitorId
@@ -175,7 +194,7 @@ app.post('/api/presence/heartbeat', (req, res) => {
     });
 });
 
-app.get('/api/presence/active', (req, res) => {
+app.get('/api/presence/active', presenceLimiter, (req, res) => {
     res.json({
         success: true,
         activeVisitors: getActiveVisitorsCount()
@@ -192,7 +211,7 @@ app.use('/api/builds', apiLimiter, buildsRoutes);
 app.use('/api/email', apiLimiter, emailRoutes);
 app.use('/api/catalog', apiLimiter, catalogRoutes);
 app.use('/api/uploads', apiLimiter, uploadsRoutes);
-app.use('/api/chat', apiLimiter, chatRoutes);
+app.use('/api/chat', chatLimiter, chatRoutes);
 
 // Serve frontend static files from the project root (one level up from backend)
 const path = require('path');

@@ -16,6 +16,7 @@
     <meta name="twitter:title" content="EzFix - Device Repair & Custom Builds">
     <meta name="twitter:description" content="Fast repairs, custom builds, and precision 3D prints with transparent pricing.">
     <title>EzFix - Phone, Tablet, Notebook & PC Repair</title>
+    <link rel="preload" as="image" href="assets/logos/ezfix-logo.png" fetchpriority="high">
     <link rel="stylesheet" href="styles.css?v=20260310h">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -95,6 +96,11 @@
                         <span>Cart</span>
                         <span class="cart-count mobile-cart-count" data-role="cart-count" aria-live="polite" aria-atomic="true">0</span>
                     </a>
+                </li>
+                <li class="mobile-quick-actions">
+                    <button class="btn btn-secondary btn-sm" id="langToggleMobile" type="button" aria-label="Switch language">CZ</button>
+                    <a href="#" class="btn btn-primary btn-sm" id="loginNavBtnMobile" data-page="auth">Login</a>
+                    <button class="btn btn-secondary btn-sm" id="logoutBtnMobile" style="display:none;">Logout</button>
                 </li>
                 <li id="adminNavLink" style="display: none;"><a href="#" data-page="admin">Admin</a></li>
             </ul>
@@ -433,6 +439,16 @@
                             <a href="#" class="link-btn" data-page="printing">Print a Part</a>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="home-news">
+                <div class="container">
+                    <div class="home-news-header">
+                        <h2>News and Updates</h2>
+                        <p>Latest updates, tips, and offers from EzFix.</p>
+                    </div>
+                    <div class="home-news-grid" id="homeNewsList"></div>
                 </div>
             </div>
         </section>
@@ -2033,6 +2049,7 @@
                                 <button class="catalog-tab-btn" data-catalog-tab="other-items">Jiné položky</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="checkout">Pokladna</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="email">E-mailové šablony</button>
+                                <button class="catalog-tab-btn" data-catalog-tab="news">News and Updates</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="advanced">Pokročilé JSON</button>
                             </div>
 
@@ -2192,6 +2209,27 @@
                                 </div>
                             </div>
 
+                            <div class="catalog-panel" id="catalog-news">
+                                <div class="catalog-section">
+                                    <div class="catalog-header">
+                                        <h3>News and Updates</h3>
+                                        <p>Add and edit homepage news cards with rich formatting.</p>
+                                    </div>
+                                    <div class="catalog-subheader">
+                                        <h4>Articles</h4>
+                                        <div class="catalog-news-toolbar">
+                                            <label for="catalogNewsSortMode" class="catalog-news-sort-label">Sorting</label>
+                                            <select id="catalogNewsSortMode" class="catalog-input catalog-news-sort-select">
+                                                <option value="manual">Manual Order</option>
+                                                <option value="newest">Newest First</option>
+                                            </select>
+                                            <button class="btn btn-sm" id="catalogAddNewsItem">Add News</button>
+                                        </div>
+                                    </div>
+                                    <div id="catalogNewsList" class="catalog-list"></div>
+                                </div>
+                            </div>
+
                             <div class="catalog-panel" id="catalog-advanced">
                                 <div class="catalog-section">
                                     <div class="catalog-header">
@@ -2215,6 +2253,10 @@
                                             <h4>Checkout</h4>
                                             <textarea id="catalogCheckoutInput" class="catalog-textarea" rows="12"></textarea>
                                         </div>
+                                        <div>
+                                            <h4>News</h4>
+                                            <textarea id="catalogNewsInput" class="catalog-textarea" rows="12"></textarea>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2233,6 +2275,22 @@
 
                     <!-- Chats Tab Content -->
                     <div id="chats-content" class="admin-tab-content">
+                        <div class="admin-chat-filters" id="adminChatFilters">
+                            <label class="admin-chat-filter-label" for="adminChatStatusFilter">
+                                Stav
+                                <span class="admin-chat-open-count" id="adminChatOpenCount" style="display:none;">0</span>
+                            </label>
+                            <select id="adminChatStatusFilter" class="admin-chat-filter-select">
+                                <option value="all">Všechny chaty</option>
+                                <option value="open_unassigned">Otevřené nepřevzaté</option>
+                                <option value="taken_active">Převzaté aktivní</option>
+                                <option value="closed">Uzavřené</option>
+                            </select>
+                            <label class="admin-chat-filter-label" for="adminChatAdminFilter">Admin</label>
+                            <select id="adminChatAdminFilter" class="admin-chat-filter-select">
+                                <option value="all">Všichni admini</option>
+                            </select>
+                        </div>
                         <div class="admin-chat-layout">
                             <aside class="admin-chat-sessions" id="adminChatSessions">
                                 <div class="admin-chat-empty">No chat sessions yet.</div>
@@ -2252,6 +2310,58 @@
                                 </form>
                             </section>
                         </div>
+
+                        <section class="admin-chat-ai-config" id="adminChatAiConfig">
+                            <div class="admin-chat-ai-config-header">
+                                <h3>AI Bot Answers</h3>
+                                <button type="button" class="btn btn-sm btn-secondary" id="adminChatAiReloadBtn">Reload</button>
+                            </div>
+                            <p class="admin-chat-ai-config-note">Customize automatic AI replies for common chat topics.</p>
+
+                            <div class="admin-chat-ai-grid">
+                                <div class="admin-chat-ai-field">
+                                    <label for="adminChatAiKeywordsEmail">Email keywords</label>
+                                    <input id="adminChatAiKeywordsEmail" type="text" placeholder="email, mail, kontakt" maxlength="300">
+                                </div>
+                                <div class="admin-chat-ai-field">
+                                    <label for="adminChatAiKeywordsPhone">Phone keywords</label>
+                                    <input id="adminChatAiKeywordsPhone" type="text" placeholder="telefon, phone, call" maxlength="300">
+                                </div>
+                                <div class="admin-chat-ai-field">
+                                    <label for="adminChatAiKeywordsPrice">Price keywords</label>
+                                    <input id="adminChatAiKeywordsPrice" type="text" placeholder="cena, price, kolik" maxlength="300">
+                                </div>
+                                <div class="admin-chat-ai-field">
+                                    <label for="adminChatAiKeywordsRepair">Repair keywords</label>
+                                    <input id="adminChatAiKeywordsRepair" type="text" placeholder="oprava, servis, repair" maxlength="300">
+                                </div>
+                            </div>
+
+                            <div class="admin-chat-ai-field">
+                                <label for="adminChatAiReplyEmail">Reply for email</label>
+                                <textarea id="adminChatAiReplyEmail" rows="3" maxlength="1200"></textarea>
+                            </div>
+                            <div class="admin-chat-ai-field">
+                                <label for="adminChatAiReplyPhone">Reply for phone</label>
+                                <textarea id="adminChatAiReplyPhone" rows="3" maxlength="1200"></textarea>
+                            </div>
+                            <div class="admin-chat-ai-field">
+                                <label for="adminChatAiReplyPrice">Reply for price</label>
+                                <textarea id="adminChatAiReplyPrice" rows="3" maxlength="1200"></textarea>
+                            </div>
+                            <div class="admin-chat-ai-field">
+                                <label for="adminChatAiReplyRepair">Reply for repair/service</label>
+                                <textarea id="adminChatAiReplyRepair" rows="3" maxlength="1200"></textarea>
+                            </div>
+                            <div class="admin-chat-ai-field">
+                                <label for="adminChatAiReplyFallback">Fallback reply (when no keyword matches)</label>
+                                <textarea id="adminChatAiReplyFallback" rows="3" maxlength="1200"></textarea>
+                            </div>
+
+                            <div class="admin-chat-ai-actions">
+                                <button type="button" class="btn btn-primary" id="adminChatAiSaveBtn">Save AI Answers</button>
+                            </div>
+                        </section>
                     </div>
 
                     <!-- Admin Credentials Tab Content -->
@@ -2562,13 +2672,25 @@
         </div>
     </div>
 
+    <div class="email-modal hidden" id="newsDetailsModal" style="display:none;">
+        <div class="email-modal-overlay" id="newsDetailsOverlay"></div>
+        <div class="email-modal-container" role="dialog" aria-modal="true" aria-labelledby="newsDetailsTitle">
+            <div class="email-modal-header">
+                <h2 id="newsDetailsTitle">News</h2>
+                <button class="email-modal-close" id="newsDetailsClose" aria-label="Close">x</button>
+            </div>
+            <div class="email-modal-content">
+                <div id="newsDetailsBody"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
         window.EZFIX_CONFIG = {
             // Single source of truth for API base URL.
             API_BASE_URL: 'https://api.ezfix.cz/api'
         };
     </script>
-    <script src="https://widget.packeta.com/v6/www/js/library.js" defer></script>
     <script src="script.js?v=20260310o" defer></script>
 </body>
 </html>

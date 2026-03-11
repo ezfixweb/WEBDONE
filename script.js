@@ -74,6 +74,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 280);
     }
 
+    const perfLoggingEnabled =
+        window.location.search.includes('perf=1') ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+
+    function logPerfMetric(name, durationMs, details = null) {
+        if (!perfLoggingEnabled) return;
+        const safeDuration = Number.isFinite(durationMs) ? durationMs : 0;
+        if (details) {
+            console.info(`[perf] ${name}: ${safeDuration.toFixed(1)}ms`, details);
+            return;
+        }
+        console.info(`[perf] ${name}: ${safeDuration.toFixed(1)}ms`);
+    }
+
+    window.addEventListener('load', () => {
+        const nav = performance.getEntriesByType('navigation')[0];
+        if (!nav) return;
+        logPerfMetric('page-dom-content-loaded', nav.domContentLoadedEventEnd);
+        logPerfMetric('page-load-complete', nav.loadEventEnd);
+    });
+
     // ========================================================================
     // MODULE 1.5: INTERNATIONALIZATION (CZ/EN)
     // ========================================================================
@@ -406,22 +428,22 @@ document.addEventListener('DOMContentLoaded', function() {
             'Upload Image': 'Nahrát obrázek',
             'No upload': 'Žádný upload',
             'Show': 'Zobrazit',
-            'Hide': 'Skryt',
-            'Current Admin Users': 'Aktualni admini',
-            'Add New Admin User': 'Pridat noveho admina',
-            'Existing username or new username': 'Existujici uzivatelske jmeno nebo nove',
-            'Existing user email or new email': 'Existujici e-mail nebo novy',
-            'Required only for new admin': 'Povinne jen pro noveho admina',
-            'Required only for new user': 'Povinne jen pro noveho uzivatele',
-            'Add User': 'Pridat uzivatele',
+            'Hide': 'Skrýt',
+            'Current Admin Users': 'Aktuální admini',
+            'Add New Admin User': 'Přidat nového admina',
+            'Existing username or new username': 'Existující uživatelské jméno nebo nové',
+            'Existing user email or new email': 'Existující e-mail nebo nový',
+            'Required only for new admin': 'Povinné jen pro nového admina',
+            'Required only for new user': 'Povinné jen pro nového uživatele',
+            'Add User': 'Přidat uživatele',
             'Edit Admin User': 'Upravit admina',
-            'Click Edit on a user': 'Kliknete na Upravit u uzivatele',
-            'New Password': 'Nove heslo',
-            'Leave blank to keep current': 'Nechte prazdne pro zachovani',
-            'Save Changes': 'Ulozit zmeny',
-            'Reset to Default': 'Obnovit vychozi',
-            'Reset all credentials to the default (admin / admin123)': 'Obnovit vychozi udaje (admin / admin123)',
-            'Reset Credentials': 'Obnovit udaje',
+            'Click Edit on a user': 'Klikněte na Upravit u uživatele',
+            'New Password': 'Nové heslo',
+            'Leave blank to keep current': 'Nechte prázdné pro zachování',
+            'Save Changes': 'Uložit změny',
+            'Reset to Default': 'Obnovit výchozí',
+            'Reset all credentials to the default (admin / admin123)': 'Obnovit výchozí údaje (admin / admin123)',
+            'Reset Credentials': 'Obnovit údaje',
             'Your trusted partner for all device repairs.': 'Váš spolehlivý partner pro všechny opravy zařízení.',
             'Quick Links': 'Rychlé odkazy',
             'Track Order': 'Sledovat objednávku',
@@ -431,6 +453,20 @@ document.addEventListener('DOMContentLoaded', function() {
             'Active Visitors': 'Aktivní návštěvníci',
             'Search parts, brands, or options': 'Hledejte dily, znacky nebo volby',
             'Clear': 'Vymazat',
+            'News and Updates': 'Novinky a aktuality',
+            'Latest updates, tips, and offers from EzFix.': 'Nejnovější aktuality, tipy a nabídky od EzFix.',
+            'Detail': 'Detail',
+            'Add News': 'Přidat novinku',
+            'Articles': 'Články',
+            'Add and edit homepage news cards with rich formatting.': 'Přidávejte a upravujte novinky na homepage včetně formátování textu.',
+            'AI Bot Answers': 'AI odpovědi bota',
+            'Customize automatic AI replies for common chat topics.': 'Nastavte automatické AI odpovědi pro běžná témata v chatu.',
+            'Save AI Answers': 'Uložit AI odpovědi',
+            'Reload': 'Načíst znovu',
+            'No chats for selected filters.': 'Žádné chaty pro zvolené filtry.',
+            'AI bot answers saved': 'AI odpovědi bota byly uloženy',
+            'Failed to load AI answers': 'Nepodařilo se načíst AI odpovědi',
+            'Failed to save AI answers': 'Nepodařilo se uložit AI odpovědi',
             'Order Shipped': 'Objednávka odeslána',
             'Screen Fixed': 'Displej opraven',
             'Battery Kit': 'Bateriová sada',
@@ -847,6 +883,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (DOM.langToggle) {
             DOM.langToggle.textContent = i18nState.lang === 'cs' ? 'CZ' : 'EN';
         }
+        const langToggleMobile = document.getElementById('langToggleMobile');
+        if (langToggleMobile) {
+            langToggleMobile.textContent = i18nState.lang === 'cs' ? 'CZ' : 'EN';
+        }
         document.documentElement.lang = i18nState.lang;
     }
 
@@ -887,6 +927,39 @@ document.addEventListener('DOMContentLoaded', function() {
         adminEmailMessage: 'Dobrý den {{customerName}},\n\nozýváme se ohledně vaší objednávky.\n\nS pozdravem,\nTým EzFix'
     };
 
+    const defaultNewsItems = [
+        {
+            id: 'news-welcome',
+            title: 'Welcome to EzFix News',
+            image: 'https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=1200&q=80',
+            summary: '<p>Follow updates about repairs, shop items, and new services.</p>',
+            content: '<p>Here we share service updates, limited offers, and practical tips for phones, notebooks, and 3D printing.</p>',
+            active: true,
+            publishedAt: '2026-03-01T10:00:00.000Z',
+            sortOrder: 0
+        },
+        {
+            id: 'news-same-day',
+            title: 'Same-Day Repair Slots',
+            image: 'https://images.unsplash.com/photo-1518773553398-650c184e0bb3?auto=format&fit=crop&w=1200&q=80',
+            summary: '<p>Selected repairs can now be completed the same day.</p>',
+            content: '<p>We expanded technician capacity for common issues like battery replacement and charging-port repairs. Contact us early to reserve your slot.</p>',
+            active: true,
+            publishedAt: '2026-03-05T10:00:00.000Z',
+            sortOrder: 1
+        },
+        {
+            id: 'news-3d',
+            title: 'New 3D Materials Added',
+            image: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80',
+            summary: '<p>New material profiles are ready for stronger and cleaner prints.</p>',
+            content: '<p>We added fresh filament options and tuned profiles for better dimensional accuracy. You can request a recommendation in chat.</p>',
+            active: true,
+            publishedAt: '2026-03-08T10:00:00.000Z',
+            sortOrder: 2
+        }
+    ];
+
     let printingOptions = {
         printers: [
             { id: 'ender3', name: 'Creality Ender 3', desc: 'Fast, 1 color', image: 'assets/printing/ender3.svg', active: true, multicolor: false },
@@ -916,7 +989,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     let checkoutOptions = { ...defaultCheckoutOptions };
+    let newsItems = [...defaultNewsItems];
     let packetaSelection = null;
+    let packetaWidgetLoaderPromise = null;
 
     // ========================================================================
     // MODULE 2: API CONFIGURATION & HELPERS
@@ -1249,6 +1324,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let catalogState = null;
     let catalogDraft = null;
+    let newsSortMode = 'manual';
     const catalogUiState = {
         deviceKey: null,
         brandId: null,
@@ -1411,23 +1487,66 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function openPacketaWidget() {
+        const openWidget = () => {
+            const options = {
+                language: i18nState.lang === 'cs' ? 'cs' : 'en'
+            };
+
+            window.Packeta.Widget.pick(apiKey, (point) => {
+                if (point) setPacketaSelection(point);
+            }, options);
+        };
+
+        const ensurePacketaWidgetLoaded = () => {
+            if (window.Packeta && window.Packeta.Widget && typeof window.Packeta.Widget.pick === 'function') {
+                return Promise.resolve();
+            }
+
+            if (packetaWidgetLoaderPromise) {
+                return packetaWidgetLoaderPromise;
+            }
+
+            packetaWidgetLoaderPromise = new Promise((resolve, reject) => {
+                const existingScript = document.querySelector('script[data-packeta-widget="1"]');
+                if (existingScript) {
+                    existingScript.addEventListener('load', () => resolve(), { once: true });
+                    existingScript.addEventListener('error', () => reject(new Error('Packeta widget failed to load')), { once: true });
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = 'https://widget.packeta.com/v6/www/js/library.js';
+                script.defer = true;
+                script.async = true;
+                script.setAttribute('data-packeta-widget', '1');
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('Packeta widget failed to load'));
+                document.head.appendChild(script);
+            }).catch((error) => {
+                packetaWidgetLoaderPromise = null;
+                throw error;
+            });
+
+            return packetaWidgetLoaderPromise;
+        };
+
         const apiKey = getPacketaApiKey();
         if (!apiKey) {
             showToast(t('Packeta API key is missing'));
             return;
         }
-        if (!window.Packeta || !window.Packeta.Widget || typeof window.Packeta.Widget.pick !== 'function') {
-            showToast(t('Packeta widget failed to load'));
-            return;
-        }
 
-        const options = {
-            language: i18nState.lang === 'cs' ? 'cs' : 'en'
-        };
-
-        window.Packeta.Widget.pick(apiKey, (point) => {
-            if (point) setPacketaSelection(point);
-        }, options);
+        ensurePacketaWidgetLoaded()
+            .then(() => {
+                if (!window.Packeta || !window.Packeta.Widget || typeof window.Packeta.Widget.pick !== 'function') {
+                    showToast(t('Packeta widget failed to load'));
+                    return;
+                }
+                openWidget();
+            })
+            .catch(() => {
+                showToast(t('Packeta widget failed to load'));
+            });
     }
 
     function updateCheckoutTotals(subtotal) {
@@ -1499,6 +1618,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function applyCatalog(catalog) {
         if (!catalog || typeof catalog !== 'object') return;
         catalogState = catalog;
+        newsSortMode = String(catalog.newsSortMode || 'manual').toLowerCase() === 'newest' ? 'newest' : 'manual';
 
         if (catalog.services && typeof catalog.services === 'object') {
             serviceData = catalog.services;
@@ -1537,9 +1657,14 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             checkoutOptions = { ...defaultCheckoutOptions };
         }
+        newsItems = normalizeNewsItems(catalog.news);
+        if (!newsItems.length) {
+            newsItems = normalizeNewsItems(defaultNewsItems);
+        }
         updateCheckoutPickupFeeUi();
         renderTermsModalContent();
         renderAnnouncementBanner(catalog.announcement || {});
+        renderHomeNewsSection(newsItems);
     }
 
     async function loadCatalog() {
@@ -1559,7 +1684,9 @@ document.addEventListener('DOMContentLoaded', function() {
             customBuilds: customPCParts,
             printing: printingOptions,
             checkout: checkoutOptions,
-            announcement: catalogState?.announcement || { active: false, text: '' }
+            announcement: catalogState?.announcement || { active: false, text: '' },
+            newsSortMode,
+            news: Array.isArray(newsItems) ? newsItems : []
         }));
     }
 
@@ -1599,6 +1726,199 @@ document.addEventListener('DOMContentLoaded', function() {
             banner.classList.add('hidden');
             document.body.classList.remove('has-announcement');
         }
+    }
+
+    function sanitizeNewsHtml(value) {
+        const raw = String(value || '');
+        return raw
+            .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+            .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
+            .replace(/\son\w+\s*=\s*'[^']*'/gi, '')
+            .replace(/javascript:/gi, '');
+    }
+
+    function stripNewsHtml(value) {
+        return String(value || '')
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function buildNewsSummaryFallback(contentHtml) {
+        const plain = stripNewsHtml(contentHtml);
+        if (!plain) return '';
+        const shortened = plain.length > 180 ? `${plain.slice(0, 177).trimEnd()}...` : plain;
+        return `<p>${escapeHtml(shortened)}</p>`;
+    }
+
+    function getNewsSummaryMetrics(item) {
+        const customSummary = String(item?.summary || '').trim();
+        const isFallback = !customSummary;
+        const summaryHtml = customSummary || buildNewsSummaryFallback(String(item?.content || ''));
+        const summaryChars = stripNewsHtml(summaryHtml).length;
+        return {
+            isFallback,
+            summaryHtml,
+            summaryChars
+        };
+    }
+
+    function buildNewsSignature(payload) {
+        const normalizedItems = normalizeNewsItems(payload?.news || []);
+        return JSON.stringify({
+            newsSortMode: String(payload?.newsSortMode || 'manual').toLowerCase() === 'newest' ? 'newest' : 'manual',
+            news: normalizedItems
+        });
+    }
+
+    function updateCatalogNewsDirtyIndicator() {
+        const tabBtn = document.querySelector('.catalog-tab-btn[data-catalog-tab="news"]');
+        if (!tabBtn || !catalogDraft) return;
+
+        const draftSignature = buildNewsSignature(catalogDraft);
+        const savedSignature = buildNewsSignature(catalogState || { news: newsItems, newsSortMode });
+        tabBtn.classList.toggle('has-unsaved', draftSignature !== savedSignature);
+    }
+
+    function normalizeNewsItems(items) {
+        const source = Array.isArray(items) ? items : [];
+        return source.map((item, index) => {
+            const content = sanitizeNewsHtml(String(item?.content || ''));
+            const providedSummary = sanitizeNewsHtml(String(item?.summary || ''));
+            return {
+                id: String(item?.id || `news-${Date.now()}-${index}`),
+                title: String(item?.title || '').trim() || `News ${index + 1}`,
+                image: String(item?.image || '').trim(),
+                summary: providedSummary.trim() || buildNewsSummaryFallback(content),
+                content,
+                active: item?.active !== false,
+                publishedAt: Number.isFinite(new Date(item?.publishedAt || '').getTime())
+                    ? new Date(item.publishedAt).toISOString()
+                    : null,
+                sortOrder: Number.isFinite(Number(item?.sortOrder))
+                    ? Math.max(0, Math.floor(Number(item.sortOrder)))
+                    : index
+            };
+        });
+    }
+
+    function toDateTimeLocalInputValue(isoString) {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        if (!Number.isFinite(date.getTime())) return '';
+        const pad = (value) => String(value).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function fromDateTimeLocalInputValue(value) {
+        const text = String(value || '').trim();
+        if (!text) return null;
+        const date = new Date(text);
+        return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+    }
+
+    function formatNewsDateLabel(isoString) {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        if (!Number.isFinite(date.getTime())) return '';
+        return date.toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    function sortNewsItems(items) {
+        const sorted = [...normalizeNewsItems(items)];
+        const mode = newsSortMode === 'newest' ? 'newest' : 'manual';
+        sorted.sort((a, b) => {
+            const timeA = Number.isFinite(new Date(a.publishedAt || '').getTime()) ? new Date(a.publishedAt).getTime() : 0;
+            const timeB = Number.isFinite(new Date(b.publishedAt || '').getTime()) ? new Date(b.publishedAt).getTime() : 0;
+            if (mode === 'newest' && timeA !== timeB) return timeB - timeA;
+            const orderDiff = (a.sortOrder || 0) - (b.sortOrder || 0);
+            if (orderDiff !== 0) return orderDiff;
+            if (timeA !== timeB) return timeB - timeA;
+            return catalogTextSorter.compare(String(a.title || ''), String(b.title || ''));
+        });
+        return sorted;
+    }
+
+    function isNewsPublished(item, now = Date.now()) {
+        const publishedTime = Number.isFinite(new Date(item?.publishedAt || '').getTime())
+            ? new Date(item.publishedAt).getTime()
+            : null;
+        return publishedTime === null || publishedTime <= now;
+    }
+
+    function renderHomeNewsSection(items = []) {
+        const listEl = document.getElementById('homeNewsList');
+        if (!listEl) return;
+
+        const now = Date.now();
+        const activeNews = sortNewsItems(items).filter((item) => item.active !== false && isNewsPublished(item, now));
+        if (!activeNews.length) {
+            listEl.innerHTML = '';
+            return;
+        }
+
+        listEl.innerHTML = activeNews.map((item) => `
+            <article class="home-news-card ${item.image ? '' : 'no-image'}">
+                ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" class="home-news-image" width="1200" height="675" loading="lazy" decoding="async" fetchpriority="low">` : ''}
+                <div class="home-news-body">
+                    ${item.publishedAt ? `<p class="home-news-date">${escapeHtml(formatNewsDateLabel(item.publishedAt))}</p>` : ''}
+                    <h3 class="home-news-title">${escapeHtml(item.title)}</h3>
+                    <div class="home-news-summary">${item.summary || ''}</div>
+                    <div class="home-news-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" data-news-detail-id="${escapeHtml(item.id)}">Detail</button>
+                    </div>
+                </div>
+            </article>
+        `).join('');
+    }
+
+    function closeNewsDetailsModal() {
+        const modal = document.getElementById('newsDetailsModal');
+        if (!modal) return;
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+
+    function openNewsDetailsModal(newsId) {
+        const modal = document.getElementById('newsDetailsModal');
+        const titleEl = document.getElementById('newsDetailsTitle');
+        const bodyEl = document.getElementById('newsDetailsBody');
+        if (!modal || !titleEl || !bodyEl) return;
+
+        const now = Date.now();
+        const entry = sortNewsItems(newsItems || []).find((item) => String(item.id) === String(newsId) && item.active !== false && isNewsPublished(item, now));
+        if (!entry) return;
+
+        titleEl.textContent = entry.title || 'News';
+        bodyEl.innerHTML = `
+            ${entry.image ? `<img src="${escapeHtml(entry.image)}" alt="${escapeHtml(entry.title || 'News')}" class="news-details-hero" width="1200" height="675" decoding="async">` : ''}
+            ${entry.publishedAt ? `<p class="news-details-date">${escapeHtml(formatNewsDateLabel(entry.publishedAt))}</p>` : ''}
+            <div class="news-details-content">${entry.content || entry.summary || ''}</div>
+        `;
+
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+    }
+
+    function initHomeNewsUi() {
+        const overlay = document.getElementById('newsDetailsOverlay');
+        const closeBtn = document.getElementById('newsDetailsClose');
+
+        overlay?.addEventListener('click', closeNewsDetailsModal);
+        closeBtn?.addEventListener('click', closeNewsDetailsModal);
+
+        document.addEventListener('click', (event) => {
+            const detailBtn = event.target.closest('[data-news-detail-id]');
+            if (!detailBtn) return;
+            const newsId = detailBtn.getAttribute('data-news-detail-id');
+            if (newsId) {
+                openNewsDetailsModal(newsId);
+            }
+        });
     }
 
     function slugify(value) {
@@ -1658,10 +1978,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.querySelectorAll('.catalog-panel').forEach(panel => panel.classList.remove('active'));
                 btn.classList.add('active');
                 document.getElementById(`catalog-${tab}`)?.classList.add('active');
-                if (tab === 'advanced') renderCatalogAdvanced();
-                if (tab === 'checkout') renderCatalogCheckout();
+                renderCatalogTabContent(tab);
             });
         });
+    }
+
+    function renderCatalogTabContent(tab) {
+        const startedAt = performance.now();
+        if (tab === 'repairs') {
+            renderCatalogRepairs();
+            logPerfMetric('catalog-tab-render', performance.now() - startedAt, { tab });
+            return;
+        }
+        if (tab === 'builds') {
+            renderCatalogBuilds();
+            logPerfMetric('catalog-tab-render', performance.now() - startedAt, { tab });
+            return;
+        }
+        if (tab === 'printing') {
+            renderCatalogPrinting();
+            logPerfMetric('catalog-tab-render', performance.now() - startedAt, { tab });
+            return;
+        }
+        if (tab === 'other-items') {
+            renderCatalogOtherItems();
+            logPerfMetric('catalog-tab-render', performance.now() - startedAt, { tab });
+            return;
+        }
+        if (tab === 'checkout' || tab === 'email') {
+            renderCatalogCheckout();
+            logPerfMetric('catalog-tab-render', performance.now() - startedAt, { tab });
+            return;
+        }
+        if (tab === 'news') {
+            renderCatalogNews();
+            logPerfMetric('catalog-tab-render', performance.now() - startedAt, { tab });
+            return;
+        }
+        if (tab === 'advanced') {
+            renderCatalogAdvanced();
+        }
+        logPerfMetric('catalog-tab-render', performance.now() - startedAt, { tab });
     }
 
     function renderCatalogAdvanced() {
@@ -1669,11 +2026,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const buildsInput = document.getElementById('catalogBuildsInput');
         const printingInput = document.getElementById('catalogPrintingInput');
         const checkoutInput = document.getElementById('catalogCheckoutInput');
-        if (!servicesInput || !buildsInput || !printingInput || !checkoutInput) return;
+        const newsInput = document.getElementById('catalogNewsInput');
+        if (!servicesInput || !buildsInput || !printingInput || !checkoutInput || !newsInput) return;
         servicesInput.value = JSON.stringify(catalogDraft.services, null, 2);
         buildsInput.value = JSON.stringify(catalogDraft.customBuilds, null, 2);
         printingInput.value = JSON.stringify(catalogDraft.printing, null, 2);
         checkoutInput.value = JSON.stringify(catalogDraft.checkout || defaultCheckoutOptions, null, 2);
+        newsInput.value = JSON.stringify(catalogDraft.news || [], null, 2);
     }
 
     function renderCatalogCheckout() {
@@ -2285,6 +2644,257 @@ document.addEventListener('DOMContentLoaded', function() {
                 const index = parseInt(row.dataset.index, 10);
                 items.splice(index, 1);
                 renderCatalogOtherItems();
+            });
+        });
+    }
+
+    function renderCatalogNews() {
+        const list = document.getElementById('catalogNewsList');
+        const sortModeInput = document.getElementById('catalogNewsSortMode');
+        if (!list) return;
+
+        catalogDraft.news = normalizeNewsItems(catalogDraft.news);
+        if (typeof catalogDraft.newsSortMode !== 'string') {
+            catalogDraft.newsSortMode = newsSortMode;
+        }
+        const draftSortMode = String(catalogDraft.newsSortMode || 'manual').toLowerCase() === 'newest' ? 'newest' : 'manual';
+        if (sortModeInput) {
+            sortModeInput.value = draftSortMode;
+            sortModeInput.onchange = () => {
+                catalogDraft.newsSortMode = sortModeInput.value === 'newest' ? 'newest' : 'manual';
+                updateCatalogNewsDirtyIndicator();
+            };
+        }
+
+        const items = catalogDraft.news;
+        const now = Date.now();
+        const titleCount = new Map();
+        const idCount = new Map();
+        items.sort((a, b) => {
+            const orderDiff = (a.sortOrder || 0) - (b.sortOrder || 0);
+            if (orderDiff !== 0) return orderDiff;
+            const timeA = Number.isFinite(new Date(a.publishedAt || '').getTime()) ? new Date(a.publishedAt).getTime() : 0;
+            const timeB = Number.isFinite(new Date(b.publishedAt || '').getTime()) ? new Date(b.publishedAt).getTime() : 0;
+            return timeB - timeA;
+        });
+        items.forEach((item, index) => {
+            item.sortOrder = index;
+            const titleKey = String(item.title || '').trim().toLowerCase();
+            const idKey = String(item.id || '').trim().toLowerCase();
+            if (titleKey) {
+                titleCount.set(titleKey, (titleCount.get(titleKey) || 0) + 1);
+            }
+            if (idKey) {
+                idCount.set(idKey, (idCount.get(idKey) || 0) + 1);
+            }
+        });
+        updateCatalogNewsDirtyIndicator();
+
+        list.innerHTML = items.map((item, index) => {
+            const titleKey = String(item.title || '').trim().toLowerCase();
+            const idKey = String(item.id || '').trim().toLowerCase();
+            const hasDuplicateTitle = titleKey ? (titleCount.get(titleKey) || 0) > 1 : false;
+            const hasDuplicateId = idKey ? (idCount.get(idKey) || 0) > 1 : false;
+            const summaryMeta = getNewsSummaryMetrics(item);
+            return `
+            <div class="catalog-item" data-index="${index}" data-type="news-item">
+                <div>
+                    <label>ID</label>
+                    <input class="catalog-input" value="${escapeHtml(item.id || '')}" data-field="id" readonly />
+                    ${hasDuplicateId ? '<p class="catalog-news-warning">Duplicate ID detected</p>' : ''}
+                </div>
+                <div>
+                    <label>Title</label>
+                    <input class="catalog-input" value="${escapeHtml(item.title || '')}" data-field="title" />
+                    ${hasDuplicateTitle ? '<p class="catalog-news-warning">Duplicate title detected</p>' : ''}
+                    ${item.active === false
+                        ? '<p class="catalog-news-state is-inactive">Inactive</p>'
+                        : (isNewsPublished(item, now)
+                            ? '<p class="catalog-news-state is-published">Published</p>'
+                            : '<p class="catalog-news-state is-scheduled">Scheduled</p>')}
+                </div>
+                <div>
+                    <label>Image URL</label>
+                    <input class="catalog-input" value="${escapeHtml(item.image || '')}" data-field="image" />
+                </div>
+                <div>
+                    <label>Published At</label>
+                    <input type="datetime-local" class="catalog-input" value="${escapeHtml(toDateTimeLocalInputValue(item.publishedAt))}" data-field="publishedAt" />
+                </div>
+                <div>
+                    <label>Order</label>
+                    <input type="number" min="0" step="1" class="catalog-input" value="${Number.isFinite(Number(item.sortOrder)) ? Math.max(0, Math.floor(Number(item.sortOrder))) : index}" data-field="sortOrder" />
+                </div>
+                <div class="toggle">
+                    <input type="checkbox" data-field="active" ${item.active === false ? '' : 'checked'} />
+                    <span>Active</span>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label>Small Text</label>
+                    <div class="catalog-rich-toolbar" data-toolbar="summary">
+                        <button type="button" class="catalog-rich-btn" data-action="generate-summary">Generate</button>
+                        <button type="button" class="catalog-rich-btn" data-cmd="bold">Bold</button>
+                        <button type="button" class="catalog-rich-btn" data-cmd="italic">Italic</button>
+                        <button type="button" class="catalog-rich-btn" data-cmd="underline">Underline</button>
+                        <button type="button" class="catalog-rich-btn" data-cmd="strikeThrough">Strike</button>
+                        <button type="button" class="catalog-rich-btn" data-cmd="insertUnorderedList">List</button>
+                        <button type="button" class="catalog-rich-btn" data-cmd="removeFormat">Clear</button>
+                    </div>
+                    <div class="catalog-rich-editor" contenteditable="true" data-field="summary">${item.summary || ''}</div>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label>Big Text</label>
+                    <div class="catalog-rich-toolbar" data-toolbar="content">
+                        <button type="button" class="catalog-rich-btn" data-cmd="bold">Bold</button>
+                        <button type="button" class="catalog-rich-btn" data-cmd="italic">Italic</button>
+                        <button type="button" class="catalog-rich-btn" data-cmd="underline">Underline</button>
+                        <button type="button" class="catalog-rich-btn" data-cmd="strikeThrough">Strike</button>
+                        <button type="button" class="catalog-rich-btn" data-cmd="insertUnorderedList">List</button>
+                        <button type="button" class="catalog-rich-btn" data-cmd="removeFormat">Clear</button>
+                    </div>
+                    <div class="catalog-rich-editor" contenteditable="true" data-field="content">${item.content || ''}</div>
+                </div>
+                <div class="catalog-news-preview-wrap" style="grid-column: 1 / -1;">
+                    <label>Preview</label>
+                    <article class="catalog-news-preview ${item.image ? '' : 'no-image'}" data-role="news-preview">
+                        ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" class="catalog-news-preview-image" width="1200" height="675" loading="lazy" decoding="async" fetchpriority="low">` : ''}
+                        <div class="catalog-news-preview-body">
+                            ${item.publishedAt ? `<p class="catalog-news-preview-date">${escapeHtml(formatNewsDateLabel(item.publishedAt))}</p>` : ''}
+                            <h4 class="catalog-news-preview-title">${escapeHtml(item.title || '')}</h4>
+                            <div class="catalog-news-preview-summary">${summaryMeta.summaryHtml}</div>
+                            <p class="catalog-news-preview-meta">Summary chars: ${summaryMeta.summaryChars}${summaryMeta.isFallback ? ' (fallback)' : ''}</p>
+                        </div>
+                    </article>
+                </div>
+                <div class="inline-actions" style="grid-column: 1 / -1; justify-content: flex-end;">
+                    <button class="btn btn-sm btn-secondary" data-action="open-home" ${item.active === false || !isNewsPublished(item, now) ? 'disabled' : ''}>Open on Homepage</button>
+                    <button class="btn btn-sm btn-secondary" data-action="publish-now" ${isNewsPublished(item, now) ? 'disabled' : ''}>Publish Now</button>
+                    <button class="btn btn-sm btn-secondary" data-action="move-up" ${index === 0 ? 'disabled' : ''}>Up</button>
+                    <button class="btn btn-sm btn-secondary" data-action="move-down" ${index === items.length - 1 ? 'disabled' : ''}>Down</button>
+                    <button class="btn btn-sm btn-secondary" data-action="delete">Delete</button>
+                </div>
+            </div>
+        `;
+        }).join('');
+
+        list.querySelectorAll('.catalog-item').forEach((row) => {
+            const index = parseInt(row.dataset.index, 10);
+            const record = items[index];
+            if (!record) return;
+
+            const previewEl = row.querySelector('[data-role="news-preview"]');
+            const summaryEditor = row.querySelector('.catalog-rich-editor[data-field="summary"]');
+            const refreshPreview = () => {
+                if (!previewEl) return;
+                const summaryMeta = getNewsSummaryMetrics(record);
+                previewEl.classList.toggle('no-image', !record.image);
+                previewEl.innerHTML = `
+                    ${record.image ? `<img src="${escapeHtml(record.image)}" alt="${escapeHtml(record.title || '')}" class="catalog-news-preview-image" width="1200" height="675" loading="lazy" decoding="async" fetchpriority="low">` : ''}
+                    <div class="catalog-news-preview-body">
+                        ${record.publishedAt ? `<p class="catalog-news-preview-date">${escapeHtml(formatNewsDateLabel(record.publishedAt))}</p>` : ''}
+                        <h4 class="catalog-news-preview-title">${escapeHtml(record.title || '')}</h4>
+                        <div class="catalog-news-preview-summary">${summaryMeta.summaryHtml}</div>
+                        <p class="catalog-news-preview-meta">Summary chars: ${summaryMeta.summaryChars}${summaryMeta.isFallback ? ' (fallback)' : ''}</p>
+                    </div>
+                `;
+            };
+
+            row.querySelectorAll('input[data-field]').forEach((input) => {
+                input.addEventListener('input', () => {
+                    const field = input.dataset.field;
+                    const value = input.type === 'checkbox' ? input.checked : input.value;
+                    if (field === 'active') {
+                        record.active = Boolean(value);
+                    } else if (field === 'title' || field === 'image') {
+                        record[field] = String(value || '').trim();
+                    } else if (field === 'publishedAt') {
+                        record.publishedAt = fromDateTimeLocalInputValue(value);
+                    } else if (field === 'sortOrder') {
+                        record.sortOrder = Math.max(0, Math.floor(Number(value) || 0));
+                    }
+                    refreshPreview();
+                    updateCatalogNewsDirtyIndicator();
+                });
+            });
+
+            row.querySelectorAll('.catalog-rich-editor').forEach((editor) => {
+                editor.addEventListener('input', () => {
+                    const field = editor.dataset.field;
+                    if (field !== 'summary' && field !== 'content') return;
+                    record[field] = sanitizeNewsHtml(editor.innerHTML);
+                    refreshPreview();
+                    updateCatalogNewsDirtyIndicator();
+                });
+            });
+
+            row.querySelectorAll('.catalog-rich-toolbar .catalog-rich-btn').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const cmd = btn.getAttribute('data-cmd');
+                    const toolbar = btn.closest('.catalog-rich-toolbar');
+                    const editor = toolbar?.nextElementSibling;
+                    if (!editor) return;
+                    editor.focus();
+                    document.execCommand(cmd, false, null);
+                    const field = editor.dataset.field;
+                    if (field === 'summary' || field === 'content') {
+                        record[field] = sanitizeNewsHtml(editor.innerHTML);
+                        refreshPreview();
+                        updateCatalogNewsDirtyIndicator();
+                    }
+                });
+            });
+
+            row.querySelector('[data-action="generate-summary"]')?.addEventListener('click', () => {
+                record.summary = buildNewsSummaryFallback(record.content);
+                if (summaryEditor) {
+                    summaryEditor.innerHTML = record.summary;
+                }
+                refreshPreview();
+                updateCatalogNewsDirtyIndicator();
+            });
+
+            row.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
+                items.splice(index, 1);
+                items.forEach((item, itemIndex) => {
+                    item.sortOrder = itemIndex;
+                });
+                renderCatalogNews();
+            });
+
+            row.querySelector('[data-action="publish-now"]')?.addEventListener('click', () => {
+                record.publishedAt = new Date().toISOString();
+                if (record.active === false) {
+                    record.active = true;
+                }
+                renderCatalogNews();
+            });
+
+            row.querySelector('[data-action="open-home"]')?.addEventListener('click', () => {
+                if (record.active === false || !isNewsPublished(record)) return;
+                showPage('home');
+                openNewsDetailsModal(record.id);
+            });
+
+            row.querySelector('[data-action="move-up"]')?.addEventListener('click', () => {
+                if (index <= 0) return;
+                const temp = items[index - 1];
+                items[index - 1] = items[index];
+                items[index] = temp;
+                items.forEach((item, itemIndex) => {
+                    item.sortOrder = itemIndex;
+                });
+                renderCatalogNews();
+            });
+
+            row.querySelector('[data-action="move-down"]')?.addEventListener('click', () => {
+                if (index >= items.length - 1) return;
+                const temp = items[index + 1];
+                items[index + 1] = items[index];
+                items[index] = temp;
+                items.forEach((item, itemIndex) => {
+                    item.sortOrder = itemIndex;
+                });
+                renderCatalogNews();
             });
         });
     }
@@ -3322,6 +3932,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             mountAdminPageNode();
+            initAdminBindings();
+            ensureAdminChatInboxInitialized();
             if (!window.location.hash || !window.location.hash.includes('email=')) {
                 window.adminEmailFilter = null;
             }
@@ -3395,8 +4007,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         applyTranslations();
         window.scrollTo(0, 0);
-        DOM.mobileMenuBtn.classList.remove('active');
-        DOM.navLinks.classList.remove('active');
+        DOM.mobileMenuBtn?.classList.remove('active');
+        DOM.navLinks?.classList.remove('active');
         ensureVisiblePage();
     }
 
@@ -5271,12 +5883,11 @@ document.addEventListener('DOMContentLoaded', function() {
         ensureCatalogState();
         setDefaultCatalogUiState();
         renderCatalogTabs();
-        renderCatalogRepairs();
-        renderCatalogBuilds();
-        renderCatalogPrinting();
-        renderCatalogOtherItems();
-        renderCatalogCheckout();
-        renderCatalogAdvanced();
+
+        const activeTabBtn = document.querySelector('.catalog-tab-btn.active');
+        const activeTab = activeTabBtn?.dataset.catalogTab || 'repairs';
+        renderCatalogTabContent(activeTab);
+
         renderCatalogAnnouncement();
         applyTranslations();
     }
@@ -5556,6 +6167,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function updateAuthUI() {
         const logoutBtn = DOM.logoutBtn;
+        const logoutBtnMobile = document.getElementById('logoutBtnMobile');
         const adminNavLink = document.getElementById('adminNavLink');
         const isLoggedIn = !!Storage.getToken();
         const currentUser = Storage.getUser();
@@ -5585,8 +6197,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const orderTabs = ['repairs', 'custom-pc', 'printing', 'other-items'];
 
         if (logoutBtn) logoutBtn.style.display = isLoggedIn ? 'inline-flex' : 'none';
+        if (logoutBtnMobile) logoutBtnMobile.style.display = isLoggedIn ? 'inline-flex' : 'none';
         if (adminNavLink) adminNavLink.style.display = isAdmin ? 'list-item' : 'none';
         if (DOM.loginNavBtn) DOM.loginNavBtn.style.display = isLoggedIn ? 'none' : 'inline-flex';
+        const loginNavBtnMobile = document.getElementById('loginNavBtnMobile');
+        if (loginNavBtnMobile) loginNavBtnMobile.style.display = isLoggedIn ? 'none' : 'inline-flex';
         orderTabs.forEach((tab) => {
             const tabBtn = document.querySelector(`.admin-tab-btn[data-tab="${tab}"]`);
             const tabContent = document.getElementById(`${tab}-content`);
@@ -7756,6 +8371,8 @@ document.addEventListener('DOMContentLoaded', function() {
         this.setAttribute('aria-expanded', expanded ? 'true' : 'false');
     });
 
+    document.getElementById('logoutBtnMobile')?.addEventListener('click', handleLogout);
+
     // Part details modal close handlers
     const partModal = document.getElementById('partDetailsModal');
     const partOverlay = partModal?.querySelector('.part-details-overlay');
@@ -7775,6 +8392,7 @@ document.addEventListener('DOMContentLoaded', function() {
             closeOtherDetails();
             closeTermsModal();
             closeContactModal();
+            closeNewsDetailsModal();
         }
     });
 
@@ -7782,39 +8400,44 @@ document.addEventListener('DOMContentLoaded', function() {
     DOM.loginForm?.addEventListener('submit', handleAdminLogin);
     DOM.logoutBtn?.addEventListener('click', handleLogout);
 
-    DOM.statusFilter?.addEventListener('change', renderAdminOrders);
+    let adminBindingsInitialized = false;
+    function initAdminBindings() {
+        if (adminBindingsInitialized) return;
+        adminBindingsInitialized = true;
 
-    document.addEventListener('click', (event) => {
-        const actionBtn = event.target.closest('[data-order-action]');
-        if (!actionBtn) return;
+        DOM.statusFilter?.addEventListener('change', renderAdminOrders);
 
-        const action = actionBtn.dataset.orderAction;
-        const orderId = actionBtn.dataset.orderId;
+        document.addEventListener('click', (event) => {
+            const actionBtn = event.target.closest('[data-order-action]');
+            if (!actionBtn) return;
 
-        if (action === 'edit-status') {
-            editOrderStatus(orderId);
-            return;
-        }
-        if (action === 'details') {
-            if (typeof window.showOrderDetails === 'function') {
-                window.showOrderDetails(orderId);
+            const action = actionBtn.dataset.orderAction;
+            const orderId = actionBtn.dataset.orderId;
+
+            if (action === 'edit-status') {
+                editOrderStatus(orderId);
+                return;
             }
-            return;
-        }
-        if (action === 'email') {
-            const email = actionBtn.dataset.orderEmail || '';
-            const name = actionBtn.dataset.orderName || '';
-            emailCustomer(orderId, email, name);
-            return;
-        }
-        if (action === 'delete') {
-            deleteOrder(orderId);
-        }
-    });
+            if (action === 'details') {
+                if (typeof window.showOrderDetails === 'function') {
+                    window.showOrderDetails(orderId);
+                }
+                return;
+            }
+            if (action === 'email') {
+                const email = actionBtn.dataset.orderEmail || '';
+                const name = actionBtn.dataset.orderName || '';
+                emailCustomer(orderId, email, name);
+                return;
+            }
+            if (action === 'delete') {
+                deleteOrder(orderId);
+            }
+        });
 
-    // Admin Main Tabs (Repairs vs Custom PC)
-    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        // Admin Main Tabs (Repairs vs Custom PC)
+        document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
             const tabName = this.dataset.tab;
             const currentUser = Storage.getUser();
 
@@ -7850,15 +8473,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderCredentialsUI();
             }
             if (tabName === 'chats') {
+                ensureAdminChatInboxInitialized();
                 loadAdminChatSessions();
+                loadAdminChatAiConfig();
             }
             renderAdminOrders();
+            });
         });
-    });
 
-    // Device Type Tabs for Repairs
-    document.querySelectorAll('.device-tab-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        // Device Type Tabs for Repairs
+        document.querySelectorAll('.device-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
             const device = this.dataset.device;
             
             // Update active button
@@ -7868,18 +8493,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // Store current device filter and re-render
             window.currentDeviceFilter = device;
             renderAdminOrders();
+            });
         });
-    });
 
-    document.querySelectorAll('.custompc-tab-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        document.querySelectorAll('.custompc-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
             const buildType = this.dataset.build || 'all';
             document.querySelectorAll('.custompc-tab-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             window.currentCustomPcFilter = buildType;
             renderAdminOrders();
+            });
         });
-    });
 
     document.getElementById('catalogAddBrand')?.addEventListener('click', () => {
         ensureCatalogState();
@@ -7975,6 +8600,27 @@ document.addEventListener('DOMContentLoaded', function() {
         renderCatalogOtherItems();
     });
 
+    document.getElementById('catalogAddNewsItem')?.addEventListener('click', () => {
+        ensureCatalogState();
+        const title = prompt('News title?');
+        if (!title) return;
+        catalogDraft.news = normalizeNewsItems(catalogDraft.news);
+        catalogDraft.news.unshift({
+            id: slugify(title) || `news-${Date.now()}`,
+            title: String(title || '').trim(),
+            image: '',
+            summary: '<p>Short summary...</p>',
+            content: '<p>Full details...</p>',
+            active: true,
+            publishedAt: new Date().toISOString(),
+            sortOrder: 0
+        });
+        catalogDraft.news.forEach((item, index) => {
+            item.sortOrder = index;
+        });
+        renderCatalogNews();
+    });
+
     document.getElementById('catalogLoadBtn')?.addEventListener('click', () => {
         catalogDraft = cloneCatalog();
         renderCatalogEditor();
@@ -7987,17 +8633,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const buildsInput = document.getElementById('catalogBuildsInput');
         const printingInput = document.getElementById('catalogPrintingInput');
         const checkoutInput = document.getElementById('catalogCheckoutInput');
+        const newsInput = document.getElementById('catalogNewsInput');
 
         try {
             let catalog = null;
             if (advancedPanel && advancedPanel.classList.contains('active')) {
-                if (!servicesInput || !buildsInput || !printingInput || !checkoutInput) return;
+                if (!servicesInput || !buildsInput || !printingInput || !checkoutInput || !newsInput) return;
                 catalog = {
                     services: JSON.parse(servicesInput.value || '{}'),
                     customBuilds: JSON.parse(buildsInput.value || '{}'),
                     printing: JSON.parse(printingInput.value || '{}'),
                     checkout: JSON.parse(checkoutInput.value || '{}'),
-                    announcement: catalogDraft?.announcement || { active: false, text: '' }
+                    announcement: catalogDraft?.announcement || { active: false, text: '' },
+                    newsSortMode: String(catalogDraft?.newsSortMode || newsSortMode || 'manual').toLowerCase() === 'newest' ? 'newest' : 'manual',
+                    news: JSON.parse(newsInput.value || '[]')
                 };
             } else {
                 ensureCatalogState();
@@ -8006,18 +8655,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     customBuilds: catalogDraft.customBuilds,
                     printing: catalogDraft.printing,
                     checkout: catalogDraft.checkout || { ...defaultCheckoutOptions },
-                    announcement: catalogDraft.announcement || { active: false, text: '' }
+                    announcement: catalogDraft.announcement || { active: false, text: '' },
+                    newsSortMode: String(catalogDraft.newsSortMode || newsSortMode || 'manual').toLowerCase() === 'newest' ? 'newest' : 'manual',
+                    news: normalizeNewsItems(catalogDraft.news)
                 };
             }
 
             await apiCall('PUT', '/catalog', { catalog });
             applyCatalog(catalog);
             catalogDraft = cloneCatalog();
-            renderCatalogAdvanced();
-            renderCatalogRepairs();
-            renderCatalogBuilds();
-            renderCatalogPrinting();
-            renderCatalogCheckout();
+            renderCatalogEditor();
 
             if (document.getElementById('printing')?.classList.contains('active')) {
                 renderPrintingPage();
@@ -8035,13 +8682,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    document.getElementById('catalogSaveBtn')?.addEventListener('click', saveCatalogHandler);
-    document.getElementById('catalogSaveBtnTop')?.addEventListener('click', saveCatalogHandler);
+        document.getElementById('catalogSaveBtn')?.addEventListener('click', saveCatalogHandler);
+        document.getElementById('catalogSaveBtnTop')?.addEventListener('click', saveCatalogHandler);
 
-    const catalogUploadInput = document.getElementById('catalogUploadInput');
-    const catalogUploadResult = document.getElementById('catalogUploadResult');
-    if (catalogUploadInput) {
-        catalogUploadInput.addEventListener('change', async () => {
+        const catalogUploadInput = document.getElementById('catalogUploadInput');
+        const catalogUploadResult = document.getElementById('catalogUploadResult');
+        if (catalogUploadInput) {
+            catalogUploadInput.addEventListener('change', async () => {
             const file = catalogUploadInput.files && catalogUploadInput.files[0];
             if (!file) return;
 
@@ -8072,11 +8719,11 @@ document.addEventListener('DOMContentLoaded', function() {
             } finally {
                 catalogUploadInput.value = '';
             }
-        });
-    }
+            });
+        }
 
-    DOM.clearOrdersBtn?.addEventListener('click', async function() {
-        if (confirm(t('Are you sure you want to clear ALL orders? This action cannot be undone.'))) {
+        DOM.clearOrdersBtn?.addEventListener('click', async function() {
+            if (confirm(t('Are you sure you want to clear ALL orders? This action cannot be undone.'))) {
             try {
                 // Get all orders first
                 const result = await apiCall('GET', '/orders');
@@ -8099,26 +8746,26 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 showToast('Failed to clear orders: ' + error.message);
             }
-        }
-    });
+            }
+        });
 
-    // Credentials management
-    const toggleCredentialsBtn = document.getElementById('toggleCredentials');
-    const credentialsContent = document.getElementById('credentialsContent');
+        // Credentials management
+        const toggleCredentialsBtn = document.getElementById('toggleCredentials');
+        const credentialsContent = document.getElementById('credentialsContent');
 
-    if (toggleCredentialsBtn && credentialsContent) {
-        toggleCredentialsBtn.addEventListener('click', function() {
+        if (toggleCredentialsBtn && credentialsContent) {
+            toggleCredentialsBtn.addEventListener('click', function() {
             const isHidden = credentialsContent.style.display === 'none';
             credentialsContent.style.display = isHidden ? 'flex' : 'none';
             toggleCredentialsBtn.textContent = isHidden ? t('Hide') : t('Show');
             if (isHidden) {
                 renderCredentialsUI();
             }
-        });
-    }
+            });
+        }
 
-    // Add user form
-    document.getElementById('addUserForm')?.addEventListener('submit', async function(e) {
+        // Add user form
+        document.getElementById('addUserForm')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const username = document.getElementById('newUsername').value.trim();
         const email = document.getElementById('newEmail')?.value.trim();
@@ -8138,10 +8785,10 @@ document.addEventListener('DOMContentLoaded', function() {
             this.reset();
             renderCredentialsUI();
         }
-    });
+        });
 
-    // Edit user form
-    document.getElementById('editUserForm')?.addEventListener('submit', async function(e) {
+        // Edit user form
+        document.getElementById('editUserForm')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const userId = document.getElementById('editUserId')?.value;
         const username = document.getElementById('editUsername')?.value.trim();
@@ -8170,20 +8817,21 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('editPassword').value = '';
             renderCredentialsUI();
         }
-    });
+        });
+
+        // Reset credentials button
+        document.getElementById('resetCredentialsBtn')?.addEventListener('click', function() {
+            if (confirm(t('This will reset your admin credentials. Are you sure?'))) {
+                showCredentialsMessage('resetMessage', 'Note: This feature requires server configuration. Contact an administrator.', false);
+            }
+        });
+    }
 
     // Email form submission
     document.getElementById('emailForm')?.addEventListener('submit', handleEmailFormSubmit);
 
     // Close email modal when clicking overlay
     document.querySelector('.email-modal-overlay')?.addEventListener('click', closeEmailModal);
-
-    // Reset credentials button
-    document.getElementById('resetCredentialsBtn')?.addEventListener('click', function() {
-        if (confirm(t('This will reset your admin credentials. Are you sure?'))) {
-            showCredentialsMessage('resetMessage', 'Note: This feature requires server configuration. Contact an administrator.', false);
-        }
-    });
 
     // Show/hide password toggles (eye buttons)
     document.querySelectorAll('.password-toggle').forEach(btn => {
@@ -8325,11 +8973,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('authGoogleBtn')?.addEventListener('click', startGoogleAuth);
     document.getElementById('authGoogleBtnRegister')?.addEventListener('click', startGoogleAuth);
 
-    DOM.langToggle?.addEventListener('click', () => {
+    function toggleLanguage() {
         i18nState.lang = i18nState.lang === 'cs' ? 'en' : 'cs';
         localStorage.setItem('lang', i18nState.lang);
         applyTranslations();
-    });
+    }
+
+    DOM.langToggle?.addEventListener('click', toggleLanguage);
+
+    document.getElementById('langToggleMobile')?.addEventListener('click', toggleLanguage);
 
     DOM.cookieAcceptBtn?.addEventListener('click', () => {
         saveCookieConsent('accepted');
@@ -8353,15 +9005,23 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionMeta: null,
         pollId: null,
         typingStopTimer: null,
-        typingActive: false
+        typingActive: false,
+        submitInFlight: false,
+        serverUnreadCount: 0
     };
 
     const adminChatState = {
         sessions: [],
+        adminUsers: [],
         activeSessionId: null,
         pollId: null,
         typingStopTimer: null,
-        typingActive: false
+        typingActive: false,
+        statusFilter: 'all',
+        adminFilter: 'all',
+        aiConfigLoaded: false,
+        aiConfigLoading: false,
+        aiConfigSaving: false
     };
 
     const supportRatingState = {
@@ -8534,7 +9194,7 @@ document.addEventListener('DOMContentLoaded', function() {
         badge.textContent = safeCount > 99 ? '99+' : String(safeCount);
     }
 
-    function updateSupportChatUnread(messages = [], isOpen = false) {
+    function updateSupportChatUnread(messages = [], isOpen = false, serverUnreadCount = null) {
         if (!Array.isArray(messages)) {
             renderSupportChatUnreadBadge(0);
             return;
@@ -8554,6 +9214,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.setItem('supportChatLastSeenAdminMessageId', String(latestAdminId));
             }
             renderSupportChatUnreadBadge(0);
+            return;
+        }
+
+        if (Number.isFinite(Number(serverUnreadCount))) {
+            renderSupportChatUnreadBadge(Number(serverUnreadCount));
             return;
         }
 
@@ -8655,6 +9320,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function clearSupportChatLocalSession() {
         supportChatState.sessionId = '';
         supportChatState.lastSeenAdminMessageId = 0;
+        supportChatState.serverUnreadCount = 0;
         supportChatState.typingActive = false;
         if (supportChatState.typingStopTimer) {
             clearTimeout(supportChatState.typingStopTimer);
@@ -8695,13 +9361,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return supportChatState.sessionId;
     }
 
-    async function loadSupportChatMessages() {
+    async function loadSupportChatMessages(markReadUser = true) {
         if (!supportChatState.sessionId) return { messages: [], session: null };
-        const result = await apiCall('GET', `/chat/messages/${supportChatState.sessionId}`);
+        const readFlag = markReadUser ? '1' : '0';
+        const result = await apiCall('GET', `/chat/messages/${supportChatState.sessionId}?markReadUser=${readFlag}`);
         supportChatState.sessionMeta = result.session || null;
+        supportChatState.serverUnreadCount = Number(result.unreadUserCount || 0);
         return {
             messages: result.messages || [],
-            session: result.session || null
+            session: result.session || null,
+            unreadUserCount: Number(result.unreadUserCount || 0)
         };
     }
 
@@ -8724,7 +9393,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         renderSupportChatHeader(derivedAdmin ? { ...(sessionInfo || {}), assigned_admin_name: derivedAdmin } : sessionInfo);
         updateSupportChatComposerState(sessionInfo, messages || []);
-        updateSupportChatUnread(messages || [], chatOpen);
+        updateSupportChatUnread(messages || [], chatOpen, supportChatState.serverUnreadCount);
 
         if (!hasSupportChatProfile()) {
             const intro = document.createElement('div');
@@ -8880,16 +9549,222 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function splitKeywordsInput(value) {
+        return String(value || '')
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .slice(0, 30);
+    }
+
+    function joinKeywordsOutput(list) {
+        return Array.isArray(list) ? list.join(', ') : '';
+    }
+
+    function fillAdminChatAiConfigForm(config = {}) {
+        const emailKeywordsInput = document.getElementById('adminChatAiKeywordsEmail');
+        const phoneKeywordsInput = document.getElementById('adminChatAiKeywordsPhone');
+        const priceKeywordsInput = document.getElementById('adminChatAiKeywordsPrice');
+        const repairKeywordsInput = document.getElementById('adminChatAiKeywordsRepair');
+        const emailReplyInput = document.getElementById('adminChatAiReplyEmail');
+        const phoneReplyInput = document.getElementById('adminChatAiReplyPhone');
+        const priceReplyInput = document.getElementById('adminChatAiReplyPrice');
+        const repairReplyInput = document.getElementById('adminChatAiReplyRepair');
+        const fallbackReplyInput = document.getElementById('adminChatAiReplyFallback');
+
+        if (emailKeywordsInput) emailKeywordsInput.value = joinKeywordsOutput(config?.email?.keywords);
+        if (phoneKeywordsInput) phoneKeywordsInput.value = joinKeywordsOutput(config?.phone?.keywords);
+        if (priceKeywordsInput) priceKeywordsInput.value = joinKeywordsOutput(config?.price?.keywords);
+        if (repairKeywordsInput) repairKeywordsInput.value = joinKeywordsOutput(config?.repair?.keywords);
+
+        if (emailReplyInput) emailReplyInput.value = String(config?.email?.reply || '');
+        if (phoneReplyInput) phoneReplyInput.value = String(config?.phone?.reply || '');
+        if (priceReplyInput) priceReplyInput.value = String(config?.price?.reply || '');
+        if (repairReplyInput) repairReplyInput.value = String(config?.repair?.reply || '');
+        if (fallbackReplyInput) fallbackReplyInput.value = String(config?.fallbackReply || '');
+    }
+
+    function collectAdminChatAiConfigForm() {
+        const emailKeywordsInput = document.getElementById('adminChatAiKeywordsEmail');
+        const phoneKeywordsInput = document.getElementById('adminChatAiKeywordsPhone');
+        const priceKeywordsInput = document.getElementById('adminChatAiKeywordsPrice');
+        const repairKeywordsInput = document.getElementById('adminChatAiKeywordsRepair');
+        const emailReplyInput = document.getElementById('adminChatAiReplyEmail');
+        const phoneReplyInput = document.getElementById('adminChatAiReplyPhone');
+        const priceReplyInput = document.getElementById('adminChatAiReplyPrice');
+        const repairReplyInput = document.getElementById('adminChatAiReplyRepair');
+        const fallbackReplyInput = document.getElementById('adminChatAiReplyFallback');
+
+        return {
+            email: {
+                keywords: splitKeywordsInput(emailKeywordsInput?.value),
+                reply: String(emailReplyInput?.value || '').trim()
+            },
+            phone: {
+                keywords: splitKeywordsInput(phoneKeywordsInput?.value),
+                reply: String(phoneReplyInput?.value || '').trim()
+            },
+            price: {
+                keywords: splitKeywordsInput(priceKeywordsInput?.value),
+                reply: String(priceReplyInput?.value || '').trim()
+            },
+            repair: {
+                keywords: splitKeywordsInput(repairKeywordsInput?.value),
+                reply: String(repairReplyInput?.value || '').trim()
+            },
+            fallbackReply: String(fallbackReplyInput?.value || '').trim()
+        };
+    }
+
+    async function loadAdminChatAiConfig(forceReload = false) {
+        if (!Storage.getToken() || !canAccessAdmin(Storage.getUser())) return;
+        if (!forceReload && adminChatState.aiConfigLoaded) return;
+        if (adminChatState.aiConfigLoading) return;
+
+        const reloadBtn = document.getElementById('adminChatAiReloadBtn');
+        adminChatState.aiConfigLoading = true;
+        if (reloadBtn) reloadBtn.disabled = true;
+
+        try {
+            const result = await apiCall('GET', '/chat/admin/ai-config');
+            if (!result?.success || !result?.config) {
+                throw new Error(result?.message || 'Failed to load AI config');
+            }
+
+            fillAdminChatAiConfigForm(result.config);
+            adminChatState.aiConfigLoaded = true;
+        } catch (err) {
+            console.error('Load admin chat AI config failed:', err);
+            showToast(err?.message || 'Failed to load AI answers');
+        } finally {
+            adminChatState.aiConfigLoading = false;
+            if (reloadBtn) reloadBtn.disabled = false;
+        }
+    }
+
+    async function saveAdminChatAiConfig() {
+        if (!Storage.getToken() || !canAccessAdmin(Storage.getUser())) return;
+        if (adminChatState.aiConfigSaving) return;
+
+        const saveBtn = document.getElementById('adminChatAiSaveBtn');
+        adminChatState.aiConfigSaving = true;
+        if (saveBtn) saveBtn.disabled = true;
+
+        try {
+            const payload = collectAdminChatAiConfigForm();
+            const result = await apiCall('PUT', '/chat/admin/ai-config', payload);
+            if (!result?.success) {
+                throw new Error(result?.message || 'Failed to save AI config');
+            }
+
+            fillAdminChatAiConfigForm(result.config || payload);
+            adminChatState.aiConfigLoaded = true;
+            showToast('AI bot answers saved');
+        } catch (err) {
+            console.error('Save admin chat AI config failed:', err);
+            showToast(err?.message || 'Failed to save AI answers');
+        } finally {
+            adminChatState.aiConfigSaving = false;
+            if (saveBtn) saveBtn.disabled = false;
+        }
+    }
+
+    function getAdminChatStatusKind(session) {
+        const rawStatus = String(session?.status || '').trim().toLowerCase();
+        const hasAssignedAdmin = Boolean(String(session?.assigned_admin_name || '').trim());
+
+        if (rawStatus === 'closed') return 'closed';
+        if (hasAssignedAdmin) return 'taken_active';
+        return 'open_unassigned';
+    }
+
+    function getOpenUnassignedChatCount() {
+        return (adminChatState.sessions || []).filter((session) => getAdminChatStatusKind(session) === 'open_unassigned').length;
+    }
+
+    function renderAdminChatOpenCount() {
+        const openCountEl = document.getElementById('adminChatOpenCount');
+        if (!openCountEl) return;
+
+        const count = getOpenUnassignedChatCount();
+        if (count <= 0) {
+            openCountEl.style.display = 'none';
+            openCountEl.textContent = '0';
+            return;
+        }
+
+        openCountEl.style.display = 'inline-flex';
+        openCountEl.textContent = count > 99 ? '99+' : String(count);
+    }
+
+    function getFilteredAdminChatSessions() {
+        const statusFilter = String(adminChatState.statusFilter || 'all');
+        const adminFilter = String(adminChatState.adminFilter || 'all').trim().toLowerCase();
+
+        return (adminChatState.sessions || []).filter((session) => {
+            const statusKind = getAdminChatStatusKind(session);
+            if (statusFilter !== 'all' && statusKind !== statusFilter) {
+                return false;
+            }
+
+            if (adminFilter !== 'all') {
+                const assigned = String(session?.assigned_admin_name || '').trim().toLowerCase();
+                if (assigned !== adminFilter) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }
+
+    function renderAdminChatAdminFilterOptions() {
+        const adminFilterEl = document.getElementById('adminChatAdminFilter');
+        if (!adminFilterEl) return;
+
+        const previousValue = String(adminChatState.adminFilter || 'all');
+        const usersFromApi = (adminChatState.adminUsers || [])
+            .map((name) => String(name || '').trim())
+            .filter(Boolean);
+        const usersFromSessions = (adminChatState.sessions || [])
+            .map((session) => String(session?.assigned_admin_name || '').trim())
+            .filter(Boolean);
+
+        const uniqueAdmins = [...new Set([...usersFromApi, ...usersFromSessions])]
+            .sort((a, b) => a.localeCompare(b, 'cs', { sensitivity: 'base' }));
+
+        const optionsHtml = [
+            '<option value="all">Všichni admini</option>',
+            ...uniqueAdmins.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`)
+        ].join('');
+
+        adminFilterEl.innerHTML = optionsHtml;
+        const hasPrevious = previousValue === 'all' || uniqueAdmins.some((name) => name.toLowerCase() === previousValue.toLowerCase());
+        adminChatState.adminFilter = hasPrevious ? previousValue : 'all';
+        adminFilterEl.value = adminChatState.adminFilter === 'all'
+            ? 'all'
+            : (uniqueAdmins.find((name) => name.toLowerCase() === adminChatState.adminFilter.toLowerCase()) || 'all');
+    }
+
     async function loadAdminChatSessions() {
         if (!Storage.getToken() || !canAccessAdmin(Storage.getUser())) return;
 
         try {
             const result = await apiCall('GET', '/chat/admin/sessions');
             adminChatState.sessions = result.sessions || [];
+            adminChatState.adminUsers = Array.isArray(result.admins) ? result.admins : [];
+            renderAdminChatAdminFilterOptions();
+            renderAdminChatOpenCount();
             renderAdminChatSessionList();
 
-            if (!adminChatState.activeSessionId && adminChatState.sessions.length > 0) {
-                await openAdminChatSession(adminChatState.sessions[0].id);
+            const hasActiveSession = (adminChatState.sessions || []).some((session) => session.id === adminChatState.activeSessionId);
+            if (!hasActiveSession) {
+                adminChatState.activeSessionId = null;
+            }
+
+            const filteredSessions = getFilteredAdminChatSessions();
+            if (!adminChatState.activeSessionId && filteredSessions.length > 0) {
+                await openAdminChatSession(filteredSessions[0].id);
             }
         } catch (err) {
             console.error('Load admin chat sessions failed:', err);
@@ -8900,9 +9775,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const sessionsEl = document.getElementById('adminChatSessions');
         if (!sessionsEl) return;
 
-        const sessions = adminChatState.sessions || [];
+        const sessions = getFilteredAdminChatSessions();
+        renderAdminChatOpenCount();
         if (!sessions.length) {
-            sessionsEl.innerHTML = '<div class="admin-chat-empty">No chat sessions yet.</div>';
+            sessionsEl.innerHTML = '<div class="admin-chat-empty">No chats for selected filters.</div>';
             refreshTakeChatButton(null);
             return;
         }
@@ -9116,7 +9992,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 syncOnboardingPlaceholder();
 
                 await ensureSupportChatSession();
-                const result = await loadSupportChatMessages();
+                const result = await loadSupportChatMessages(true);
                 renderSupportChatMessages(result.messages || [], result.session || null);
                 return true;
             }
@@ -9127,7 +10003,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const pollSupportChat = async () => {
             try {
                 if (!supportChatState.sessionId) return;
-                const result = await loadSupportChatMessages();
+                const isOpen = Boolean(document.getElementById('supportChat')?.classList.contains('open'));
+                const result = await loadSupportChatMessages(isOpen);
                 renderSupportChatMessages(result.messages || [], result.session || null);
             } catch {
                 // ignore polling failures
@@ -9147,7 +10024,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 if (hasSupportChatProfile()) {
                     await ensureSupportChatSession();
-                    const result = await loadSupportChatMessages();
+                    const result = await loadSupportChatMessages(true);
                     renderSupportChatMessages(result.messages || [], result.session || null);
                 } else {
                     renderSupportChatMessages([], null);
@@ -9228,6 +10105,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (supportChatState.submitInFlight) return;
             if (supportChatState.isClosed) {
                 showToast('Tento chat byl ukončen administrátorem.');
                 return;
@@ -9236,6 +10114,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!text) return;
 
             try {
+                supportChatState.submitInFlight = true;
                 const onboardingHandled = await processOnboardingStep(text);
                 if (onboardingHandled) {
                     input.value = '';
@@ -9263,6 +10142,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (err) {
                 console.error('Support chat send failed:', err);
                 showToast('Failed to send message');
+            } finally {
+                supportChatState.submitInFlight = false;
             }
         });
 
@@ -9279,6 +10160,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const replyInput = document.getElementById('adminChatReplyInput');
         const takeChatBtn = document.getElementById('adminTakeChatBtn');
         const closeChatBtn = document.getElementById('adminCloseChatBtn');
+        const statusFilterEl = document.getElementById('adminChatStatusFilter');
+        const adminFilterEl = document.getElementById('adminChatAdminFilter');
         const takeModal = document.getElementById('adminChatTakeModal');
         const takeBackdrop = document.getElementById('adminChatTakeBackdrop');
         const takeCancelBtn = document.getElementById('adminChatTakeCancel');
@@ -9289,6 +10172,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const closeConfirmBackdrop = document.getElementById('adminChatCloseConfirmBackdrop');
         const closeConfirmCancel = document.getElementById('adminChatCloseConfirmCancel');
         const closeConfirmOk = document.getElementById('adminChatCloseConfirmOk');
+        const aiReloadBtn = document.getElementById('adminChatAiReloadBtn');
+        const aiSaveBtn = document.getElementById('adminChatAiSaveBtn');
 
         let takeModalSessionId = '';
         let closeConfirmResolver = null;
@@ -9379,7 +10264,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
             showToast(`Chat převzal ${result.session?.assigned_admin_name || 'aktuální admin'}`);
             await loadAdminChatSessions();
-            await openAdminChatSession(sessionId);
+
+            const filteredSessions = getFilteredAdminChatSessions();
+            const stillVisible = filteredSessions.some((session) => session.id === sessionId);
+            if (stillVisible) {
+                await openAdminChatSession(sessionId);
+                return;
+            }
+
+            adminChatState.activeSessionId = null;
+            if (filteredSessions.length > 0) {
+                await openAdminChatSession(filteredSessions[0].id);
+            } else {
+                clearAdminChatThread();
+            }
         };
 
         const closeChatSession = async (sessionId) => {
@@ -9502,6 +10400,46 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        aiReloadBtn?.addEventListener('click', async () => {
+            await loadAdminChatAiConfig(true);
+        });
+
+        aiSaveBtn?.addEventListener('click', async () => {
+            await saveAdminChatAiConfig();
+        });
+
+        statusFilterEl?.addEventListener('change', async () => {
+            adminChatState.statusFilter = String(statusFilterEl.value || 'all');
+            renderAdminChatSessionList();
+
+            const filteredSessions = getFilteredAdminChatSessions();
+            const activeVisible = filteredSessions.some((session) => session.id === adminChatState.activeSessionId);
+            if (!activeVisible) {
+                adminChatState.activeSessionId = null;
+                if (filteredSessions.length > 0) {
+                    await openAdminChatSession(filteredSessions[0].id);
+                } else {
+                    clearAdminChatThread();
+                }
+            }
+        });
+
+        adminFilterEl?.addEventListener('change', async () => {
+            adminChatState.adminFilter = String(adminFilterEl.value || 'all').trim().toLowerCase();
+            renderAdminChatSessionList();
+
+            const filteredSessions = getFilteredAdminChatSessions();
+            const activeVisible = filteredSessions.some((session) => session.id === adminChatState.activeSessionId);
+            if (!activeVisible) {
+                adminChatState.activeSessionId = null;
+                if (filteredSessions.length > 0) {
+                    await openAdminChatSession(filteredSessions[0].id);
+                } else {
+                    clearAdminChatThread();
+                }
+            }
+        });
+
         replyInput?.addEventListener('input', handleAdminTypingInput);
         replyInput?.addEventListener('blur', () => {
             const sessionId = adminChatState.activeSessionId;
@@ -9526,10 +10464,50 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }, 3000);
+
+        const chatsTabActive = document.getElementById('chats-content')?.classList.contains('active');
+        if (chatsTabActive) {
+            loadAdminChatAiConfig();
+        }
+    }
+
+    let adminChatInboxInitialized = false;
+    function ensureAdminChatInboxInitialized() {
+        if (adminChatInboxInitialized) return;
+        adminChatInboxInitialized = true;
+        initAdminChatInbox();
+    }
+
+    let presenceTrackingStarted = false;
+    function startPresenceTrackingDeferred() {
+        if (presenceTrackingStarted) return;
+        presenceTrackingStarted = true;
+
+        const begin = async () => {
+            try {
+                await sendPresenceHeartbeat();
+                setInterval(sendPresenceHeartbeat, 45 * 1000);
+                setInterval(refreshActiveVisitorsStat, 30 * 1000);
+            } catch (err) {
+                console.warn('Presence tracking start failed:', err?.message || err);
+            }
+        };
+
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(() => {
+                begin();
+            }, { timeout: 3500 });
+            return;
+        }
+
+        setTimeout(() => {
+            begin();
+        }, 2500);
     }
 
     initSupportChat();
-    initAdminChatInbox();
+    initHomeNewsUi();
+    renderHomeNewsSection(newsItems);
 
     // ========================================================================
     // INITIALIZATION
@@ -9537,9 +10515,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     (async () => {
         try {
-            await sendPresenceHeartbeat();
-            setInterval(sendPresenceHeartbeat, 45 * 1000);
-            setInterval(refreshActiveVisitorsStat, 30 * 1000);
             initCookieConsent();
             await loadCatalog();
             await refreshAuthState();
@@ -9560,12 +10535,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!catalogState || !catalogState.announcement) {
                 renderAnnouncementBanner({ active: false, text: '' });
             }
+            startPresenceTrackingDeferred();
         } catch (initError) {
             console.error('Initialization error:', initError);
             updateAuthUI();
             applyTranslations();
             showPage('home');
             initCookieConsent();
+            startPresenceTrackingDeferred();
         } finally {
             hideStartupLoader();
         }
