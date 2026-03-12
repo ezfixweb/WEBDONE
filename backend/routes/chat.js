@@ -123,11 +123,17 @@ async function buildAiReply(userText = '') {
     for (const group of groups) {
         const keywords = Array.isArray(group?.keywords) ? group.keywords : [];
         if (keywords.some((keyword) => text.includes(normalizeForMatch(keyword)))) {
-            return group.reply || config.fallbackReply || DEFAULT_CHAT_AI_CONFIG.fallbackReply;
+            return {
+                reply: group.reply || config.fallbackReply || DEFAULT_CHAT_AI_CONFIG.fallbackReply,
+                matched: true
+            };
         }
     }
 
-    return config.fallbackReply || DEFAULT_CHAT_AI_CONFIG.fallbackReply;
+    return {
+        reply: config.fallbackReply || DEFAULT_CHAT_AI_CONFIG.fallbackReply,
+        matched: false
+    };
 }
 
 function isTypingFresh(timestampValue) {
@@ -333,18 +339,30 @@ router.post('/messages/:sessionId', async (req, res) => {
             return res.json({ success: true, messages, duplicate: true, session: { ...replySession, typing: buildTypingState(replySession) } });
         }
 
+        const userMessageCountRow = await db.getAsync(
+            `SELECT COUNT(*)::int AS total
+             FROM chat_messages
+             WHERE session_id = ? AND sender_type = 'user'`,
+            [sessionId]
+        );
+        const previousUserMessageCount = Number(userMessageCountRow?.total || 0);
+
         await db.runAsync(
             `INSERT INTO chat_messages (session_id, sender_type, sender_name, message, is_read_admin, is_read_user)
              VALUES (?, 'user', ?, ?, FALSE, TRUE)`,
             [sessionId, senderName || 'Visitor', message]
         );
 
-        const aiReply = await buildAiReply(message);
-        await db.runAsync(
-            `INSERT INTO chat_messages (session_id, sender_type, sender_name, message, is_read_admin, is_read_user)
-             VALUES (?, 'bot', 'EzFix AI', ?, FALSE, TRUE)`,
-            [sessionId, aiReply]
-        );
+        const aiDecision = await buildAiReply(message);
+        const shouldInsertAiReply = Boolean(aiDecision?.matched) || previousUserMessageCount === 0;
+        const aiReply = shouldInsertAiReply ? String(aiDecision?.reply || '') : null;
+        if (aiReply) {
+            await db.runAsync(
+                `INSERT INTO chat_messages (session_id, sender_type, sender_name, message, is_read_admin, is_read_user)
+                 VALUES (?, 'bot', 'EzFix AI', ?, FALSE, TRUE)`,
+                [sessionId, aiReply]
+            );
+        }
 
         await db.runAsync(
             `UPDATE chat_sessions
