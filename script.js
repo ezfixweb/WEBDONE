@@ -10316,7 +10316,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     clearAdminChatThread();
                 }
                 renderAdminChatSessionList();
-                showToast('Chat byl trvale uzavřen.');
+                showToast('Chat byl trvale smazán.');
             } else {
                 showToast('Chat je ukončen pro uživatele. Čeká se na hodnocení.');
             }

@@ -741,22 +741,14 @@ router.post('/admin/sessions/:sessionId/close', verifyToken, verifyOrderManager,
         }
 
         const existingStatus = String(session.status || '').toLowerCase();
-        if (existingStatus === 'awaiting_rating') {
+        if (existingStatus === 'awaiting_rating' || existingStatus === 'closed') {
             await db.runAsync(
-                `UPDATE chat_sessions
-                 SET status = 'closed',
-                     typing_user_name = NULL,
-                     typing_user_at = NULL,
-                     typing_admin_name = NULL,
-                     typing_admin_at = NULL,
-                     updated_at = CURRENT_TIMESTAMP,
-                     last_message_at = CURRENT_TIMESTAMP,
-                     assigned_admin_id = COALESCE(assigned_admin_id, ?),
-                     assigned_admin_name = COALESCE(NULLIF(assigned_admin_name, ''), ?)
+                `DELETE FROM chat_sessions
                  WHERE id = ?`,
-                [req.user?.id || null, currentAdmin, sessionId]
+                [sessionId]
             );
-            return res.json({ success: true, message: 'Chat fully closed', phase: 'final' });
+
+            return res.json({ success: true, message: 'Chat permanently deleted', phase: 'final' });
         }
 
         const closingText = `Chat byl ukončen administrátorem ${currentAdmin}. Děkujeme za kontakt.`;
