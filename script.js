@@ -1665,6 +1665,7 @@ document.addEventListener('DOMContentLoaded', function() {
         renderTermsModalContent();
         renderAnnouncementBanner(catalog.announcement || {});
         renderHomeNewsSection(newsItems);
+        applySocialLinks(catalog.socialLinks || {});
     }
 
     async function loadCatalog() {
@@ -1678,6 +1679,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function applySocialLinks(socialLinks) {
+        const insta = String(socialLinks?.instagram || '').trim();
+        const fb = String(socialLinks?.facebook || '').trim();
+        ['footerInstagram', 'navInstagram'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (insta) { el.href = insta; el.style.display = 'flex'; }
+            else { el.style.display = 'none'; }
+        });
+        ['footerFacebook', 'navFacebook'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (fb) { el.href = fb; el.style.display = 'flex'; }
+            else { el.style.display = 'none'; }
+        });
+        const adminInsta = document.getElementById('adminInstagramUrl');
+        const adminFb = document.getElementById('adminFacebookUrl');
+        if (adminInsta && !adminInsta.dataset.edited) adminInsta.value = insta;
+        if (adminFb && !adminFb.dataset.edited) adminFb.value = fb;
+    }
+
     function cloneCatalog() {
         return JSON.parse(JSON.stringify({
             services: serviceData,
@@ -1686,7 +1708,8 @@ document.addEventListener('DOMContentLoaded', function() {
             checkout: checkoutOptions,
             announcement: catalogState?.announcement || { active: false, text: '' },
             newsSortMode,
-            news: Array.isArray(newsItems) ? newsItems : []
+            news: Array.isArray(newsItems) ? newsItems : [],
+            socialLinks: catalogState?.socialLinks || { instagram: '', facebook: '' }
         }));
     }
 
@@ -3921,6 +3944,11 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {string} pageId - The ID of the page to show
      */
     function showPage(pageId) {
+        if (pageId === 'profile' && !Storage.getToken()) {
+            showPage('auth');
+            return;
+        }
+
         // Prevent access to admin without login
         if (pageId === 'admin') {
             if (!Storage.getToken() || !Storage.adminLoggedIn) {
@@ -4010,6 +4038,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (pageId === 'other') {
             renderOtherItemsPage();
         }
+        if (pageId === 'profile') {
+            renderProfilePage();
+        }
 
         applyTranslations();
         window.scrollTo(0, 0);
@@ -4023,6 +4054,228 @@ document.addEventListener('DOMContentLoaded', function() {
         const homePage = document.getElementById('home');
         if (homePage) {
             homePage.classList.add('active');
+        }
+    }
+
+    function formatDateTimeSafe(value) {
+        if (!value) return '-';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '-';
+        return date.toLocaleString();
+    }
+
+    function formatProfileRoleLabel(role) {
+        const normalized = String(role || '').toLowerCase();
+        if (normalized === 'owner') return 'Owner';
+        if (normalized === 'manager') return 'Manager';
+        if (normalized === 'worker') return 'Worker';
+        if (normalized === 'customer') return 'User';
+        return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : '-';
+    }
+
+    async function renderProfilePage() {
+        const messageEl = document.getElementById('profileMessage');
+        const ordersListEl = document.getElementById('profileOrdersList');
+        const chatsListEl = document.getElementById('profileChatsList');
+        const usernameEl = document.getElementById('profileUsername');
+        const emailEl = document.getElementById('profileEmail');
+        const roleEl = document.getElementById('profileRole');
+        const createdEl = document.getElementById('profileCreatedAt');
+
+        if (!ordersListEl || !chatsListEl || !usernameEl || !emailEl || !roleEl || !createdEl) return;
+
+        if (!Storage.getToken()) {
+            if (messageEl) messageEl.textContent = 'Please login to view your profile.';
+            return;
+        }
+
+        ordersListEl.innerHTML = '<div class="profile-empty">Loading your orders...</div>';
+        chatsListEl.innerHTML = '<div class="profile-empty">Loading your chats...</div>';
+        if (messageEl) messageEl.textContent = '';
+
+        try {
+            const meResult = await apiCall('GET', '/auth/me');
+            const user = meResult?.user || Storage.getUser() || {};
+            Storage.setUser(user);
+
+            usernameEl.textContent = user.username || '-';
+            emailEl.textContent = user.email || '-';
+            roleEl.textContent = formatProfileRoleLabel(user.role);
+            createdEl.textContent = formatDateTimeSafe(user.created_at);
+
+            const [ordersResult, chatsResult] = await Promise.allSettled([
+                apiCall('GET', '/orders/mine'),
+                apiCall('GET', '/chat/my/sessions')
+            ]);
+
+            if (ordersResult.status === 'fulfilled') {
+                const orders = Array.isArray(ordersResult.value?.orders) ? ordersResult.value.orders : [];
+                if (!orders.length) {
+                    ordersListEl.innerHTML = '<div class="profile-empty">No orders yet.</div>';
+                } else {
+                    const detailsByOrderId = new Map();
+                    await Promise.all(orders.map(async (order) => {
+                        try {
+                            const result = await apiCall('GET', `/orders/${order.id}`);
+                            if (result?.success && result.order) {
+                                detailsByOrderId.set(String(order.id), result.order);
+                            }
+                        } catch {
+                            // Leave this order without expanded details if loading fails.
+                        }
+                    }));
+
+                    ordersListEl.innerHTML = orders.map((order) => {
+                        const orderIdKey = String(order.id || '');
+                        const details = detailsByOrderId.get(orderIdKey);
+                        const items = Array.isArray(details?.items) ? details.items : [];
+
+                        const detailRows = [
+                            `<div><strong>Service:</strong> ${escapeHtml(formatServiceTypeLabel(details?.service_type || ''))}</div>`,
+                            `<div><strong>Payment:</strong> ${escapeHtml(String(details?.payment_method || 'N/A'))}</div>`,
+                            `<div><strong>Created:</strong> ${escapeHtml(formatDateTimeSafe(details?.created_at || order.created_at))}</div>`,
+                            `<div><strong>Updated:</strong> ${escapeHtml(formatDateTimeSafe(details?.updated_at || order.updated_at))}</div>`
+                        ].join('');
+
+                        const itemsHtml = items.length
+                            ? `<div class="profile-order-items">${items.map((item) => `
+                                <div class="profile-order-item">
+                                    <div><strong>${escapeHtml(item.repair_name || item.repair_type || 'Item')}</strong></div>
+                                    <div class="meta">${escapeHtml([item.device, item.brand, item.model].filter(Boolean).join(' • '))}</div>
+                                    <div class="meta">${escapeHtml(formatCurrency(item.price || 0))}</div>
+                                </div>
+                            `).join('')}</div>`
+                            : '<div class="profile-empty">No item details available.</div>';
+
+                        const detailsHtml = details
+                            ? `${detailRows}${itemsHtml}`
+                            : '<div class="profile-empty">Order details unavailable.</div>';
+
+                        return `
+                            <div class="profile-history-item">
+                                <div class="profile-order-header">
+                                    <div>
+                                        <div class="title">#${escapeHtml(order.order_number || String(order.id || ''))}</div>
+                                        <div class="meta">Status: ${escapeHtml(formatStatusLabel(order.status || ''))} • ${escapeHtml(formatDateTimeSafe(order.created_at))}</div>
+                                        <div class="preview">Total: ${escapeHtml(formatCurrency(order.total || 0))} • Items: ${escapeHtml(String(order.item_count || 0))}</div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-secondary profile-order-toggle" data-order-toggle="${escapeHtml(orderIdKey)}" aria-expanded="false">Show details</button>
+                                </div>
+                                <div class="profile-order-details" data-order-details="${escapeHtml(orderIdKey)}" style="display:none;">
+                                    ${detailsHtml}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    ordersListEl.querySelectorAll('[data-order-toggle]').forEach((btn) => {
+                        btn.addEventListener('click', () => {
+                            const orderId = btn.getAttribute('data-order-toggle');
+                            if (!orderId) return;
+                            const detailsEl = ordersListEl.querySelector(`[data-order-details="${CSS.escape(orderId)}"]`);
+                            if (!detailsEl) return;
+
+                            const isVisible = detailsEl.style.display !== 'none';
+                            detailsEl.style.display = isVisible ? 'none' : 'block';
+                            btn.textContent = isVisible ? 'Show details' : 'Hide details';
+                            btn.setAttribute('aria-expanded', isVisible ? 'false' : 'true');
+                        });
+                    });
+                }
+            } else {
+                ordersListEl.innerHTML = '<div class="profile-empty">Failed to load order history.</div>';
+            }
+
+            if (chatsResult.status === 'fulfilled') {
+                const sessions = Array.isArray(chatsResult.value?.sessions) ? chatsResult.value.sessions : [];
+                if (!sessions.length) {
+                    chatsListEl.innerHTML = '<div class="profile-empty">No chats yet.</div>';
+                } else {
+                    const previewSessions = sessions.slice(0, 8);
+                    chatsListEl.innerHTML = previewSessions.map((session) => {
+                        const sessionId = String(session.id || '');
+                        const status = escapeHtml(formatStatusLabel(session.status || 'open'));
+                        const when = escapeHtml(formatDateTimeSafe(session.last_message_at || session.created_at));
+                        const preview = escapeHtml(String(session.last_message || 'No messages yet'));
+
+                        return `
+                            <div class="profile-history-item">
+                                <div class="profile-chat-header">
+                                    <div>
+                                        <div class="title">Chat ${escapeHtml(sessionId)}</div>
+                                        <div class="meta">${status} • ${when}</div>
+                                        <div class="preview">${preview}</div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-secondary profile-chat-toggle" data-chat-toggle="${escapeHtml(sessionId)}" aria-expanded="false">Show chat</button>
+                                </div>
+                                <div class="profile-chat-transcript" data-chat-transcript="${escapeHtml(sessionId)}" data-chat-loaded="false" style="display:none;"></div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    chatsListEl.querySelectorAll('[data-chat-toggle]').forEach((btn) => {
+                        btn.addEventListener('click', async () => {
+                            const sessionId = btn.getAttribute('data-chat-toggle');
+                            if (!sessionId) return;
+                            const transcriptEl = chatsListEl.querySelector(`[data-chat-transcript="${CSS.escape(sessionId)}"]`);
+                            if (!transcriptEl) return;
+
+                            const isVisible = transcriptEl.style.display !== 'none';
+                            if (isVisible) {
+                                transcriptEl.style.display = 'none';
+                                btn.textContent = 'Show chat';
+                                btn.setAttribute('aria-expanded', 'false');
+                                return;
+                            }
+
+                            transcriptEl.style.display = 'block';
+                            btn.textContent = 'Hide chat';
+                            btn.setAttribute('aria-expanded', 'true');
+
+                            if (transcriptEl.dataset.chatLoaded === 'true') {
+                                return;
+                            }
+
+                            transcriptEl.innerHTML = '<div class="profile-empty">Loading chat transcript...</div>';
+                            try {
+                                const result = await apiCall('GET', `/chat/my/sessions/${sessionId}/messages`);
+                                const messages = Array.isArray(result?.messages) ? result.messages : [];
+                                if (!messages.length) {
+                                    transcriptEl.innerHTML = '<div class="profile-empty">No messages in this chat.</div>';
+                                    transcriptEl.dataset.chatLoaded = 'true';
+                                    return;
+                                }
+
+                                transcriptEl.innerHTML = messages.map((msg) => {
+                                    const type = String(msg.sender_type || '').toLowerCase();
+                                    const klass = type === 'user' ? 'user' : (type === 'admin' ? 'admin' : 'bot');
+                                    const sender = escapeHtml(msg.sender_name || msg.sender_type || 'message');
+                                    const text = escapeHtml(String(msg.message || ''));
+                                    const time = escapeHtml(formatDateTimeSafe(msg.created_at));
+                                    return `
+                                        <div class="profile-chat-message-row ${klass}">
+                                            <div class="profile-chat-message"><strong>${sender}:</strong> ${text}</div>
+                                            <div class="meta">${time}</div>
+                                        </div>
+                                    `;
+                                }).join('');
+
+                                transcriptEl.dataset.chatLoaded = 'true';
+                            } catch {
+                                transcriptEl.innerHTML = '<div class="profile-empty">Failed to load chat transcript.</div>';
+                            }
+                        });
+                    });
+                }
+            } else {
+                chatsListEl.innerHTML = '<div class="profile-empty">Failed to load chat history.</div>';
+            }
+
+            if (messageEl) messageEl.textContent = '';
+        } catch (error) {
+            if (messageEl) messageEl.textContent = 'Failed to load profile data. Please try again.';
+            ordersListEl.innerHTML = '<div class="profile-empty">Failed to load order history.</div>';
+            chatsListEl.innerHTML = '<div class="profile-empty">Failed to load chat history.</div>';
         }
     }
 
@@ -6184,6 +6437,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const canOrders = canManageOrders(currentUser);
         const canChats = canAccessChats(currentUser);
         const canCredentials = canAccessCredentials(currentUser);
+        const profileNavBtn = document.getElementById('profileNavBtn');
+        const profileNavBtnMobile = document.getElementById('profileNavBtnMobile');
 
         if (isAdmin) {
             mountAdminPageNode();
@@ -6208,6 +6463,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (DOM.loginNavBtn) DOM.loginNavBtn.style.display = isLoggedIn ? 'none' : 'inline-flex';
         const loginNavBtnMobile = document.getElementById('loginNavBtnMobile');
         if (loginNavBtnMobile) loginNavBtnMobile.style.display = isLoggedIn ? 'none' : 'inline-flex';
+        if (profileNavBtn) profileNavBtn.style.display = isLoggedIn ? 'inline-flex' : 'none';
+        if (profileNavBtnMobile) profileNavBtnMobile.style.display = isLoggedIn ? 'inline-flex' : 'none';
         orderTabs.forEach((tab) => {
             const tabBtn = document.querySelector(`.admin-tab-btn[data-tab="${tab}"]`);
             const tabContent = document.getElementById(`${tab}-content`);
@@ -8752,6 +9009,24 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 showToast('Failed to clear orders: ' + error.message);
             }
+            }
+        });
+
+        // Social links save
+        document.getElementById('saveSocialLinksBtn')?.addEventListener('click', async () => {
+            const insta = String(document.getElementById('adminInstagramUrl')?.value || '').trim();
+            const fb = String(document.getElementById('adminFacebookUrl')?.value || '').trim();
+            const msgEl = document.getElementById('socialLinksSaveMsg');
+            try {
+                const socialLinks = { instagram: insta, facebook: fb };
+                const currentCatalog = cloneCatalog();
+                currentCatalog.socialLinks = socialLinks;
+                await apiCall('PUT', '/catalog', { catalog: currentCatalog });
+                if (catalogState) catalogState.socialLinks = socialLinks;
+                applySocialLinks(socialLinks);
+                if (msgEl) { msgEl.textContent = 'Uloženo ✓'; setTimeout(() => { msgEl.textContent = ''; }, 3000); }
+            } catch (err) {
+                if (msgEl) { msgEl.style.color = '#ef4444'; msgEl.textContent = 'Chyba při ukládání'; setTimeout(() => { msgEl.textContent = ''; msgEl.style.color = '#22c55e'; }, 4000); }
             }
         });
 

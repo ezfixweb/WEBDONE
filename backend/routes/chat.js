@@ -530,6 +530,85 @@ router.get('/admin/sessions', verifyToken, verifyOrderManager, async (req, res) 
     }
 });
 
+router.get('/my/sessions', verifyToken, async (req, res) => {
+    try {
+        const email = String(req.user?.email || '').trim().toLowerCase();
+        if (!email) {
+            return res.json({ success: true, sessions: [] });
+        }
+
+        const sessions = await db.allAsync(
+            `SELECT
+                s.id,
+                s.customer_name,
+                s.customer_email,
+                s.help_topic,
+                s.assigned_admin_name,
+                s.status,
+                s.last_message_at,
+                s.created_at,
+                lm.sender_type AS last_sender_type,
+                lm.message AS last_message
+             FROM chat_sessions s
+             LEFT JOIN LATERAL (
+                SELECT sender_type, message
+                FROM chat_messages cm
+                WHERE cm.session_id = s.id
+                ORDER BY cm.created_at DESC
+                LIMIT 1
+             ) lm ON TRUE
+             WHERE LOWER(COALESCE(s.customer_email, '')) = ?
+             ORDER BY s.last_message_at DESC, s.created_at DESC
+             LIMIT 60`,
+            [email]
+        );
+
+        res.json({ success: true, sessions });
+    } catch (err) {
+        console.error('Get own chat sessions error:', err);
+        res.status(500).json({ success: false, message: 'Failed to load your chats', error: err.message });
+    }
+});
+
+router.get('/my/sessions/:sessionId/messages', verifyToken, async (req, res) => {
+    try {
+        const sessionId = String(req.params.sessionId || '').trim();
+        const email = String(req.user?.email || '').trim().toLowerCase();
+
+        if (!sessionId) {
+            return res.status(400).json({ success: false, message: 'Session ID is required' });
+        }
+
+        const session = await db.getAsync(
+            `SELECT id, customer_name, customer_email, help_topic, assigned_admin_name, status, created_at, updated_at
+             FROM chat_sessions
+             WHERE id = ?`,
+            [sessionId]
+        );
+
+        if (!session) {
+            return res.status(404).json({ success: false, message: 'Session not found' });
+        }
+
+        if (String(session.customer_email || '').trim().toLowerCase() !== email) {
+            return res.status(403).json({ success: false, message: 'Not allowed' });
+        }
+
+        const messages = await db.allAsync(
+            `SELECT id, sender_type, sender_name, message, created_at
+             FROM chat_messages
+             WHERE session_id = ?
+             ORDER BY created_at ASC`,
+            [sessionId]
+        );
+
+        res.json({ success: true, session, messages });
+    } catch (err) {
+        console.error('Get own chat messages error:', err);
+        res.status(500).json({ success: false, message: 'Failed to load chat messages', error: err.message });
+    }
+});
+
 router.get('/admin/ai-config', verifyToken, verifyOrderManager, async (req, res) => {
     try {
         const config = await getChatAiConfig(true);

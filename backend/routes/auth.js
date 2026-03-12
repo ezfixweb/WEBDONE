@@ -131,7 +131,8 @@ router.post('/register', [
                 username,
                 email,
                 role,
-                permissions: rolePermissions(role)
+                permissions: rolePermissions(role),
+                created_at: new Date().toISOString()
             }
         });
     } catch (err) {
@@ -168,7 +169,7 @@ router.post('/login', [
 
         // Find user
         const user = await db.getAsync(
-            'SELECT id, username, email, password_hash, role, permissions FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)',
+            'SELECT id, username, email, password_hash, role, permissions, created_at FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)',
             [identifier, identifier]
         );
 
@@ -226,7 +227,8 @@ router.post('/login', [
                 username: user.username,
                 email: user.email,
                 role: user.role,
-                permissions: parsePermissions(user.permissions)
+                permissions: parsePermissions(user.permissions),
+                created_at: user.created_at
             }
         });
     } catch (err) {

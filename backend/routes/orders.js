@@ -148,6 +148,34 @@ router.post('/track', async (req, res) => {
 });
 
 /**
+ * Get currently logged-in user's own orders only
+ * GET /api/orders/mine
+ */
+router.get('/mine', verifyToken, async (req, res) => {
+    try {
+        const orders = await db.allAsync(
+            `SELECT o.id, o.order_number, o.customer_name, o.customer_email, o.status, o.total,
+                    o.created_at, o.updated_at, COUNT(oi.id) as item_count
+             FROM orders o
+             LEFT JOIN order_items oi ON o.id = oi.order_id
+             WHERE o.user_id = ?
+             GROUP BY o.id
+             ORDER BY o.created_at DESC`,
+            [req.user.id]
+        );
+
+        res.json({ success: true, orders });
+    } catch (err) {
+        console.error('Get own orders error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get own orders',
+            error: err.message
+        });
+    }
+});
+
+/**
  * Get order details with items
  * GET /api/orders/:orderId
  */

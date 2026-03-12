@@ -100,11 +100,18 @@
                 <li class="mobile-quick-actions">
                     <button class="btn btn-secondary btn-sm" id="langToggleMobile" type="button" aria-label="Switch language">CZ</button>
                     <a href="#" class="btn btn-primary btn-sm" id="loginNavBtnMobile" data-page="auth">Login</a>
+                    <a href="#" class="btn btn-secondary btn-sm" id="profileNavBtnMobile" data-page="profile" style="display:none;">Profile</a>
                     <button class="btn btn-secondary btn-sm" id="logoutBtnMobile" style="display:none;">Logout</button>
                 </li>
                 <li id="adminNavLink" style="display: none;"><a href="#" data-page="admin">Admin</a></li>
             </ul>
             <div class="nav-right">
+                <a href="#" class="nav-social-link" id="navInstagram" aria-label="Instagram" target="_blank" rel="noopener noreferrer" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                </a>
+                <a href="#" class="nav-social-link" id="navFacebook" aria-label="Facebook" target="_blank" rel="noopener noreferrer" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                </a>
                 <button class="cart-btn" id="cartBtn" aria-label="View cart">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="9" cy="21" r="1"></circle>
@@ -116,6 +123,7 @@
                 <button class="btn btn-secondary btn-sm" id="langToggle" type="button" aria-label="Switch language">CZ</button>
                 <button class="btn btn-secondary btn-sm" id="logoutBtn" style="display: none;">Logout</button>
                 <a href="#" class="btn btn-primary btn-sm" id="loginNavBtn" data-page="auth">Login</a>
+                <a href="#" class="btn btn-secondary btn-sm" id="profileNavBtn" data-page="profile" style="display:none;">Profile</a>
             </div>
             <button class="mobile-menu-btn" aria-label="Toggle menu" aria-expanded="false" aria-controls="primaryNav">
                 <span></span>
@@ -561,6 +569,56 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="profile" class="page">
+            <div class="page-header-dark">
+                <div class="container">
+                    <h1>My Profile</h1>
+                    <p>Your account details, order history, and chat history.</p>
+                </div>
+            </div>
+            <div class="services-content">
+                <div class="container profile-page-layout">
+                    <div class="profile-summary-card">
+                        <h3>Account Info</h3>
+                        <div class="profile-summary-grid">
+                            <div class="profile-summary-item">
+                                <span class="label">Username</span>
+                                <span class="value" id="profileUsername">-</span>
+                            </div>
+                            <div class="profile-summary-item">
+                                <span class="label">Email</span>
+                                <span class="value" id="profileEmail">-</span>
+                            </div>
+                            <div class="profile-summary-item">
+                                <span class="label">Role</span>
+                                <span class="value" id="profileRole">-</span>
+                            </div>
+                            <div class="profile-summary-item">
+                                <span class="label">Account Created</span>
+                                <span class="value" id="profileCreatedAt">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-history-card">
+                        <h3>Order History</h3>
+                        <div class="profile-history-list" id="profileOrdersList">
+                            <div class="profile-empty">No orders found.</div>
+                        </div>
+                    </div>
+
+                    <div class="profile-history-card">
+                        <h3>Chat History</h3>
+                        <div class="profile-history-list" id="profileChatsList">
+                            <div class="profile-empty">No chat history found.</div>
+                        </div>
+                    </div>
+
+                    <div class="form-message" id="profileMessage"></div>
                 </div>
             </div>
         </section>
@@ -2367,6 +2425,26 @@
 
                     <!-- Admin Credentials Tab Content -->
                     <div id="credentials-content" class="admin-tab-content">
+                        <div class="credentials-section social-links-admin-section">
+                            <div class="credentials-header">
+                                <h3>Social Media</h3>
+                            </div>
+                            <div class="social-links-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="adminInstagramUrl">Instagram URL</label>
+                                        <input type="url" id="adminInstagramUrl" placeholder="https://instagram.com/yourpage" maxlength="300">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="adminFacebookUrl">Facebook URL</label>
+                                        <input type="url" id="adminFacebookUrl" placeholder="https://facebook.com/yourpage" maxlength="300">
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm" id="saveSocialLinksBtn">Uložit</button>
+                                <span id="socialLinksSaveMsg" style="margin-left:12px;font-size:0.85rem;color:#22c55e;"></span>
+                            </div>
+                        </div>
+
                         <div class="credentials-section" id="credentialsSection">
                             <div class="credentials-header">
                                 <h3>Admin Credentials</h3>
@@ -2557,6 +2635,14 @@
                         <img src="assets/logos/ezfix-logo.png" alt="EzFix logo" class="footer-logo" loading="lazy" decoding="async">
                     </a>
                     <p>Your trusted partner for all device repairs.</p>
+                    <div class="footer-social">
+                        <a href="#" class="social-link" id="footerInstagram" aria-label="Instagram" target="_blank" rel="noopener noreferrer" style="display:none;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                        </a>
+                        <a href="#" class="social-link" id="footerFacebook" aria-label="Facebook" target="_blank" rel="noopener noreferrer" style="display:none;">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                        </a>
+                    </div>
                 </div>
                 <div class="footer-links">
                     <h4>Quick Links</h4>

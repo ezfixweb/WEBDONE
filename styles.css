@@ -4196,6 +4196,52 @@ body.has-announcement .hero {
     color: rgba(255, 255, 255, 0.7);
 }
 
+.footer-social {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.75);
+    transition: background 0.2s, color 0.2s;
+    text-decoration: none;
+}
+
+.social-link:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.nav-social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 0.2s, background 0.2s;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.nav-social-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.social-links-form {
+    padding: 12px 0 4px;
+}
+
 .footer h4 {
     margin-bottom: 20px;
     color: #e9e4ff;
@@ -4230,6 +4276,167 @@ body.has-announcement .hero {
     text-align: center;
     color: rgba(255, 255, 255, 0.55);
     font-size: 0.875rem;
+}
+
+.profile-page-layout {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+}
+
+.profile-summary-card,
+.profile-history-card {
+    background: #fff;
+    border: 1px solid #e5ddff;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 8px 24px rgba(27, 16, 67, 0.06);
+}
+
+.profile-summary-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin-top: 10px;
+}
+
+.profile-summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.profile-summary-item .label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #6b6a8c;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.profile-summary-item .value {
+    font-size: 1rem;
+    color: #1f1748;
+    font-weight: 600;
+}
+
+.profile-history-list {
+    margin-top: 10px;
+    display: grid;
+    gap: 10px;
+}
+
+.profile-history-item {
+    border: 1px solid #e8e2ff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #faf8ff;
+}
+
+.profile-history-item .title {
+    font-weight: 700;
+    color: #221a4f;
+}
+
+.profile-history-item .meta {
+    margin-top: 4px;
+    font-size: 0.85rem;
+    color: #655e8f;
+}
+
+.profile-history-item .preview {
+    margin-top: 6px;
+    font-size: 0.92rem;
+    color: #2b255c;
+}
+
+.profile-order-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.profile-order-toggle {
+    flex-shrink: 0;
+}
+
+.profile-order-details {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #ddd3ff;
+    display: grid;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: #3b3368;
+}
+
+.profile-order-items {
+    margin-top: 6px;
+    display: grid;
+    gap: 8px;
+}
+
+.profile-order-item {
+    background: #fff;
+    border: 1px solid #e6ddff;
+    border-radius: 10px;
+    padding: 8px 10px;
+}
+
+.profile-chat-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.profile-chat-toggle {
+    flex-shrink: 0;
+}
+
+.profile-chat-transcript {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #ddd3ff;
+    display: grid;
+    gap: 8px;
+}
+
+.profile-chat-message-row {
+    background: #fff;
+    border: 1px solid #e7e0ff;
+    border-radius: 10px;
+    padding: 8px 10px;
+}
+
+.profile-chat-message-row.user {
+    border-left: 4px solid #4f46e5;
+}
+
+.profile-chat-message-row.admin {
+    border-left: 4px solid #7a2cff;
+}
+
+.profile-chat-message-row.bot {
+    border-left: 4px solid #22c55e;
+}
+
+.profile-chat-messages {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #ddd3ff;
+    display: grid;
+    gap: 6px;
+}
+
+.profile-chat-message {
+    font-size: 0.85rem;
+    color: #3d356d;
+}
+
+.profile-empty {
+    color: #6f6a8f;
 }
 
 /* Mobile Responsive */
