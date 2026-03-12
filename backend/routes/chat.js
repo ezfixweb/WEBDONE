@@ -485,7 +485,7 @@ router.get('/admin/sessions', verifyToken, verifyOrderManager, async (req, res) 
              WHERE role IN ('worker', 'manager', 'owner')
                AND username IS NOT NULL
                AND TRIM(username) <> ''
-             ORDER BY username COLLATE NOCASE ASC`
+                         ORDER BY LOWER(username) ASC, username ASC`
         );
 
         res.json({

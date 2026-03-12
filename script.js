@@ -9025,6 +9025,7 @@ document.addEventListener('DOMContentLoaded', function() {
         typingActive: false,
         statusFilter: 'all',
         adminFilter: 'all',
+        loadErrorVisible: false,
         aiConfigLoaded: false,
         aiConfigLoading: false,
         aiConfigSaving: false
@@ -9757,6 +9758,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const result = await apiCall('GET', '/chat/admin/sessions');
+            adminChatState.loadErrorVisible = false;
             adminChatState.sessions = result.sessions || [];
             adminChatState.adminUsers = Array.isArray(result.admins) ? result.admins : [];
             renderAdminChatAdminFilterOptions();
@@ -9774,6 +9776,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (err) {
             console.error('Load admin chat sessions failed:', err);
+            if (!adminChatState.loadErrorVisible) {
+                showToast('Admin chat list failed to load. Please refresh and try again.');
+                adminChatState.loadErrorVisible = true;
+            }
         }
     }
 
@@ -9782,9 +9788,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!sessionsEl) return;
 
         const sessions = getFilteredAdminChatSessions();
+        const totalSessions = (adminChatState.sessions || []).length;
         renderAdminChatOpenCount();
         if (!sessions.length) {
-            sessionsEl.innerHTML = '<div class="admin-chat-empty">No chats for selected filters.</div>';
+            if (totalSessions > 0) {
+                sessionsEl.innerHTML = '<div class="admin-chat-empty">No chats for selected filters. <button type="button" class="btn btn-sm btn-secondary" data-chat-reset-filters>Reset filters</button></div>';
+            } else {
+                sessionsEl.innerHTML = '<div class="admin-chat-empty">No chats for selected filters.</div>';
+            }
             refreshTakeChatButton(null);
             return;
         }
@@ -10328,6 +10339,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         sessionsEl?.addEventListener('click', async (event) => {
+            const resetFiltersBtn = event.target.closest('[data-chat-reset-filters]');
+            if (resetFiltersBtn) {
+                adminChatState.statusFilter = 'all';
+                adminChatState.adminFilter = 'all';
+                const statusFilterEl = document.getElementById('adminChatStatusFilter');
+                const adminFilterEl = document.getElementById('adminChatAdminFilter');
+                if (statusFilterEl) statusFilterEl.value = 'all';
+                if (adminFilterEl) adminFilterEl.value = 'all';
+                renderAdminChatSessionList();
+                const allSessions = getFilteredAdminChatSessions();
+                if (!adminChatState.activeSessionId && allSessions.length > 0) {
+                    await openAdminChatSession(allSessions[0].id);
+                }
+                return;
+            }
+
             const assignBtn = event.target.closest('[data-chat-assign]');
             if (assignBtn) {
                 const sessionId = assignBtn.getAttribute('data-chat-assign');
