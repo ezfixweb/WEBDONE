@@ -279,6 +279,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'Choose your PSU': 'Zvolte napajeci zdroj',
             'Select Cooler': 'Vyberte chladic',
             'Choose your CPU cooler': 'Zvolte chladic CPU',
+            'Select OS': 'Vyberte OS',
+            'Choose operating system preference': 'Zvolte preferenci operačního systému',
+            'Choose whether you want the system delivered with an operating system.': 'Vyberte, zda chcete sestavu dodat s nainstalovaným operačním systémem.',
             'Your Custom Build': 'Vase sestava',
             'Total:': 'Celkem:',
             'Upload Reference': 'Nahrat reference',
@@ -501,6 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'Please complete the Home Assistant build selections': 'Dokoncete volby pro Home Assistant',
             'Please select build type and brand first': 'Nejprve zvolte typ sestavy a znacku',
             'Please select build status, OS, and installation': 'Zvolte stav sestavy, OS a instalaci',
+            'Please select OS option': 'Zvolte možnost OS',
             'Please complete the build before adding to cart': 'Dokoncete sestavu pred pridanim do kosiku',
             'Custom build added to cart': 'Vlastni sestava pridana do kosiku',
             'Failed to add build to cart': 'Nepodarilo se pridat sestavu do kosiku',
@@ -1705,7 +1709,10 @@ document.addEventListener('DOMContentLoaded', function() {
             serviceData = catalog.services;
         }
         if (catalog.customBuilds && typeof catalog.customBuilds === 'object') {
-            customPCParts = catalog.customBuilds;
+            customPCParts = {
+                ...customPCParts,
+                ...catalog.customBuilds
+            };
         }
         if (catalog.printing && typeof catalog.printing === 'object') {
             // Preserve default printer properties (like multicolor) if not in catalog
@@ -2508,7 +2515,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderCatalogBuilds() {
         const categorySelect = document.getElementById('catalogBuildCategorySelect');
         const list = document.getElementById('catalogBuildList');
+        const osDescriptionInput = document.getElementById('catalogBuildOsDescription');
         if (!categorySelect || !list) return;
+
+        if (typeof catalogDraft.customBuilds.osOptionDescription !== 'string') {
+            catalogDraft.customBuilds.osOptionDescription = customPCParts.osOptionDescription || '';
+        }
+        if (osDescriptionInput) {
+            osDescriptionInput.value = catalogDraft.customBuilds.osOptionDescription;
+            osDescriptionInput.oninput = () => {
+                catalogDraft.customBuilds.osOptionDescription = osDescriptionInput.value;
+            };
+        }
 
         const categories = getBuildCategories().slice().sort(catalogSortByText);
         if (!categories.includes(catalogUiState.buildCategory)) {
@@ -3449,6 +3467,7 @@ document.addEventListener('DOMContentLoaded', function() {
             { id: 'os-installed', name: 'Install with OS' },
             { id: 'os-clean', name: 'Clean (No OS)' }
         ],
+        osOptionDescription: 'Choose whether you want the system delivered with an operating system.',
         installOption: [
             { id: 'install-yes', name: 'Installation (We will install the server)' },
             { id: 'install-no', name: 'No Installation' }
@@ -7197,6 +7216,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (sidebar) sidebar.classList.add('show');
                 if (container) container.classList.add('sidebar-active');
                 renderCustomPCStep('rack');
+            },
+            'backToCooler': () => {
+                const sidebar = document.querySelector('.custom-pc-sidebar');
+                const container = document.querySelector('.custom-pc-container');
+                if (sidebar) sidebar.classList.add('show');
+                if (container) container.classList.add('sidebar-active');
+                renderCustomPCStep('cooler');
             }
         };
 
@@ -7242,8 +7268,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 || ['haBrand', 'haType', 'haModel', 'haRam', 'haStorageType', 'haStorageSize', 'haCaseRack', 'haSwitch', 'haOther'].includes(step));
         const isServerFlow = currentBuild.buildType === 'server' || step === 'serverType';
 
-        const customSteps = ['buildType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'];
-        const customLabels = ['Type', 'Brand', 'CPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler'];
+        const customSteps = ['buildType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler', 'osOption'];
+        const customLabels = ['Type', 'Brand', 'CPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler', 'OS'];
 
         const serverSteps = ['buildType', 'serverType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'rack', 'other'];
         const serverLabels = ['Type', 'Server Type', 'Brand', 'CPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Rack', 'Other'];
@@ -7309,6 +7335,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'psu': 'psuStep',
             'case': 'caseStep',
             'cooler': 'coolerStep',
+            'osOption': 'osOptionStep',
             'rack': 'rackStep',
             'other': 'otherStep',
             'haBrand': 'haBrandStep',
@@ -7438,12 +7465,69 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (step === 'rack') {
             items = customPCParts.rack;
             gridId = 'rackGrid';
+        } else if (step === 'osOption') {
+            const osGrid = document.getElementById('customOsOptionGrid');
+            const osDescriptionEl = document.getElementById('customPCOsOptionDescriptionStep');
+            const osTitleEl = document.getElementById('customOsStepTitle');
+            const osSubtitleEl = document.getElementById('customOsStepSubtitle');
+            const backLabelEl = document.getElementById('backToCoolerLabel');
+
+            if (osTitleEl) osTitleEl.textContent = t('Select OS');
+            if (osSubtitleEl) osSubtitleEl.textContent = t('Choose operating system preference');
+            if (backLabelEl) backLabelEl.textContent = t('Back');
+
+            if (osDescriptionEl) {
+                const text = String(customPCParts.osOptionDescription || '').trim();
+                osDescriptionEl.textContent = text || t('Choose whether you want the system delivered with an operating system.');
+            }
+
+            if (osGrid) {
+                const osItems = filterActiveItems(customPCParts.osOption);
+                osGrid.innerHTML = osItems.map(item => `
+                    <div class="brand-card" data-step="osOption" data-id="${item.id}">
+                        <h3>${item.name}</h3>
+                    </div>
+                `).join('');
+                if (currentBuild.osOption) {
+                    osGrid.querySelectorAll('.brand-card').forEach(card => {
+                        if (card.dataset.id === currentBuild.osOption) {
+                            card.classList.add('active');
+                        }
+                    });
+                }
+                osGrid.querySelectorAll('.brand-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        currentBuild.osOption = card.dataset.id;
+                        osGrid.querySelectorAll('.brand-card').forEach(c => c.classList.remove('active'));
+                        card.classList.add('active');
+                        renderBuildSummary();
+                        updateBuildSidebar();
+                        showBuildSummary();
+                    });
+                });
+            }
+
+            showCustomPCStep(step);
+            return;
         } else if (step === 'other') {
             const buildGrid = document.getElementById('buildStatusGrid');
             const osGrid = document.getElementById('osOptionGrid');
             const installGrid = document.getElementById('installOptionGrid');
+            const osDescriptionEl = document.getElementById('customPCOsOptionDescription');
+            const isServerBuild = currentBuild.buildType === 'server';
+            const buildStatusHeader = buildGrid ? buildGrid.previousElementSibling : null;
+            const installHeader = installGrid ? installGrid.previousElementSibling : null;
 
-            if (buildGrid) {
+            if (buildStatusHeader) buildStatusHeader.style.display = isServerBuild ? '' : 'none';
+            if (buildGrid) buildGrid.style.display = isServerBuild ? '' : 'none';
+            if (installHeader) installHeader.style.display = isServerBuild ? '' : 'none';
+            if (installGrid) installGrid.style.display = isServerBuild ? '' : 'none';
+            if (osDescriptionEl) {
+                const text = String(customPCParts.osOptionDescription || '').trim();
+                osDescriptionEl.textContent = text || t('Choose whether you want the system delivered with an operating system.');
+            }
+
+            if (buildGrid && isServerBuild) {
                 const buildItems = filterActiveItems(customPCParts.buildStatus);
                 buildGrid.innerHTML = buildItems.map(item => `
                     <div class="brand-card" data-step="buildStatus" data-id="${item.id}">
@@ -7492,14 +7576,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         card.classList.add('active');
                         renderBuildSummary();
                         updateBuildSidebar();
-                        if (currentBuild.buildStatus && currentBuild.osOption && currentBuild.installOption) {
+                        if (!isServerBuild || (currentBuild.buildStatus && currentBuild.installOption)) {
                             showBuildSummary();
                         }
                     });
                 });
             }
 
-            if (installGrid) {
+            if (installGrid && isServerBuild) {
                 const installItems = filterActiveItems(customPCParts.installOption);
                 installGrid.innerHTML = installItems.map(item => `
                     <div class="brand-card" data-step="installOption" data-id="${item.id}">
@@ -7652,7 +7736,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ? ['buildType', 'serverType', 'haBrand', 'haType', 'haModel', 'haRam', 'haStorageType', 'haStorageSize', 'haCaseRack', 'haSwitch', 'haOther']
             : (currentBuild.buildType === 'server'
                 ? ['buildType', 'serverType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'rack', 'other']
-                : ['buildType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler']);
+                : ['buildType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler', 'osOption']);
         const stepIndex = allSteps.indexOf(step);
 
         if (step === 'buildType') {
@@ -7775,12 +7859,12 @@ document.addEventListener('DOMContentLoaded', function() {
             ? ['buildType', 'serverType', 'haBrand', 'haType', 'haModel', 'haRam', 'haStorageType', 'haStorageSize', 'haCaseRack', 'haSwitch', 'haInstallOs', 'haCluster']
             : (currentBuild.buildType === 'server'
                 ? ['buildType', 'serverType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'rack', 'buildStatus', 'osOption', 'installOption']
-                : ['buildType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler']);
+                : ['buildType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler', 'osOption']);
         const stepLabels = isHomeAssistant
             ? ['Type', 'Server Type', 'Brand', 'Type', 'Model', 'RAM', 'Storage Type', 'Storage Size', 'Case/Rack', 'Switch', 'Install OS', 'Cluster']
             : (currentBuild.buildType === 'server'
                 ? ['Type', 'Server Type', 'Brand', 'CPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Rack', 'Build', 'OS', 'Install']
-                : ['Type', 'Brand', 'CPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler']);
+                : ['Type', 'Brand', 'CPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler', 'OS']);
         
         let items = [];
         let total = 0;
@@ -7843,7 +7927,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const lastStep = currentBuild.buildType === 'server'
             ? (currentBuild.serverType === 'server-home-assistant' ? 'haOther' : 'other')
-            : 'cooler';
+            : 'osOption';
         updateCustomPCProgressSteps(lastStep);
     }
 
@@ -7913,7 +7997,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? ['buildType', 'serverType', 'haBrand', 'haType', 'haModel', 'haRam', 'haStorageType', 'haStorageSize', 'haCaseRack', 'haSwitch', 'haInstallOs', 'haCluster']
                 : (currentBuild.buildType === 'server'
                     ? ['buildType', 'serverType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'rack', 'buildStatus', 'osOption', 'installOption']
-                    : ['buildType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler']);
+                    : ['buildType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler', 'osOption']);
             const labelMap = {
                 buildType: 'Build Type',
                 serverType: 'Server Type',
@@ -7947,7 +8031,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ? ['haModel', 'haRam', 'haStorageSize', 'haCaseRack', 'haSwitch']
             : (currentBuild.buildType === 'server'
                 ? ['buildType', 'serverType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'rack', 'buildStatus', 'osOption', 'installOption']
-                : ['buildType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler']);
+                : ['buildType', 'cpuBrand', 'cpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler', 'osOption']);
         stepKeys.forEach(k => {
             const id = currentBuild[k];
             if (id) {
@@ -8090,6 +8174,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 showToast('Please select build status, OS, and installation');
                 return;
             }
+            if (currentBuild.buildType !== 'server' && !osInfo) {
+                showToast('Please select OS option');
+                return;
+            }
         }
 
         const parts = isHomeAssistant
@@ -8142,8 +8230,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (haInstallInfo) extras.push(`Install: ${haInstallInfo.name}`);
             if (haClusterInfo) extras.push(`Cluster: ${haClusterInfo.name}`);
         } else {
-            if (buildStatusInfo) extras.push(`Build: ${buildStatusInfo.name}`);
             if (osInfo) extras.push(`OS: ${osInfo.name}`);
+            if (buildStatusInfo) extras.push(`Build: ${buildStatusInfo.name}`);
             if (installInfo) extras.push(`Install: ${installInfo.name}`);
         }
         const fullSummary = [partsSummary, extras.join(' | ')].filter(Boolean).join(' | ');

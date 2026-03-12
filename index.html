@@ -1057,6 +1057,7 @@
                             <div class="step-subheader" style="margin-top:16px;">
                                 <h3>OS</h3>
                             </div>
+                            <p id="customPCOsOptionDescription" class="custom-pc-os-description">Choose whether you want the system delivered with an operating system.</p>
                             <div class="brand-grid" id="osOptionGrid"></div>
                             <div class="step-subheader" style="margin-top:16px;">
                                 <h3>Installation</h3>
@@ -1182,6 +1183,22 @@
                             <p>Choose your CPU cooler</p>
                         </div>
                         <div class="brand-grid" id="coolerGrid"></div>
+                    </div>
+
+                    <div class="service-step" id="osOptionStep">
+                        <button class="back-btn" id="backToCooler">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                            <span id="backToCoolerLabel">Back</span>
+                        </button>
+                        <div class="step-header">
+                            <h2 id="customOsStepTitle">Select OS</h2>
+                            <p id="customOsStepSubtitle">Choose operating system preference</p>
+                        </div>
+                        <p id="customPCOsOptionDescriptionStep" class="custom-pc-os-description">Choose whether you want the system delivered with an operating system.</p>
+                        <div class="brand-grid" id="customOsOptionGrid"></div>
                     </div>
 
                     <!-- Build Summary -->
@@ -2170,6 +2187,10 @@
                                         <label>Category</label>
                                         <select id="catalogBuildCategorySelect" class="catalog-select"></select>
                                         <button class="btn btn-sm" id="catalogAddBuildItem">Add Part</button>
+                                    </div>
+                                    <div class="catalog-row catalog-row-stack">
+                                        <label for="catalogBuildOsDescription">OS Description (shown in Custom PC builder)</label>
+                                        <textarea id="catalogBuildOsDescription" class="catalog-textarea" rows="2" placeholder="Example: Choose if you want a licensed operating system pre-installed."></textarea>
                                     </div>
                                     <div id="catalogBuildList" class="catalog-list"></div>
                                 </div>

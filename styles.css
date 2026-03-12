@@ -4908,6 +4908,14 @@ body.has-announcement .hero {
     background: var(--primary-dark);
 }
 
+.custom-pc-os-description {
+    margin: 8px 0 12px;
+    color: var(--text-light);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    max-width: 720px;
+}
+
 .custom-pc-container.sidebar-active .custom-pc-main .brand-grid {
     max-width: 100%;
 }
