@@ -677,9 +677,9 @@ body.has-announcement .hero {
 }
 
 .profile-icon-btn {
-    width: 46px;
-    min-width: 46px;
-    height: 46px;
+    width: 54px;
+    min-width: 54px;
+    height: 54px;
     padding: 0;
     display: inline-flex;
     align-items: center;
@@ -687,7 +687,7 @@ body.has-announcement .hero {
     color: #ffffff;
     background: linear-gradient(135deg, #7a2cff 0%, #3b54ff 100%);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 6px 14px rgba(59, 84, 255, 0.35);
+    box-shadow: 0 6px 18px rgba(59, 84, 255, 0.45);
 }
 
 .profile-icon-btn:hover {
@@ -696,8 +696,8 @@ body.has-announcement .hero {
 }
 
 .profile-icon {
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
 }
 
 @media (max-width: 1200px) {
