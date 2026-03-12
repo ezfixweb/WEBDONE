@@ -6747,6 +6747,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    async function fetchAdminUserDetails(userId) {
+        try {
+            const result = await apiCall('GET', `/admin/users/${userId}/details`);
+            return { success: true, data: result };
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+
+    function closeAdminUserDetailsModal() {
+        const modal = document.getElementById('adminUserDetailsModal');
+        if (modal) modal.remove();
+    }
+
     function getPermissionSelection(prefix) {
         const checked = [];
         if (document.getElementById(`${prefix}PermOrders`)?.checked) checked.push('orders');
@@ -6834,6 +6848,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 : ''}
                         </div>
                         <div class="user-actions">
+                            <button type="button" class="user-details-btn" data-detail-id="${user.id}">Details</button>
                             <button type="button" class="user-edit-btn" data-edit-id="${user.id}">Edit</button>
                             <button type="button" class="user-delete-btn" data-delete-username="${user.username}">Delete</button>
                         </div>
@@ -6848,6 +6863,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         const userId = parseInt(btn.dataset.editId, 10);
                         if (Number.isFinite(userId)) {
                             handleEditUserUI(userId);
+                        }
+                    });
+                });
+
+                container.querySelectorAll('.user-details-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const userId = parseInt(btn.dataset.detailId, 10);
+                        if (Number.isFinite(userId)) {
+                            handleViewUserDetailsUI(userId);
                         }
                     });
                 });
@@ -6875,6 +6899,265 @@ document.addEventListener('DOMContentLoaded', function() {
             syncCustomerUsersVisibility();
         } catch (error) {
             showToast('Failed to load users: ' + error.message);
+        }
+    }
+
+    async function handleViewUserDetailsUI(userId) {
+        closeAdminUserDetailsModal();
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.id = 'adminUserDetailsModal';
+        modal.innerHTML = `
+            <div class="modal admin-user-details-modal" role="dialog" aria-modal="true" aria-label="User details">
+                <div class="modal-header">
+                    <h3>User Details</h3>
+                    <button class="modal-close" type="button" aria-label="Close user details">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="adminUserDetailsMessage" class="profile-empty">Loading user details...</div>
+                    <div class="profile-grid" id="adminUserDetailsGrid" style="display:none; margin-bottom:16px;">
+                        <div class="profile-stat"><span class="label">Username</span><span class="value" id="adminDetailUsername">-</span></div>
+                        <div class="profile-stat"><span class="label">Email</span><span class="value" id="adminDetailEmail">-</span></div>
+                        <div class="profile-stat"><span class="label">Role</span><span class="value" id="adminDetailRole">-</span></div>
+                        <div class="profile-stat"><span class="label">Created</span><span class="value" id="adminDetailCreated">-</span></div>
+                    </div>
+                    <div id="adminDetailActionsWrapper" style="margin-bottom:16px; display:none;"><button type="button" class="btn btn-secondary" id="adminResetPasswordBtn">Reset Password</button></div>
+                    <h4 style="margin: 10px 0;">Orders</h4>
+                    <div id="adminUserOrdersList" class="profile-history-list">
+                        <div class="profile-empty">Loading orders...</div>
+                    </div>
+                    <h4 style="margin: 18px 0 10px;">Chats</h4>
+                    <div id="adminUserChatsList" class="profile-history-list">
+                        <div class="profile-empty">Loading chats...</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeBtn = modal.querySelector('.modal-close');
+        closeBtn?.addEventListener('click', closeAdminUserDetailsModal);
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeAdminUserDetailsModal();
+            }
+        });
+
+        const messageEl = document.getElementById('adminUserDetailsMessage');
+        const gridEl = document.getElementById('adminUserDetailsGrid');
+        const usernameEl = document.getElementById('adminDetailUsername');
+        const emailEl = document.getElementById('adminDetailEmail');
+        const roleEl = document.getElementById('adminDetailRole');
+        const createdEl = document.getElementById('adminDetailCreated');
+        const ordersListEl = document.getElementById('adminUserOrdersList');
+        const chatsListEl = document.getElementById('adminUserChatsList');
+        const actionsWrapperEl = document.getElementById('adminDetailActionsWrapper');
+        const resetPasswordBtn = document.getElementById('adminResetPasswordBtn');
+
+        const detailsResult = await fetchAdminUserDetails(userId);
+        if (!detailsResult.success || !detailsResult.data) {
+            if (messageEl) messageEl.textContent = `Failed to load user details: ${detailsResult.message || 'Unknown error'}`;
+            if (ordersListEl) ordersListEl.innerHTML = '<div class="profile-empty">Failed to load order history.</div>';
+            if (chatsListEl) chatsListEl.innerHTML = '<div class="profile-empty">Failed to load chat history.</div>';
+            return;
+        }
+
+        const user = detailsResult.data.user || {};
+        const orders = Array.isArray(detailsResult.data.orders) ? detailsResult.data.orders : [];
+        const chats = Array.isArray(detailsResult.data.chats) ? detailsResult.data.chats : [];
+
+        if (usernameEl) usernameEl.textContent = user.username || '-';
+        if (emailEl) emailEl.textContent = user.email || '-';
+        if (roleEl) roleEl.textContent = formatProfileRoleLabel(user.role);
+        if (createdEl) createdEl.textContent = formatDateTimeSafe(user.created_at);
+        if (messageEl) messageEl.textContent = '';
+        if (gridEl) gridEl.style.display = 'grid';
+        if (actionsWrapperEl) actionsWrapperEl.style.display = 'block';
+        if (resetPasswordBtn) {
+            resetPasswordBtn.addEventListener('click', async () => {
+                const newPassword = window.prompt(`${t('Enter a new password for')} ${user.username}:`);
+                if (!newPassword) return;
+                if (newPassword.length < 8) {
+                    showToast('Password must be at least 8 characters');
+                    return;
+                }
+                if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+                    showToast('Password must contain uppercase, lowercase, and numbers');
+                    return;
+                }
+                try {
+                    const result = await apiCall('POST', `/admin/users/${user.id}/password`, { newPassword });
+                    if (result.success) {
+                        showToast(`Password reset successfully for ${user.username}`);
+                    } else {
+                        showToast(`Failed to reset password: ${result.message || 'Unknown error'}`);
+                    }
+                } catch (error) {
+                    showToast(`Error resetting password: ${error.message}`);
+                }
+            });
+        }
+
+        if (!orders.length) {
+            if (ordersListEl) ordersListEl.innerHTML = '<div class="profile-empty">No orders yet.</div>';
+        } else {
+            const detailsByOrderId = new Map();
+            await Promise.all(orders.map(async (order) => {
+                try {
+                    const result = await apiCall('GET', `/orders/${order.id}`);
+                    if (result?.success && result.order) {
+                        detailsByOrderId.set(String(order.id), result.order);
+                    }
+                } catch {
+                    // Keep order visible even if detail loading fails.
+                }
+            }));
+
+            if (ordersListEl) {
+                ordersListEl.innerHTML = orders.map((order) => {
+                    const orderIdKey = String(order.id || '');
+                    const details = detailsByOrderId.get(orderIdKey);
+                    const items = Array.isArray(details?.items) ? details.items : [];
+
+                    const detailRows = [
+                        `<div><strong>Service:</strong> ${escapeHtml(formatServiceTypeLabel(details?.service_type || ''))}</div>`,
+                        `<div><strong>Payment:</strong> ${escapeHtml(String(details?.payment_method || 'N/A'))}</div>`,
+                        `<div><strong>Created:</strong> ${escapeHtml(formatDateTimeSafe(details?.created_at || order.created_at))}</div>`,
+                        `<div><strong>Updated:</strong> ${escapeHtml(formatDateTimeSafe(details?.updated_at || order.updated_at))}</div>`
+                    ].join('');
+
+                    const itemsHtml = items.length
+                        ? `<div class="profile-order-items">${items.map((item) => `
+                            <div class="profile-order-item">
+                                <div><strong>${escapeHtml(item.repair_name || item.repair_type || 'Item')}</strong></div>
+                                <div class="meta">${escapeHtml([item.device, item.brand, item.model].filter(Boolean).join(' • '))}</div>
+                                <div class="meta">${escapeHtml(formatCurrency(item.price || 0))}</div>
+                            </div>
+                        `).join('')}</div>`
+                        : '<div class="profile-empty">No item details available.</div>';
+
+                    const detailsHtml = details
+                        ? `${detailRows}${itemsHtml}`
+                        : '<div class="profile-empty">Order details unavailable.</div>';
+
+                    return `
+                        <div class="profile-history-item">
+                            <div class="profile-order-header">
+                                <div>
+                                    <div class="title">#${escapeHtml(order.order_number || String(order.id || ''))}</div>
+                                    <div class="meta">Status: ${escapeHtml(formatStatusLabel(order.status || ''))} • ${escapeHtml(formatDateTimeSafe(order.created_at))}</div>
+                                    <div class="preview">Total: ${escapeHtml(formatCurrency(order.total || 0))} • Items: ${escapeHtml(String(order.item_count || 0))}</div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-secondary admin-order-toggle" data-admin-order-toggle="${escapeHtml(orderIdKey)}" aria-expanded="false">Show details</button>
+                            </div>
+                            <div class="profile-order-details" data-admin-order-details="${escapeHtml(orderIdKey)}" style="display:none;">
+                                ${detailsHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                ordersListEl.querySelectorAll('[data-admin-order-toggle]').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const orderId = btn.getAttribute('data-admin-order-toggle');
+                        if (!orderId) return;
+                        const detailsEl = ordersListEl.querySelector(`[data-admin-order-details="${CSS.escape(orderId)}"]`);
+                        if (!detailsEl) return;
+
+                        const isVisible = detailsEl.style.display !== 'none';
+                        detailsEl.style.display = isVisible ? 'none' : 'block';
+                        btn.textContent = isVisible ? 'Show details' : 'Hide details';
+                        btn.setAttribute('aria-expanded', isVisible ? 'false' : 'true');
+                    });
+                });
+            }
+        }
+
+        if (!chats.length) {
+            if (chatsListEl) chatsListEl.innerHTML = '<div class="profile-empty">No chats yet.</div>';
+        } else if (chatsListEl) {
+            const previewSessions = chats.slice(0, 8);
+            chatsListEl.innerHTML = previewSessions.map((session) => {
+                const sessionId = String(session.id || '');
+                const status = escapeHtml(formatStatusLabel(session.status || 'open'));
+                const when = escapeHtml(formatDateTimeSafe(session.last_message_at || session.created_at));
+                const preview = escapeHtml(String(session.last_message || 'No messages yet'));
+
+                return `
+                    <div class="profile-history-item">
+                        <div class="profile-chat-header">
+                            <div>
+                                <div class="title">Chat ${escapeHtml(sessionId)}</div>
+                                <div class="meta">${status} • ${when}</div>
+                                <div class="preview">${preview}</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-secondary admin-chat-toggle" data-admin-chat-toggle="${escapeHtml(sessionId)}" aria-expanded="false">Show chat</button>
+                        </div>
+                        <div class="profile-chat-transcript" data-admin-chat-transcript="${escapeHtml(sessionId)}" data-chat-loaded="false" style="display:none;"></div>
+                    </div>
+                `;
+            }).join('');
+
+            chatsListEl.querySelectorAll('[data-admin-chat-toggle]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const sessionId = btn.getAttribute('data-admin-chat-toggle');
+                    if (!sessionId) return;
+                    const transcriptEl = chatsListEl.querySelector(`[data-admin-chat-transcript="${CSS.escape(sessionId)}"]`);
+                    if (!transcriptEl) return;
+
+                    const isVisible = transcriptEl.style.display !== 'none';
+                    if (isVisible) {
+                        transcriptEl.style.display = 'none';
+                        btn.textContent = 'Show chat';
+                        btn.setAttribute('aria-expanded', 'false');
+                        return;
+                    }
+
+                    transcriptEl.style.display = 'block';
+                    btn.textContent = 'Hide chat';
+                    btn.setAttribute('aria-expanded', 'true');
+
+                    if (transcriptEl.dataset.chatLoaded === 'true') {
+                        return;
+                    }
+
+                    transcriptEl.innerHTML = '<div class="profile-empty">Loading chat transcript...</div>';
+                    try {
+                        const result = await apiCall('GET', `/chat/messages/${encodeURIComponent(sessionId)}?markReadUser=0`);
+                        const messages = Array.isArray(result?.messages) ? result.messages : [];
+                        if (!messages.length) {
+                            transcriptEl.innerHTML = '<div class="profile-empty">No messages in this chat.</div>';
+                            transcriptEl.dataset.chatLoaded = 'true';
+                            return;
+                        }
+
+                        transcriptEl.innerHTML = messages.map((msg) => {
+                            const type = String(msg.sender_type || '').toLowerCase();
+                            const klass = type === 'user' ? 'user' : (type === 'admin' ? 'admin' : 'bot');
+                            const sender = escapeHtml(msg.sender_name || msg.sender_type || 'message');
+                            const text = escapeHtml(String(msg.message || ''));
+                            const time = escapeHtml(formatDateTimeSafe(msg.created_at));
+                            return `
+                                <div class="profile-chat-message-row ${klass}">
+                                    <div class="profile-chat-message"><strong>${sender}:</strong> ${text}</div>
+                                    <div class="meta">${time}</div>
+                                </div>
+                            `;
+                        }).join('');
+
+                        transcriptEl.dataset.chatLoaded = 'true';
+                    } catch {
+                        transcriptEl.innerHTML = '<div class="profile-empty">Failed to load chat transcript.</div>';
+                    }
+                });
+            });
         }
     }
 

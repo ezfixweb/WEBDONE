@@ -79,6 +79,86 @@ router.get('/users', verifyToken, verifyOwner, async (req, res) => {
 });
 
 /**
+ * Get detailed user snapshot (admin only)
+ * GET /api/admin/users/:userId/details
+ */
+router.get('/users/:userId/details', verifyToken, verifyOwner, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const user = await db.getAsync(
+            'SELECT id, username, email, role, permissions, created_at FROM users WHERE id = ?',
+            [userId]
+        );
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        const orders = await db.allAsync(
+            `SELECT o.id, o.order_number, o.customer_name, o.customer_email, o.status, o.total,
+                    o.created_at, o.updated_at, COUNT(oi.id) as item_count
+             FROM orders o
+             LEFT JOIN order_items oi ON o.id = oi.order_id
+             WHERE o.user_id = ?
+             GROUP BY o.id
+             ORDER BY o.created_at DESC
+             LIMIT 60`,
+            [user.id]
+        );
+
+        let chats = [];
+        const email = String(user.email || '').trim().toLowerCase();
+        if (email) {
+            chats = await db.allAsync(
+                `SELECT
+                    s.id,
+                    s.customer_name,
+                    s.customer_email,
+                    s.help_topic,
+                    s.assigned_admin_name,
+                    s.status,
+                    s.last_message_at,
+                    s.created_at,
+                    lm.sender_type AS last_sender_type,
+                    lm.message AS last_message
+                 FROM chat_sessions s
+                 LEFT JOIN LATERAL (
+                    SELECT sender_type, message
+                    FROM chat_messages cm
+                    WHERE cm.session_id = s.id
+                    ORDER BY cm.created_at DESC
+                    LIMIT 1
+                 ) lm ON TRUE
+                 WHERE LOWER(COALESCE(s.customer_email, '')) = ?
+                 ORDER BY s.last_message_at DESC, s.created_at DESC
+                 LIMIT 60`,
+                [email]
+            );
+        }
+
+        res.json({
+            success: true,
+            user: {
+                ...user,
+                permissions: parsePermissions(user.permissions)
+            },
+            orders,
+            chats
+        });
+    } catch (err) {
+        console.error('Get user details error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load user details',
+            error: err.message
+        });
+    }
+});
+
+/**
  * Create new admin user
  * POST /api/admin/users
  */
