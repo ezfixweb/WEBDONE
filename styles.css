@@ -665,10 +665,8 @@ body.has-announcement .hero {
     gap: 6px;
     padding: 8px 10px;
     border-radius: 999px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.18);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: linear-gradient(135deg, #23214a 0%, #1b1a36 100%);
+    border: 1px solid rgba(255,255,255,0.2);
 }
 
 .nav-right .btn {
@@ -677,10 +675,11 @@ body.has-announcement .hero {
 }
 
 .profile-icon-btn {
-    width: 54px;
-    min-width: 54px;
-    height: 54px;
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
     padding: 0;
+    margin: -8px -10px -8px 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -696,8 +695,8 @@ body.has-announcement .hero {
 }
 
 .profile-icon {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
 }
 
 @media (max-width: 1200px) {
