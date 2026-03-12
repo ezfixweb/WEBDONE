@@ -3469,6 +3469,12 @@ body.has-announcement .hero {
     color: #fff;
 }
 
+.support-msg-meta {
+    margin-top: 5px;
+    font-size: 0.72rem;
+    opacity: 0.65;
+}
+
 .support-chat-form {
     display: flex;
     gap: 8px;
@@ -3799,6 +3805,17 @@ body.has-announcement .hero {
 
 .admin-chat-close-btn:hover {
     background: #fecaca;
+}
+
+.btn-danger {
+    background: #ef4444 !important;
+    color: #fff !important;
+    border-color: #ef4444 !important;
+}
+
+.btn-danger:hover {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
 }
 
 .admin-chat-messages {
@@ -5374,6 +5391,22 @@ body.has-announcement .hero {
     border-bottom-color: var(--primary);
     background: rgba(122, 44, 255, 0.08);
     border-radius: 10px 10px 0 0;
+}
+
+.admin-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    padding: 0 5px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: #ef4444;
+    color: #fff;
+    margin-left: 4px;
+    flex-shrink: 0;
 }
 
 .admin-tab-content {

@@ -741,14 +741,22 @@ router.post('/admin/sessions/:sessionId/close', verifyToken, verifyOrderManager,
         }
 
         const existingStatus = String(session.status || '').toLowerCase();
-        if (existingStatus === 'awaiting_rating' || existingStatus === 'closed') {
+        if (existingStatus === 'awaiting_rating') {
             await db.runAsync(
-                `DELETE FROM chat_sessions
+                `UPDATE chat_sessions
+                 SET status = 'closed',
+                     typing_user_name = NULL,
+                     typing_user_at = NULL,
+                     typing_admin_name = NULL,
+                     typing_admin_at = NULL,
+                     updated_at = CURRENT_TIMESTAMP,
+                     last_message_at = CURRENT_TIMESTAMP,
+                     assigned_admin_id = COALESCE(assigned_admin_id, ?),
+                     assigned_admin_name = COALESCE(NULLIF(assigned_admin_name, ''), ?)
                  WHERE id = ?`,
-                [sessionId]
+                [req.user?.id || null, currentAdmin, sessionId]
             );
-
-            return res.json({ success: true, message: 'Chat permanently deleted', phase: 'final' });
+            return res.json({ success: true, message: 'Chat closed', phase: 'final' });
         }
 
         const closingText = `Chat byl ukončen administrátorem ${currentAdmin}. Děkujeme za kontakt.`;
@@ -785,6 +793,33 @@ router.post('/admin/sessions/:sessionId/close', verifyToken, verifyOrderManager,
     } catch (err) {
         console.error('Close chat session error:', err);
         res.status(500).json({ success: false, message: 'Failed to close chat session', error: err.message });
+    }
+});
+
+router.delete('/admin/sessions/:sessionId', verifyToken, verifyOrderManager, async (req, res) => {
+    try {
+        const sessionId = String(req.params.sessionId || '').trim();
+        if (!sessionId) {
+            return res.status(400).json({ success: false, message: 'Session ID is required' });
+        }
+
+        const session = await db.getAsync('SELECT id, assigned_admin_name, status FROM chat_sessions WHERE id = ?', [sessionId]);
+        if (!session) {
+            return res.status(404).json({ success: false, message: 'Session not found' });
+        }
+
+        const currentAdmin = String(req.user?.username || 'Admin').trim();
+        const assignedAdmin = String(session.assigned_admin_name || '').trim();
+        if (assignedAdmin && assignedAdmin !== currentAdmin) {
+            return res.status(409).json({ success: false, message: `Chat is taken by ${assignedAdmin}` });
+        }
+
+        await db.runAsync('DELETE FROM chat_sessions WHERE id = ?', [sessionId]);
+
+        res.json({ success: true, message: 'Chat permanently deleted' });
+    } catch (err) {
+        console.error('Delete chat session error:', err);
+        res.status(500).json({ success: false, message: 'Failed to delete chat session', error: err.message });
     }
 });
 

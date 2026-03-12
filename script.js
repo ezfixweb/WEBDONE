@@ -9472,7 +9472,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const type = msg.sender_type === 'admin' ? 'bot' : (msg.sender_type === 'bot' ? 'bot' : 'user');
             const item = document.createElement('div');
             item.className = `support-msg ${type}`;
-            item.textContent = textValue;
+
+            const textEl = document.createElement('div');
+            textEl.textContent = textValue;
+            item.appendChild(textEl);
+
+            const metaEl = document.createElement('div');
+            metaEl.className = 'support-msg-meta';
+            if (msg.sender_type === 'bot') {
+                metaEl.textContent = 'EzFix AI';
+            } else if (msg.sender_type === 'admin') {
+                metaEl.textContent = msg.sender_name || assignedAdmin || 'Admin';
+            } else {
+                metaEl.textContent = msg.sender_name || supportChatState.profile?.name || 'Vy';
+            }
+            item.appendChild(metaEl);
+
             body.appendChild(item);
         });
 
@@ -9527,13 +9542,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         takeBtn.style.display = 'inline-flex';
+        const sessionStatus = String(session?.status || '').toLowerCase();
+        if (sessionStatus === 'closed') {
+            takeBtn.style.display = 'none';
+            if (closeBtn) {
+                closeBtn.style.display = 'inline-flex';
+                closeBtn.dataset.sessionId = session.id;
+                closeBtn.dataset.chatAction = 'delete';
+                closeBtn.textContent = 'Smazat chat';
+                closeBtn.classList.add('btn-danger');
+                closeBtn.classList.remove('admin-chat-close-btn');
+            }
+            return;
+        }
+
+        if (closeBtn) {
+            closeBtn.dataset.chatAction = 'close';
+            closeBtn.classList.remove('btn-danger');
+            closeBtn.classList.add('admin-chat-close-btn');
+        }
+
         if (assigned === myName) {
             takeBtn.disabled = true;
             takeBtn.textContent = `Převzato vámi (${assigned})`;
             if (closeBtn) {
                 closeBtn.style.display = 'inline-flex';
                 closeBtn.dataset.sessionId = session.id;
-                closeBtn.textContent = String(session?.status || '').toLowerCase() === 'awaiting_rating' ? 'Uzavřít trvale' : 'Ukončit chat';
+                closeBtn.textContent = sessionStatus === 'awaiting_rating' ? 'Uzavřít trvale' : 'Ukončit chat';
             }
         } else {
             takeBtn.disabled = true;
@@ -9697,11 +9732,26 @@ document.addEventListener('DOMContentLoaded', function() {
         if (count <= 0) {
             openCountEl.style.display = 'none';
             openCountEl.textContent = '0';
-            return;
+        } else {
+            openCountEl.style.display = 'inline-flex';
+            openCountEl.textContent = count > 99 ? '99+' : String(count);
         }
 
-        openCountEl.style.display = 'inline-flex';
-        openCountEl.textContent = count > 99 ? '99+' : String(count);
+        updateChatTabBadge();
+    }
+
+    function updateChatTabBadge() {
+        const tabBadge = document.getElementById('chatTabBadge');
+        if (!tabBadge) return;
+
+        const count = getOpenUnassignedChatCount();
+        if (count <= 0) {
+            tabBadge.style.display = 'none';
+            tabBadge.textContent = '0';
+        } else {
+            tabBadge.style.display = 'inline-block';
+            tabBadge.textContent = count > 99 ? '99+' : String(count);
+        }
     }
 
     function getFilteredAdminChatSessions() {
@@ -9710,6 +9760,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return (adminChatState.sessions || []).filter((session) => {
             const statusKind = getAdminChatStatusKind(session);
+            // Hide closed chats from the 'all' view — they only appear in the 'closed' filter
+            if (statusFilter === 'all' && statusKind === 'closed') {
+                return false;
+            }
             if (statusFilter !== 'all' && statusKind !== statusFilter) {
                 return false;
             }
@@ -10310,13 +10364,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const isFinalClose = String(result.phase || '').toLowerCase() === 'final';
             if (isFinalClose) {
-                adminChatState.sessions = (adminChatState.sessions || []).filter((s) => s.id !== sessionId);
+                // Session is now 'closed' — move away from it in the current filter
                 if (adminChatState.activeSessionId === sessionId) {
                     adminChatState.activeSessionId = null;
                     clearAdminChatThread();
                 }
-                renderAdminChatSessionList();
-                showToast('Chat byl trvale smazán.');
+                showToast('Chat uzavřen. Najdete ho ve filtru Uzavřené.');
             } else {
                 showToast('Chat je ukončen pro uživatele. Čeká se na hodnocení.');
             }
@@ -10324,6 +10377,33 @@ document.addEventListener('DOMContentLoaded', function() {
             await loadAdminChatSessions();
             if (!isFinalClose && adminChatState.activeSessionId === sessionId) {
                 await openAdminChatSession(sessionId);
+            } else if (isFinalClose) {
+                const filteredSessions = getFilteredAdminChatSessions();
+                if (filteredSessions.length > 0) {
+                    await openAdminChatSession(filteredSessions[0].id);
+                }
+            }
+        };
+
+        const deleteClosedChatSession = async (sessionId) => {
+            if (!sessionId) return;
+
+            const confirmed = await promptCloseChatConfirm();
+            if (!confirmed) return;
+
+            await apiCall('DELETE', `/chat/admin/sessions/${sessionId}`);
+
+            adminChatState.sessions = (adminChatState.sessions || []).filter((s) => s.id !== sessionId);
+            if (adminChatState.activeSessionId === sessionId) {
+                adminChatState.activeSessionId = null;
+                clearAdminChatThread();
+            }
+            renderAdminChatSessionList();
+            showToast('Chat byl trvale smazán.');
+
+            const filteredSessions = getFilteredAdminChatSessions();
+            if (filteredSessions.length > 0) {
+                await openAdminChatSession(filteredSessions[0].id);
             }
         };
 
@@ -10426,8 +10506,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const sessionId = closeChatBtn.dataset.sessionId || adminChatState.activeSessionId;
             if (!sessionId) return;
 
+            const action = closeChatBtn.dataset.chatAction || 'close';
             try {
-                await closeChatSession(sessionId);
+                if (action === 'delete') {
+                    await deleteClosedChatSession(sessionId);
+                } else {
+                    await closeChatSession(sessionId);
+                }
             } catch (err) {
                 showToast(err?.message || 'Failed to close chat');
             }
