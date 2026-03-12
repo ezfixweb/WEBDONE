@@ -31,6 +31,7 @@ const brevoConfigured = Boolean(brevoApiKey && brevoFrom);
 const smtpConfigured = Boolean(emailUser && emailPassword);
 const emailConfigured = brevoConfigured || resendConfigured || smtpConfigured;
 const preferredSmtpFamily = Number.isNaN(smtpFamily) ? 4 : smtpFamily;
+const BANK_TRANSFER_SPECIAL_EXTRA_CZK = 10;
 
 function smtpLookup(hostname, options, callback) {
     const family = preferredSmtpFamily === 6 ? 6 : 4;
@@ -74,6 +75,26 @@ function getPacketaPointLine(order) {
     } catch {
         return '';
     }
+}
+
+function getBankTransferInstructionLine(order, orderNumber, total) {
+    const paymentMethod = String(order?.payment_method || '').toLowerCase();
+    if (paymentMethod !== 'bank_transfer') return '';
+
+    const safeTotal = Number.isFinite(Number(total)) ? Number(total) : 0;
+    const amountToPay = safeTotal + BANK_TRANSFER_SPECIAL_EXTRA_CZK;
+    const account = String(order?.bank_transfer_account || '').trim();
+    const iban = String(order?.bank_transfer_iban || '').trim();
+
+    return `
+        <div class="order-box" style="border-left-color:#8b5cf6;">
+            <h3>Instrukce pro bankovní převod</h3>
+            <p><strong>Variabilní symbol (číslo objednávky):</strong> ${orderNumber}</p>
+            <p><strong>Částka k úhradě:</strong> ${formatCurrency(amountToPay)} (${formatCurrency(safeTotal)} + ${BANK_TRANSFER_SPECIAL_EXTRA_CZK} Kč)</p>
+            ${account ? `<p><strong>Číslo účtu:</strong> ${account}</p>` : ''}
+            ${iban ? `<p><strong>IBAN:</strong> ${iban}</p>` : ''}
+        </div>
+    `;
 }
 
 /**
@@ -344,6 +365,8 @@ async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumb
                                 <p class="total-amount">Celkem: ${formatCurrency(total)}</p>
                             </div>
                         </div>
+
+                        ${getBankTransferInstructionLine(order, orderNumber, total)}
 
                         <p>O stavu opravy vás budeme průběžně informovat. Objednávku můžete kdykoliv sledovat na stránce pro sledování objednávek.</p>
                         <p>

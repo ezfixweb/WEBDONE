@@ -13,6 +13,8 @@ const { db } = require('../config/database');
 const { verifyToken, verifyOrderManager, isOrderManagerRole } = require('../middleware/auth');
 const { sendOrderStatusEmail, sendOrderConfirmationEmail, sendNewOrderNotificationEmail } = require('../services/email');
 
+const CATALOG_KEY = 'main';
+
 function withTimeout(promise, timeoutMs, timeoutMessage) {
     let timeoutId;
     const timeoutPromise = new Promise((_, reject) => {
@@ -340,11 +342,27 @@ router.post('/', async (req, res) => {
         }
 
 
+        let catalogCheckout = {};
+        try {
+            const catalogRow = await db.getAsync('SELECT data FROM catalog WHERE key = ?', [CATALOG_KEY]);
+            if (catalogRow && catalogRow.data) {
+                const parsedCatalog = JSON.parse(catalogRow.data);
+                catalogCheckout = parsedCatalog && typeof parsedCatalog.checkout === 'object'
+                    ? parsedCatalog.checkout
+                    : {};
+            }
+        } catch (catalogErr) {
+            console.warn('Could not load checkout config for order email context:', catalogErr.message || catalogErr);
+        }
+
         const emailContext = {
             created_at: new Date().toISOString(),
             service_type: serviceType,
             delivery_fee: safeDeliveryFee,
-            packeta_point_json: packetaPoint ? JSON.stringify(packetaPoint) : null
+            packeta_point_json: packetaPoint ? JSON.stringify(packetaPoint) : null,
+            payment_method: paymentMethod || 'pay_on_delivery',
+            bank_transfer_account: String(catalogCheckout.bankTransferAccount || '').trim(),
+            bank_transfer_iban: String(catalogCheckout.bankTransferIban || '').trim()
         };
 
         let customerEmailStatus = 'queued';

@@ -920,12 +920,19 @@ document.addEventListener('DOMContentLoaded', function() {
         pplFee: 0,
         dpdFee: 0,
         glsFee: 0,
+        enableGopay: true,
         gopayFee: 0,
+        enableBankTransfer: false,
+        bankTransferFee: 0,
+        bankTransferAccount: '',
+        bankTransferIban: '',
         packetaApiKey: '',
         termsAdditionalText: '',
         adminEmailSubject: 'Aktualizace objednávky - EzFix',
         adminEmailMessage: 'Dobrý den {{customerName}},\n\nozýváme se ohledně vaší objednávky.\n\nS pozdravem,\nTým EzFix'
     };
+
+    const BANK_TRANSFER_SPECIAL_EXTRA_CZK = 10;
 
     const defaultNewsItems = [
         {
@@ -1396,6 +1403,74 @@ document.addEventListener('DOMContentLoaded', function() {
         return Number.isNaN(fee) ? defaultCheckoutOptions.gopayFee : fee;
     }
 
+    function isGopayEnabled() {
+        if (checkoutOptions && typeof checkoutOptions.enableGopay === 'boolean') {
+            return checkoutOptions.enableGopay;
+        }
+        return defaultCheckoutOptions.enableGopay;
+    }
+
+    function isBankTransferEnabled() {
+        if (checkoutOptions && typeof checkoutOptions.enableBankTransfer === 'boolean') {
+            return checkoutOptions.enableBankTransfer;
+        }
+        return defaultCheckoutOptions.enableBankTransfer;
+    }
+
+    function getBankTransferFee() {
+        const fee = checkoutOptions && typeof checkoutOptions.bankTransferFee === 'number'
+            ? checkoutOptions.bankTransferFee
+            : defaultCheckoutOptions.bankTransferFee;
+        return Number.isNaN(fee) ? defaultCheckoutOptions.bankTransferFee : fee;
+    }
+
+    function getBankTransferAccount() {
+        return String(checkoutOptions?.bankTransferAccount || defaultCheckoutOptions.bankTransferAccount || '').trim();
+    }
+
+    function getBankTransferIban() {
+        return String(checkoutOptions?.bankTransferIban || defaultCheckoutOptions.bankTransferIban || '').trim();
+    }
+
+    function updateCheckoutPaymentMethodsUi() {
+        const gopayOption = document.getElementById('paymentOptionGoPay');
+        const bankTransferOption = document.getElementById('paymentOptionBankTransfer');
+        const gopaySection = document.getElementById('gopaySection');
+        const bankTransferSection = document.getElementById('bankTransferSection');
+
+        const gopayEnabled = isGopayEnabled();
+        const bankTransferEnabled = isBankTransferEnabled();
+
+        if (gopayOption) gopayOption.style.display = gopayEnabled ? '' : 'none';
+        if (bankTransferOption) bankTransferOption.style.display = bankTransferEnabled ? '' : 'none';
+
+        const selected = document.querySelector('input[name="paymentMethod"]:checked');
+        const selectedValue = selected?.value || '';
+        const selectedInvalid = (selectedValue === 'gopay' && !gopayEnabled) || (selectedValue === 'bank_transfer' && !bankTransferEnabled);
+
+        if (!selected || selectedInvalid) {
+            const fallback = document.querySelector('input[name="paymentMethod"][value="pay_on_delivery"]');
+            if (fallback) fallback.checked = true;
+        }
+
+        const current = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'pay_on_delivery';
+        if (gopaySection) gopaySection.style.display = current === 'gopay' && gopayEnabled ? 'block' : 'none';
+        if (bankTransferSection) bankTransferSection.style.display = current === 'bank_transfer' && bankTransferEnabled ? 'block' : 'none';
+
+        if (bankTransferSection) {
+            const account = getBankTransferAccount();
+            const iban = getBankTransferIban();
+            const details = [
+                account ? `Account: ${escapeHtml(account)}` : '',
+                iban ? `IBAN: ${escapeHtml(iban)}` : ''
+            ].filter(Boolean).join(' • ');
+
+            bankTransferSection.innerHTML = details
+                ? `Bank transfer instructions will be shown after order creation. ${details}`
+                : 'Bank transfer instructions will be shown after order creation.';
+        }
+    }
+
     function updateCheckoutPickupFeeUi() {
         const fee = getPickupFee();
         const packetaFee = getPacketaFee();
@@ -1418,6 +1493,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const glsLabelEl = document.getElementById('gls-fee-label');
         const glsValueEl = document.getElementById('gls-fee-value');
         const gopayLabelEl = document.getElementById('gopayFeeLabel');
+        const bankTransferLabelEl = document.getElementById('bankTransferFeeLabel');
         
         if (labelEl) labelEl.textContent = formatCurrency(fee);
         if (valueEl) valueEl.textContent = formatCurrency(fee);
@@ -1433,6 +1509,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (glsValueEl) glsValueEl.textContent = formatCurrency(glsFee);
 
         if (gopayLabelEl) gopayLabelEl.textContent = formatCurrency(gopayFee);
+        if (bankTransferLabelEl) bankTransferLabelEl.textContent = formatCurrency(getBankTransferFee());
         
         // Update new delivery method fees
         const ceskaPostaLabel = document.getElementById('ceska-posta-fee-label');
@@ -1569,6 +1646,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const dpdFee = getDPDFee();
         const glsFee = getGLSFee();
         const gopayFee = getGopayFee();
+        const bankTransferFee = getBankTransferFee();
         
         let deliveryFee = 0;
         let paymentFee = 0;
@@ -1603,8 +1681,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (glsFeeRow) glsFeeRow.style.display = 'flex';
         }
 
-        if (paymentMethod === 'gopay') {
+        if (paymentMethod === 'gopay' && isGopayEnabled()) {
             paymentFee = gopayFee;
+            if (paymentFeeRow) paymentFeeRow.style.display = 'flex';
+        } else if (paymentMethod === 'bank_transfer' && isBankTransferEnabled()) {
+            paymentFee = bankTransferFee;
             if (paymentFeeRow) paymentFeeRow.style.display = 'flex';
         }
 
@@ -1662,6 +1743,12 @@ document.addEventListener('DOMContentLoaded', function() {
             newsItems = normalizeNewsItems(defaultNewsItems);
         }
         updateCheckoutPickupFeeUi();
+        updateCheckoutPaymentMethodsUi();
+        const checkoutPage = document.getElementById('checkout');
+        if (checkoutPage && checkoutPage.classList.contains('active')) {
+            const subtotal = (Storage.cart || []).reduce((sum, item) => sum + (Number(item?.price) || 0), 0);
+            updateCheckoutTotals(subtotal);
+        }
         renderTermsModalContent();
         renderAnnouncementBanner(catalog.announcement || {});
         renderHomeNewsSection(newsItems);
@@ -2066,6 +2153,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const dpdFeeInput = document.getElementById('catalogDPDFee');
         const glsFeeInput = document.getElementById('catalogGLSFee');
         const gopayFeeInput = document.getElementById('catalogGopayFee');
+        const enableGopayInput = document.getElementById('catalogEnableGopay');
+        const enableBankTransferInput = document.getElementById('catalogEnableBankTransfer');
+        const bankTransferFeeInput = document.getElementById('catalogBankTransferFee');
+        const bankTransferAccountInput = document.getElementById('catalogBankTransferAccount');
+        const bankTransferIbanInput = document.getElementById('catalogBankTransferIban');
         const packetaKeyInput = document.getElementById('catalogPacketaApiKey');
         const termsAdditionalTextInput = document.getElementById('catalogTermsAdditionalText');
         const adminEmailSubjectInput = document.getElementById('catalogAdminEmailSubject');
@@ -2084,6 +2176,11 @@ document.addEventListener('DOMContentLoaded', function() {
         dpdFeeInput.value = catalogDraft.checkout.dpdFee ?? defaultCheckoutOptions.dpdFee;
         glsFeeInput.value = catalogDraft.checkout.glsFee ?? defaultCheckoutOptions.glsFee;
         if (gopayFeeInput) gopayFeeInput.value = catalogDraft.checkout.gopayFee ?? defaultCheckoutOptions.gopayFee;
+        if (enableGopayInput) enableGopayInput.checked = catalogDraft.checkout.enableGopay ?? defaultCheckoutOptions.enableGopay;
+        if (enableBankTransferInput) enableBankTransferInput.checked = catalogDraft.checkout.enableBankTransfer ?? defaultCheckoutOptions.enableBankTransfer;
+        if (bankTransferFeeInput) bankTransferFeeInput.value = catalogDraft.checkout.bankTransferFee ?? defaultCheckoutOptions.bankTransferFee;
+        if (bankTransferAccountInput) bankTransferAccountInput.value = catalogDraft.checkout.bankTransferAccount ?? defaultCheckoutOptions.bankTransferAccount;
+        if (bankTransferIbanInput) bankTransferIbanInput.value = catalogDraft.checkout.bankTransferIban ?? defaultCheckoutOptions.bankTransferIban;
         packetaKeyInput.value = catalogDraft.checkout.packetaApiKey ?? '';
         if (termsAdditionalTextInput) {
             termsAdditionalTextInput.value = catalogDraft.checkout.termsAdditionalText ?? '';
@@ -2123,6 +2220,32 @@ document.addEventListener('DOMContentLoaded', function() {
             gopayFeeInput.oninput = () => {
                 const parsed = parseFloat(gopayFeeInput.value);
                 catalogDraft.checkout.gopayFee = Number.isNaN(parsed) ? 0 : parsed;
+            };
+        }
+        if (enableGopayInput) {
+            enableGopayInput.onchange = () => {
+                catalogDraft.checkout.enableGopay = Boolean(enableGopayInput.checked);
+            };
+        }
+        if (enableBankTransferInput) {
+            enableBankTransferInput.onchange = () => {
+                catalogDraft.checkout.enableBankTransfer = Boolean(enableBankTransferInput.checked);
+            };
+        }
+        if (bankTransferFeeInput) {
+            bankTransferFeeInput.oninput = () => {
+                const parsed = parseFloat(bankTransferFeeInput.value);
+                catalogDraft.checkout.bankTransferFee = Number.isNaN(parsed) ? 0 : parsed;
+            };
+        }
+        if (bankTransferAccountInput) {
+            bankTransferAccountInput.oninput = () => {
+                catalogDraft.checkout.bankTransferAccount = bankTransferAccountInput.value.trim();
+            };
+        }
+        if (bankTransferIbanInput) {
+            bankTransferIbanInput.oninput = () => {
+                catalogDraft.checkout.bankTransferIban = bankTransferIbanInput.value.trim();
             };
         }
         packetaKeyInput.oninput = () => {
@@ -5355,6 +5478,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             updatePacketaUi();
             updateCheckoutPickupFeeUi();
+            updateCheckoutPaymentMethodsUi();
 
             const serviceType = document.querySelector('input[name="serviceType"]:checked')?.value || 'delivery';
             const addressSection = document.getElementById('addressSection');
@@ -8182,6 +8306,8 @@ document.addEventListener('DOMContentLoaded', function() {
             let paymentFee = 0;
             if (paymentMethod === 'gopay') {
                 paymentFee = getGopayFee();
+            } else if (paymentMethod === 'bank_transfer') {
+                paymentFee = getBankTransferFee();
             }
             
             const packetaPoint = serviceType === 'zasilkovna' ? packetaSelection : null;
@@ -8233,6 +8359,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const orderNum = result.order.orderNumber;
+            const orderTotalValue = Number(result?.order?.total || 0);
 
             // Clear cart: both locally and via API if authenticated
             localStorage.removeItem('localCart');
@@ -8281,6 +8408,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p>${t('Your repair order has been placed successfully.')}</p>
                         <p>${t("We'll contact you shortly to confirm the details.")}</p>
                         <div class="order-number">${t('Order #')}${escapeHtml(orderNum)}</div>
+                        ${paymentMethod === 'bank_transfer' ? `
+                            <div class="order-success-bank-transfer" style="margin-top:14px;padding:12px;border:1px solid #d8ccff;border-radius:10px;background:#f8f5ff;text-align:left;">
+                                <strong>Bank Transfer Message:</strong>
+                                <div style="margin-top:6px;">Order Number (VS): <strong>${escapeHtml(orderNum)}</strong></div>
+                                <div style="margin-top:4px;">Amount to pay: <strong>${escapeHtml(formatCurrency(orderTotalValue + BANK_TRANSFER_SPECIAL_EXTRA_CZK))}</strong> (${escapeHtml(formatCurrency(orderTotalValue))} + ${BANK_TRANSFER_SPECIAL_EXTRA_CZK} Kč)</div>
+                                ${getBankTransferAccount() ? `<div style="margin-top:4px;">Account: <strong>${escapeHtml(getBankTransferAccount())}</strong></div>` : ''}
+                                ${getBankTransferIban() ? `<div style="margin-top:4px;">IBAN: <strong>${escapeHtml(getBankTransferIban())}</strong></div>` : ''}
+                            </div>
+                        ` : ''}
                         <div style="display: flex; gap: 12px; margin-top: 20px; justify-content: center;">
                             <button class="btn btn-primary" data-success-action="home">${t('Back to Home')}</button>
                             <button class="btn btn-secondary" data-success-action="cart">${t('Continue Shopping')}</button>
@@ -8446,12 +8582,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const gopaySection = document.getElementById('gopaySection');
+            const bankTransferSection = document.getElementById('bankTransferSection');
             const subtotal = Storage.cart.reduce((sum, item) => sum + item.price, 0);
 
-            if (this.value === 'gopay') {
+            if (this.value === 'gopay' && isGopayEnabled()) {
                 if (gopaySection) gopaySection.style.display = 'block';
+                if (bankTransferSection) bankTransferSection.style.display = 'none';
+            } else if (this.value === 'bank_transfer' && isBankTransferEnabled()) {
+                if (gopaySection) gopaySection.style.display = 'none';
+                if (bankTransferSection) bankTransferSection.style.display = 'block';
             } else {
                 if (gopaySection) gopaySection.style.display = 'none';
+                if (bankTransferSection) bankTransferSection.style.display = 'none';
             }
 
             updateCheckoutTotals(subtotal);

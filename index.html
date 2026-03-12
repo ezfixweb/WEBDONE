@@ -1761,16 +1761,26 @@
                                         <span>Pay when service is completed</span>
                                     </div>
                                 </label>
-                                <label class="service-option">
+                                <label class="service-option" id="paymentOptionGoPay">
                                     <input type="radio" name="paymentMethod" value="gopay">
                                     <div class="option-content">
                                         <strong>GoPay</strong>
                                         <span>Online card payment (+ <span id="gopayFeeLabel">0 Kč</span>)</span>
                                     </div>
                                 </label>
+                                <label class="service-option" id="paymentOptionBankTransfer" style="display:none;">
+                                    <input type="radio" name="paymentMethod" value="bank_transfer">
+                                    <div class="option-content">
+                                        <strong>Bank Transfer</strong>
+                                        <span>Pay by bank transfer (+ <span id="bankTransferFeeLabel">0 Kč</span>)</span>
+                                    </div>
+                                </label>
                             </div>
                             <div id="gopaySection" class="form-helper" style="display:none; margin-top:12px;">
                                 GoPay redirect is a placeholder until GoPay is connected.
+                            </div>
+                            <div id="bankTransferSection" class="form-helper" style="display:none; margin-top:12px;">
+                                Bank transfer instructions will be sent after your order is created.
                             </div>
                             <span class="form-error" id="paymentMethodError"></span>
                         </div>
@@ -2234,8 +2244,28 @@
                                         <input class="catalog-input" id="catalogGLSFee" type="number" min="0" step="1" />
                                     </div>
                                     <div class="catalog-row">
+                                        <label>Enable GoPay</label>
+                                        <input id="catalogEnableGopay" type="checkbox" class="catalog-toggle-input" />
+                                    </div>
+                                    <div class="catalog-row">
                                         <label>GoPay Fee (Kc)</label>
                                         <input class="catalog-input" id="catalogGopayFee" type="number" min="0" step="1" />
+                                    </div>
+                                    <div class="catalog-row">
+                                        <label>Enable Bank Transfer</label>
+                                        <input id="catalogEnableBankTransfer" type="checkbox" class="catalog-toggle-input" />
+                                    </div>
+                                    <div class="catalog-row">
+                                        <label>Bank Transfer Fee (Kc)</label>
+                                        <input class="catalog-input" id="catalogBankTransferFee" type="number" min="0" step="1" />
+                                    </div>
+                                    <div class="catalog-row">
+                                        <label>Bank Account</label>
+                                        <input class="catalog-input" id="catalogBankTransferAccount" type="text" placeholder="123456789/0800" />
+                                    </div>
+                                    <div class="catalog-row">
+                                        <label>Bank IBAN</label>
+                                        <input class="catalog-input" id="catalogBankTransferIban" type="text" placeholder="CZ6508000000192000145399" />
                                     </div>
                                     <div class="catalog-row">
                                         <label>Packeta API Key</label>

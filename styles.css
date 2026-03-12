@@ -2538,6 +2538,13 @@ body.has-announcement .hero {
     background: white;
 }
 
+.catalog-toggle-input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
 .catalog-subheader {
     display: flex;
     align-items: center;
