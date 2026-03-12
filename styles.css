@@ -1597,7 +1597,7 @@ body.has-announcement .hero {
     background:
         radial-gradient(1200px 420px at 20% -10%, rgba(149, 76, 233, 0.35), transparent 60%),
         radial-gradient(900px 360px at 90% 8%, rgba(103, 43, 201, 0.3), transparent 62%),
-        linear-gradient(180deg, #221039 0%, #180b2a 100%);
+    linear-gradient(180deg, #221039 0%, #180b2a 100%) !important;
 }
 
 .home-news .container {
@@ -1631,7 +1631,7 @@ body.has-announcement .hero {
     border: 1px solid rgba(192, 162, 255, 0.22);
     border-radius: 10px;
     overflow: hidden;
-    background: linear-gradient(135deg, rgba(65, 37, 106, 0.96), rgba(49, 25, 84, 0.94));
+    background: linear-gradient(135deg, rgba(65, 37, 106, 0.96), rgba(49, 25, 84, 0.94)) !important;
     box-shadow: 0 18px 34px rgba(5, 1, 10, 0.34);
     display: grid;
     grid-template-columns: 340px minmax(0, 1fr);
@@ -1690,6 +1690,12 @@ body.has-announcement .hero {
     color: #e2d4f8;
     font-size: 1rem;
     line-height: 1.5;
+}
+
+.home-news-summary,
+.home-news-summary * {
+    background: transparent !important;
+    color: #e2d4f8;
 }
 
 .home-news-summary p {
