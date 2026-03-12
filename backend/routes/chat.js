@@ -447,49 +447,77 @@ router.post('/typing/:sessionId', async (req, res) => {
 
 router.get('/admin/sessions', verifyToken, verifyOrderManager, async (req, res) => {
     try {
-        const sessions = await db.allAsync(
-            `SELECT
-                s.id,
-                s.customer_name,
-                s.customer_email,
-                s.help_topic,
-                s.assigned_admin_id,
-                s.assigned_admin_name,
-                s.status,
-                s.last_message_at,
-                s.created_at,
-                lm.sender_type AS last_sender_type,
-                lm.message AS last_message,
-                COALESCE(unread.unread_count, 0) AS unread_count
-             FROM chat_sessions s
-             LEFT JOIN LATERAL (
-                SELECT sender_type, message
-                FROM chat_messages cm
-                WHERE cm.session_id = s.id
-                ORDER BY cm.created_at DESC
-                LIMIT 1
-             ) lm ON TRUE
-             LEFT JOIN LATERAL (
-                SELECT COUNT(*)::int AS unread_count
-                FROM chat_messages cm2
-                WHERE cm2.session_id = s.id
-                  AND cm2.is_read_admin = FALSE
-                  AND cm2.sender_type IN ('user', 'bot')
-             ) unread ON TRUE
-             ORDER BY s.last_message_at DESC, s.created_at DESC`
-        );
+        let sessions = [];
+        try {
+            sessions = await db.allAsync(
+                `SELECT
+                    s.id,
+                    s.customer_name,
+                    s.customer_email,
+                    s.help_topic,
+                    s.assigned_admin_id,
+                    s.assigned_admin_name,
+                    s.status,
+                    s.last_message_at,
+                    s.created_at,
+                    lm.sender_type AS last_sender_type,
+                    lm.message AS last_message,
+                    COALESCE(unread.unread_count, 0) AS unread_count
+                 FROM chat_sessions s
+                 LEFT JOIN LATERAL (
+                    SELECT sender_type, message
+                    FROM chat_messages cm
+                    WHERE cm.session_id = s.id
+                    ORDER BY cm.created_at DESC
+                    LIMIT 1
+                 ) lm ON TRUE
+                 LEFT JOIN LATERAL (
+                    SELECT COUNT(*)::int AS unread_count
+                    FROM chat_messages cm2
+                    WHERE cm2.session_id = s.id
+                      AND cm2.is_read_admin = FALSE
+                      AND cm2.sender_type IN ('user', 'bot')
+                 ) unread ON TRUE
+                 ORDER BY s.last_message_at DESC, s.created_at DESC`
+            );
+        } catch (sessionErr) {
+            console.error('Admin chat sessions primary query failed, using fallback:', sessionErr);
+            sessions = await db.allAsync(
+                `SELECT
+                    s.id,
+                    s.customer_name,
+                    s.customer_email,
+                    s.help_topic,
+                    s.assigned_admin_id,
+                    s.assigned_admin_name,
+                    s.status,
+                    s.last_message_at,
+                    s.created_at,
+                    NULL::TEXT AS last_sender_type,
+                    NULL::TEXT AS last_message,
+                    0::int AS unread_count
+                 FROM chat_sessions s
+                 ORDER BY s.last_message_at DESC, s.created_at DESC`
+            );
+        }
 
-            const admins = await db.allAsync(
+        let admins = [];
+        try {
+            admins = await db.allAsync(
                 `SELECT username
                  FROM (
-                SELECT DISTINCT username
-                FROM users
-                WHERE role IN ('worker', 'manager', 'owner')
-                  AND username IS NOT NULL
-                  AND TRIM(username) <> ''
+                    SELECT DISTINCT username
+                    FROM users
+                    WHERE role IN ('worker', 'manager', 'owner')
+                      AND username IS NOT NULL
+                      AND TRIM(username) <> ''
                  ) admins
                  ORDER BY LOWER(username) ASC, username ASC`
             );
+        } catch (adminsErr) {
+            console.error('Admin chat admins query failed, returning empty admin list:', adminsErr);
+            admins = [];
+        }
 
         res.json({
             success: true,
