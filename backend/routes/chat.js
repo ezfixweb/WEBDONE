@@ -479,14 +479,17 @@ router.get('/admin/sessions', verifyToken, verifyOrderManager, async (req, res) 
              ORDER BY s.last_message_at DESC, s.created_at DESC`
         );
 
-        const admins = await db.allAsync(
-            `SELECT DISTINCT username
-             FROM users
-             WHERE role IN ('worker', 'manager', 'owner')
-               AND username IS NOT NULL
-               AND TRIM(username) <> ''
-                         ORDER BY LOWER(username) ASC, username ASC`
-        );
+            const admins = await db.allAsync(
+                `SELECT username
+                 FROM (
+                SELECT DISTINCT username
+                FROM users
+                WHERE role IN ('worker', 'manager', 'owner')
+                  AND username IS NOT NULL
+                  AND TRIM(username) <> ''
+                 ) admins
+                 ORDER BY LOWER(username) ASC, username ASC`
+            );
 
         res.json({
             success: true,
