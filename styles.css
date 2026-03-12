@@ -512,7 +512,7 @@ h1, h2, h3, h4 {
     top: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(90deg, #141328 0%, #1b1a36 50%, #141328 100%);
+    background: #1b1a36;
     z-index: 1000;
     padding: 8px 0;
     border-bottom: none;
@@ -665,8 +665,8 @@ body.has-announcement .hero {
     gap: 6px;
     padding: 8px 10px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #23214a 0%, #1b1a36 100%);
-    border: 1px solid rgba(255,255,255,0.2);
+    background: #23214a;
+    border: 1px solid #3a3861;
 }
 
 .nav-right .btn {
