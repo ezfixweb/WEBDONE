@@ -3997,6 +3997,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isOwnerRole(Storage.getUser()?.role)) {
                 renderCredentialsUI();
             }
+            const chatsTabActive = document.getElementById('chats-content')?.classList.contains('active');
+            if (chatsTabActive) {
+                ensureAdminChatInboxInitialized();
+                loadAdminChatSessions();
+                loadAdminChatAiConfig();
+            }
         }
         if (pageId === 'printing') {
             renderPrintingPage();
@@ -10467,6 +10473,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const chatsTabActive = document.getElementById('chats-content')?.classList.contains('active');
         if (chatsTabActive) {
+            loadAdminChatSessions();
             loadAdminChatAiConfig();
         }
     }
