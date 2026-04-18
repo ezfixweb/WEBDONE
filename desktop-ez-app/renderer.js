@@ -9,6 +9,8 @@ const state = {
   inventoryEditMode: false,
   inventoryDraft: null,
   knownOrderIds: new Set(),
+  currentUser: null,
+  users: [],
   notificationsEnabled: localStorage.getItem('ezfixDesktopNotifEnabled') !== 'false',
   notificationSound: localStorage.getItem('ezfixDesktopNotifSound') !== 'false',
   pollIntervalMs: Number(localStorage.getItem('ezfixDesktopPollMs') || 30000),
@@ -21,6 +23,98 @@ const connState = document.getElementById('connState');
 const appVersion = document.getElementById('appVersion');
 const ordersTableBody = document.getElementById('ordersTableBody');
 const toast = document.getElementById('toast');
+const usersTabBtn = document.getElementById('usersTabBtn');
+const usersHint = document.getElementById('usersHint');
+const usersTableBody = document.getElementById('usersTableBody');
+
+function isOwner() {
+  return String(state.currentUser?.role || '').toLowerCase() === 'owner';
+}
+
+function formatRoleLabel(role) {
+  const normalized = String(role || '').toLowerCase();
+  if (normalized === 'owner') return 'owner';
+  if (normalized === 'manager') return 'manager';
+  if (normalized === 'worker') return 'worker';
+  return 'customer';
+}
+
+function refreshOwnerUiVisibility() {
+  const owner = isOwner();
+  usersTabBtn.classList.toggle('hidden', !owner);
+  usersHint.textContent = owner
+    ? 'Přidejte další přihlášení pro tým (worker / manager / customer).'
+    : 'Tato sekce je dostupná pouze pro roli owner.';
+
+  if (!owner && state.activeTab === 'users') {
+    switchTab('orders');
+  }
+}
+
+function renderUsers() {
+  if (!isOwner()) {
+    usersTableBody.innerHTML = '<tr><td colspan="4">Nemáte oprávnění k zobrazení uživatelů.</td></tr>';
+    return;
+  }
+
+  if (!Array.isArray(state.users) || state.users.length === 0) {
+    usersTableBody.innerHTML = '<tr><td colspan="4">Žádní uživatelé.</td></tr>';
+    return;
+  }
+
+  usersTableBody.innerHTML = state.users.map((user) => {
+    return `
+      <tr>
+        <td>${escapeHtml(user.username || '-')}</td>
+        <td>${escapeHtml(user.email || '-')}</td>
+        <td>${escapeHtml(formatRoleLabel(user.role))}</td>
+        <td>${formatDate(user.created_at)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function loadUsers() {
+  if (!isOwner()) {
+    state.users = [];
+    renderUsers();
+    return;
+  }
+
+  const result = await apiFetch('/admin/users');
+  state.users = Array.isArray(result.users) ? result.users : [];
+  renderUsers();
+}
+
+async function createUserFromForm(event) {
+  event.preventDefault();
+  const errorEl = document.getElementById('createUserError');
+  errorEl.textContent = '';
+
+  if (!isOwner()) {
+    errorEl.textContent = 'Pouze owner může vytvářet přihlášení.';
+    return;
+  }
+
+  try {
+    const username = document.getElementById('newUserUsername').value.trim();
+    const email = document.getElementById('newUserEmail').value.trim();
+    const password = document.getElementById('newUserPassword').value;
+    const role = document.getElementById('newUserRole').value;
+
+    await apiFetch('/admin/users', {
+      method: 'POST',
+      body: JSON.stringify({ username, email, password, role })
+    });
+
+    document.getElementById('createUserForm').reset();
+    document.getElementById('newUserRole').value = 'manager';
+    showToast('Nové přihlášení bylo vytvořeno');
+    await loadUsers();
+  } catch (error) {
+    errorEl.textContent = error.message || 'Vytvoření uživatele selhalo';
+  }
+}
 
 function escapeHtml(value) {
   return String(value || '')
@@ -563,10 +657,13 @@ async function onLoginSubmit(event) {
     });
 
     state.token = result.token;
+    state.currentUser = result.user || null;
     localStorage.setItem('ezfixDesktopToken', state.token);
     state.notificationsEnabled = document.getElementById('notifEnabled').checked;
     setConnectedUi(true);
+    refreshOwnerUiVisibility();
     await loadDashboardData({ silent: true });
+    await loadUsers();
     startPolling();
     showToast('Připojeno');
   } catch (error) {
@@ -603,8 +700,11 @@ async function bootstrap() {
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
     state.token = '';
+    state.currentUser = null;
+    state.users = [];
     localStorage.removeItem('ezfixDesktopToken');
     stopPolling();
+    refreshOwnerUiVisibility();
     setConnectedUi(false);
   });
 
@@ -654,13 +754,29 @@ async function bootstrap() {
     startPolling();
   });
 
+  document.getElementById('createUserForm').addEventListener('submit', createUserFromForm);
+  document.getElementById('usersRefreshBtn').addEventListener('click', async () => {
+    if (!state.token) return;
+    try {
+      await loadUsers();
+      showToast('Uživatelé byli obnoveni');
+    } catch (error) {
+      alert(error.message || 'Načtení uživatelů selhalo');
+    }
+  });
+
   switchTab('orders');
+  refreshOwnerUiVisibility();
+  renderUsers();
 
   if (state.token) {
     try {
-      await apiFetch('/auth/me');
+      const meResult = await apiFetch('/auth/me');
+      state.currentUser = meResult.user || null;
       setConnectedUi(true);
+      refreshOwnerUiVisibility();
       await loadDashboardData({ silent: true });
+      await loadUsers();
       startPolling();
       showToast('Relace obnovena');
       return;

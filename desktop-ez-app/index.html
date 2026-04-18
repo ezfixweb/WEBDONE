@@ -18,6 +18,7 @@
       <div class="sidebar-section">
         <button class="tab-btn active" data-tab="orders">Objednávky</button>
         <button class="tab-btn" data-tab="inventory">Sklad</button>
+        <button class="tab-btn hidden" data-tab="users" id="usersTabBtn">Uživatelé</button>
       </div>
       <div class="sidebar-settings">
         <div class="small">Upozornění</div>
@@ -169,6 +170,61 @@
               <h3>Bazar</h3>
               <button class="inventory-add-btn hidden" data-inv-add="usedShopItems">Přidat bazarovou položku</button>
               <ul id="usedItemsList"></ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="usersTab" class="panel tab-content hidden">
+          <div class="users-head">
+            <h2>Správa přihlášení</h2>
+            <button id="usersRefreshBtn">Obnovit uživatele</button>
+          </div>
+          <p class="small" id="usersHint">Tato sekce je dostupná pouze pro roli owner.</p>
+
+          <div class="users-grid">
+            <div class="users-block">
+              <h3>Přidat nového uživatele</h3>
+              <form id="createUserForm" class="users-form">
+                <label>
+                  Uživatelské jméno
+                  <input id="newUserUsername" type="text" minlength="3" required />
+                </label>
+                <label>
+                  E-mail (volitelné)
+                  <input id="newUserEmail" type="email" />
+                </label>
+                <label>
+                  Heslo
+                  <input id="newUserPassword" type="password" minlength="8" required />
+                </label>
+                <label>
+                  Role
+                  <select id="newUserRole">
+                    <option value="worker">worker</option>
+                    <option value="manager" selected>manager</option>
+                    <option value="customer">customer</option>
+                  </select>
+                </label>
+                <button type="submit">Vytvořit přihlášení</button>
+              </form>
+              <p class="error" id="createUserError"></p>
+            </div>
+
+            <div class="users-block">
+              <h3>Existující účty</h3>
+              <div class="table-wrap users-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Uživatel</th>
+                      <th>E-mail</th>
+                      <th>Role</th>
+                      <th>Vytvořeno</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersTableBody"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </section>

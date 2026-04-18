@@ -117,11 +117,14 @@ Notes:
 - `GET /orders/:id`
 - `GET /catalog`
 - `PUT /catalog`
+- `GET /admin/users` (owner)
+- `POST /admin/users` (owner)
 
 ## Features included
 
 - Orders list with filters and inline detail drawer
 - CSV and XLSX export
 - Inventory edit mode with save to API
+- User management tab for creating additional login accounts (owner only)
 - Notification settings (interval, toggle, sound)
 - Czech UI labels and EzFix branding
