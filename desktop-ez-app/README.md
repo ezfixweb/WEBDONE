@@ -56,6 +56,25 @@ Recommended: build on Windows host.
 4. Find output in:
   - `desktop-ez-app/dist`
 
+## Troubleshooting: winCodeSign / symbolic link error on Windows
+
+If you see an error like `Cannot create symbolic link` or `exit status 2` while building:
+
+1. Close the terminal.
+2. Open a new terminal as Administrator.
+3. Remove broken electron-builder cache:
+  - `rmdir /s /q "%LOCALAPPDATA%\electron-builder\Cache\winCodeSign"`
+4. Disable auto code-sign lookup for local builds:
+  - CMD: `set CSC_IDENTITY_AUTO_DISCOVERY=false`
+  - PowerShell: `$env:CSC_IDENTITY_AUTO_DISCOVERY="false"`
+5. Run build again:
+  - `npm run dist`
+
+Notes:
+
+- This project now uses `signAndEditExecutable: false` for Windows build to reduce signing-related failures on local machines.
+- If your company requires signed executables, use a proper code-sign certificate in CI/release workflow.
+
 ## API Endpoints required by desktop app
 
 - `POST /auth/login`
