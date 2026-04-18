@@ -145,12 +145,23 @@ const allowedOrigins = Array.from(new Set([
         .filter(Boolean),
     (process.env.FRONTEND_URL || '').trim()
 ].filter(Boolean)));
+
+function isTrustedEzfixOrigin(origin) {
+    if (!origin) return false;
+    try {
+        const parsed = new URL(origin);
+        return /(^|\.)ezfix\.(cz|xz)$/i.test(parsed.hostname);
+    } catch {
+        return false;
+    }
+}
+
 app.use('/api', cors({
     origin: function(origin, callback) {
         // Allow requests with no origin (mobile apps, curl, etc)
         if (!origin || origin === 'null' || origin === 'file://') {
             callback(null, true);
-        } else if (allowedOrigins.includes(origin)) {
+        } else if (allowedOrigins.includes(origin) || isTrustedEzfixOrigin(origin)) {
             callback(null, true);
         } else {
             callback(null, false);

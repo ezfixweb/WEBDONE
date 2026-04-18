@@ -3,19 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="EzFix repairs phones, tablets, notebooks, and PCs, plus custom builds and 3D printing.">
-    <meta name="robots" content="index,follow">
+    <meta name="description" content="EzFix: rychlé opravy telefonů, tabletů, notebooků a PC. Vlastní počítačové sestavy a přesný 3D tisk v ČR.">
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+    <meta name="keywords" content="oprava telefonu, oprava notebooku, oprava PC, servis elektroniky, vlastní PC sestava, 3D tisk, EzFix">
+    <link rel="canonical" href="https://ezfix.cz/">
     <meta name="theme-color" content="#1b1b3a">
     <link rel="icon" type="image/png" href="assets/logos/favicon-32.png" sizes="32x32">
     <link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
-    <meta property="og:title" content="EzFix - Device Repair & Custom Builds">
-    <meta property="og:description" content="Fast repairs, custom builds, and precision 3D prints with transparent pricing.">
+    <meta property="og:title" content="EzFix - Opravy zařízení, vlastní sestavy a 3D tisk">
+    <meta property="og:description" content="Rychlé opravy telefonů, tabletů, notebooků a PC. Vlastní sestavy a přesný 3D tisk s transparentní cenou.">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ezfix.cz/">
+    <meta property="og:site_name" content="EzFix">
+    <meta property="og:image" content="https://ezfix.cz/assets/logos/ezfix-logo.png">
     <meta property="og:locale" content="cs_CZ">
+    <meta property="og:locale:alternate" content="en_US">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="EzFix - Device Repair & Custom Builds">
-    <meta name="twitter:description" content="Fast repairs, custom builds, and precision 3D prints with transparent pricing.">
-    <title>EzFix - Phone, Tablet, Notebook & PC Repair</title>
+    <meta name="twitter:title" content="EzFix - Opravy zařízení, vlastní sestavy a 3D tisk">
+    <meta name="twitter:description" content="Rychlé opravy telefonů, tabletů, notebooků a PC. Vlastní sestavy a přesný 3D tisk.">
+    <meta name="twitter:image" content="https://ezfix.cz/assets/logos/ezfix-logo.png">
+    <title>EzFix - Opravy Telefonů, Notebooků a PC | Vlastní Sestavy a 3D Tisk</title>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "EzFix",
+            "url": "https://ezfix.cz/",
+            "logo": "https://ezfix.cz/assets/logos/ezfix-logo.png",
+            "sameAs": [
+                "https://www.instagram.com/ezfix.cz"
+            ]
+        }
+    </script>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "EzFix",
+            "url": "https://ezfix.cz/",
+            "inLanguage": "cs-CZ"
+        }
+    </script>
     <link rel="preload" as="image" href="assets/logos/ezfix-logo.png" fetchpriority="high">
     <link rel="stylesheet" href="styles.css?v=20260312a">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,6 +97,7 @@
     <div id="announcementBanner" class="announcement-banner hidden">
         <div class="container">
             <span id="announcementText"></span>
+            <button type="button" id="announcementCloseBtn" class="announcement-close-btn" aria-label="Close announcement">×</button>
         </div>
     </div>
     <nav class="navbar">
@@ -83,6 +112,7 @@
                 <li><a href="#" data-page="services">Services</a></li>
                 <li><a href="#" data-page="custompc">Custom Builds</a></li>
                 <li><a href="#" data-page="printing">3D Printing</a></li>
+                <li><a href="#" data-page="used-shop">Used Shop</a></li>
                 <li><a href="#" data-page="other">Other</a></li>
                 <li><a href="#" data-page="about">About</a></li>
                 <li><a href="#" data-page="contact">Kontaktujte nás</a></li>
@@ -312,6 +342,40 @@
                 <div class="other-details-body">
                     <p id="otherDetailsDesc"></p>
                     <ul id="otherDetailsSpecs"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="part-details-modal hidden used-details-modal" id="usedDetailsModal" style="display:none;">
+        <div class="part-details-overlay"></div>
+        <div class="part-details-container" role="dialog" aria-modal="true" aria-labelledby="usedDetailsTitle">
+            <div class="part-details-header">
+                <div>
+                    <h2 id="usedDetailsTitle">Used Device Details</h2>
+                    <p id="usedDetailsPrice" class="part-details-price"></p>
+                </div>
+                <button class="part-details-close" id="usedDetailsClose" aria-label="Close">×</button>
+            </div>
+            <div class="part-details-content used-details-content">
+                <div class="part-details-gallery">
+                    <img id="usedDetailsMainImage" src="" alt="Used device image" loading="lazy" decoding="async">
+                    <div class="part-details-thumbs-wrap">
+                        <button class="thumb-scroll-btn" id="usedThumbsPrev" aria-label="Scroll thumbnails left">‹</button>
+                        <div id="usedDetailsThumbs" class="part-details-thumbs"></div>
+                        <button class="thumb-scroll-btn" id="usedThumbsNext" aria-label="Scroll thumbnails right">›</button>
+                    </div>
+                </div>
+                <div class="used-details-body">
+                    <h3 id="usedDetailsName"></h3>
+                    <p id="usedDetailsDesc"></p>
+                    <div class="used-details-specs">
+                        <h4>Specifications</h4>
+                        <ul id="usedDetailsSpecs"></ul>
+                    </div>
+                    <div class="used-details-actions">
+                        <button class="btn btn-primary" id="usedDetailsAddToCart">Add to Cart</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -789,6 +853,20 @@
             <div class="services-content">
                 <div class="container other-shop-container">
                     <div class="other-shop-grid" id="otherItemsGrid"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="used-shop" class="page">
+            <div class="page-header-dark">
+                <div class="container">
+                    <h1>Used Refurbished Notebook & PC Shop</h1>
+                    <p>Verified used notebooks and PCs with clear specs and transparent prices.</p>
+                </div>
+            </div>
+            <div class="services-content">
+                <div class="container used-shop-container">
+                    <div class="used-shop-grid" id="usedShopGrid"></div>
                 </div>
             </div>
         </section>
@@ -2022,6 +2100,8 @@
                                 <option value="delivered">Delivered</option>
                                 <option value="cancelled">Cancelled</option>
                             </select>
+                            <button class="btn btn-primary" id="createManualOrderBtn">Create Order</button>
+                            <button class="btn btn-secondary" id="createCustomInvoiceBtn">Create Invoice</button>
                             <button class="btn btn-secondary" id="clearOrdersBtn">Clear All Orders</button>
                         </div>
                     </div>
@@ -2143,6 +2223,7 @@
                                 <button class="catalog-tab-btn" data-catalog-tab="builds">Vlastní sestavy</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="printing">3D tisk</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="other-items">Jiné položky</button>
+                                <button class="catalog-tab-btn" data-catalog-tab="used-shop">Used Shop</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="checkout">Pokladna</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="email">E-mailové šablony</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="news">News and Updates</button>
@@ -2241,6 +2322,20 @@
                                         <button class="btn btn-sm" id="catalogAddOtherItem">Add Item</button>
                                     </div>
                                     <div id="catalogOtherItemsList" class="catalog-list"></div>
+                                </div>
+                            </div>
+
+                            <div class="catalog-panel" id="catalog-used-shop">
+                                <div class="catalog-section">
+                                    <div class="catalog-header">
+                                        <h3>Used Shop</h3>
+                                        <p>Manage refurbished notebooks and PCs shown on the Used Shop page.</p>
+                                    </div>
+                                    <div class="catalog-subheader">
+                                        <h4>Items</h4>
+                                        <button class="btn btn-sm" id="catalogAddUsedShopItem">Add Item</button>
+                                    </div>
+                                    <div id="catalogUsedShopList" class="catalog-list"></div>
                                 </div>
                             </div>
 

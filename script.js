@@ -917,6 +917,57 @@ document.addEventListener('DOMContentLoaded', function() {
         { id: 'other-4', name: 'Other Item 4', desc: '', price: 0, image: '', details: '', specs: [], showContact: false, active: true }
     ];
 
+    const defaultUsedShopItems = [
+        {
+            id: 'used-notebook-1',
+            name: 'Lenovo ThinkPad T14 (Refurbished)',
+            shortDesc: '14" business notebook, refreshed battery, cleaned cooling.',
+            details: 'Reliable refurbished notebook suitable for office work, school, and everyday use. Device is cleaned, tested, and has fresh thermal service.',
+            brand: 'Lenovo',
+            model: 'ThinkPad T14',
+            price: 8490,
+            image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=80',
+            images: [
+                'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=80',
+                'https://images.unsplash.com/photo-1517336714739-489689fd1ca8?auto=format&fit=crop&w=1200&q=80'
+            ],
+            specs: ['CPU: Intel Core i5', 'RAM: 16 GB', 'Storage: 512 GB SSD', 'Display: 14" Full HD', 'OS: Windows 11 Pro'],
+            active: true
+        },
+        {
+            id: 'used-notebook-2',
+            name: 'HP ProBook 450 G8 (Refurbished)',
+            shortDesc: '15.6" notebook with SSD and verified battery health.',
+            details: 'Refurbished notebook with balanced performance for work and home. Full diagnostic and stress test completed before listing.',
+            brand: 'HP',
+            model: 'ProBook 450 G8',
+            price: 9290,
+            image: 'https://images.unsplash.com/photo-1588702547923-7093a6c3ba33?auto=format&fit=crop&w=1200&q=80',
+            images: [
+                'https://images.unsplash.com/photo-1588702547923-7093a6c3ba33?auto=format&fit=crop&w=1200&q=80',
+                'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=1200&q=80'
+            ],
+            specs: ['CPU: Intel Core i5', 'RAM: 16 GB', 'Storage: 512 GB SSD', 'Display: 15.6" Full HD', 'OS: Windows 11'],
+            active: true
+        },
+        {
+            id: 'used-pc-1',
+            name: 'Gaming PC Ryzen 5 (Refurbished)',
+            shortDesc: 'Desktop tower for 1080p gaming and content work.',
+            details: 'Refurbished desktop PC with cleaned internals, replaced thermal paste, and full hardware stress test. Great entry-level gaming setup.',
+            brand: 'Custom',
+            model: 'Ryzen 5 Gaming PC',
+            price: 15990,
+            image: 'https://images.unsplash.com/photo-1587202372634-32705e3bf49c?auto=format&fit=crop&w=1200&q=80',
+            images: [
+                'https://images.unsplash.com/photo-1587202372634-32705e3bf49c?auto=format&fit=crop&w=1200&q=80',
+                'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&w=1200&q=80'
+            ],
+            specs: ['CPU: AMD Ryzen 5', 'GPU: NVIDIA GTX 1660', 'RAM: 16 GB', 'Storage: 1 TB NVMe SSD', 'OS: Windows 11'],
+            active: true
+        }
+    ];
+
     const defaultCheckoutOptions = {
         pickupFee: 15,
         packetaFee: 90,
@@ -996,7 +1047,8 @@ document.addEventListener('DOMContentLoaded', function() {
             { id: 'silver', name: 'Silver', hex: '#cbd5e1', active: true }
         ],
         strengths: defaultPrintingStrengths,
-        otherItems: defaultOtherItems
+        otherItems: defaultOtherItems,
+        usedShopItems: defaultUsedShopItems
     };
 
     let checkoutOptions = { ...defaultCheckoutOptions };
@@ -1017,7 +1069,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ? window.EZFIX_CONFIG.API_BASE_URL.trim().replace(/\/$/, '')
         : '';
 
-    const isEzfixWebHost = /(^|\.)ezfix\.cz$/i.test(location.hostname);
+    const isEzfixWebHost = /(^|\.)ezfix\.(cz|xz)$/i.test(location.hostname);
     const API_BASE_URL = configuredApiBase || (
         isLocalFileMode
             ? 'https://api.ezfix.cz/api'
@@ -1739,6 +1791,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!Array.isArray(printingOptions.otherItems) || printingOptions.otherItems.length === 0) {
                 printingOptions.otherItems = defaultOtherItems;
             }
+            if (!Array.isArray(printingOptions.usedShopItems) || printingOptions.usedShopItems.length === 0) {
+                printingOptions.usedShopItems = defaultUsedShopItems;
+            }
         }
         if (catalog.checkout && typeof catalog.checkout === 'object') {
             checkoutOptions = { ...defaultCheckoutOptions, ...catalog.checkout };
@@ -1832,16 +1887,65 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderAnnouncementBanner(announcement) {
         const banner = document.getElementById('announcementBanner');
         const textEl = document.getElementById('announcementText');
+        const closeBtn = document.getElementById('announcementCloseBtn');
         if (!banner || !textEl) return;
+
+        const dismissalKey = 'announcementDismissedText';
+
+        const syncAnnouncementOffset = () => {
+            const visible = !banner.classList.contains('hidden');
+            const height = visible ? Math.ceil(banner.getBoundingClientRect().height || 0) : 0;
+            document.documentElement.style.setProperty('--announcement-height', `${height}px`);
+        };
 
         const isActive = announcement && announcement.active && announcement.text;
         if (isActive) {
-            textEl.textContent = announcement.text;
-            banner.classList.remove('hidden');
-            document.body.classList.add('has-announcement');
+            const messageText = String(announcement.text || '').trim();
+            textEl.textContent = messageText;
+
+            let dismissedText = '';
+            try {
+                dismissedText = localStorage.getItem(dismissalKey) || '';
+            } catch {
+                dismissedText = '';
+            }
+
+            const isDismissed = dismissedText && dismissedText === messageText;
+            if (isDismissed) {
+                banner.classList.add('hidden');
+                document.body.classList.remove('has-announcement');
+            } else {
+                banner.classList.remove('hidden');
+                document.body.classList.add('has-announcement');
+            }
+
+            requestAnimationFrame(syncAnnouncementOffset);
+
+            if (closeBtn && !closeBtn.dataset.bound) {
+                closeBtn.dataset.bound = '1';
+                closeBtn.addEventListener('click', () => {
+                    const currentText = String(textEl.textContent || '').trim();
+                    try {
+                        if (currentText) localStorage.setItem(dismissalKey, currentText);
+                    } catch {
+                        // Ignore storage errors and still hide visually.
+                    }
+                    banner.classList.add('hidden');
+                    document.body.classList.remove('has-announcement');
+                    syncAnnouncementOffset();
+                });
+            }
+
+            if (!window.__announcementResizeBound) {
+                window.__announcementResizeBound = true;
+                window.addEventListener('resize', () => {
+                    requestAnimationFrame(syncAnnouncementOffset);
+                });
+            }
         } else {
             banner.classList.add('hidden');
             document.body.classList.remove('has-announcement');
+            syncAnnouncementOffset();
         }
     }
 
@@ -2119,6 +2223,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (tab === 'other-items') {
             renderCatalogOtherItems();
+            logPerfMetric('catalog-tab-render', performance.now() - startedAt, { tab });
+            return;
+        }
+        if (tab === 'used-shop') {
+            renderCatalogUsedShop();
             logPerfMetric('catalog-tab-render', performance.now() - startedAt, { tab });
             return;
         }
@@ -2808,6 +2917,119 @@ document.addEventListener('DOMContentLoaded', function() {
                 const index = parseInt(row.dataset.index, 10);
                 items.splice(index, 1);
                 renderCatalogOtherItems();
+            });
+        });
+    }
+
+    function renderCatalogUsedShop() {
+        const list = document.getElementById('catalogUsedShopList');
+        if (!list) return;
+
+        catalogDraft.printing = catalogDraft.printing || {};
+        const items = catalogDraft.printing.usedShopItems || [];
+        items.sort(catalogSortByName);
+
+        list.innerHTML = items.map((item, index) => `
+            <div class="catalog-item" data-index="${index}" data-type="used-shop-item">
+                <div>
+                    <label>ID</label>
+                    <input class="catalog-input" value="${item.id || ''}" data-field="id" readonly />
+                </div>
+                <div>
+                    <label>Name</label>
+                    <input class="catalog-input" value="${item.name || ''}" data-field="name" />
+                </div>
+                <div>
+                    <label>Brand</label>
+                    <input class="catalog-input" value="${item.brand || ''}" data-field="brand" />
+                </div>
+                <div>
+                    <label>Model</label>
+                    <input class="catalog-input" value="${item.model || ''}" data-field="model" />
+                </div>
+                <div>
+                    <label>Price</label>
+                    <input class="catalog-input" value="${item.price || ''}" data-field="price" />
+                </div>
+                <div>
+                    <label>Main Image URL</label>
+                    <input class="catalog-input" value="${item.image || ''}" data-field="image" />
+                </div>
+                <div>
+                    <label>Preview Description</label>
+                    <input class="catalog-input" value="${item.shortDesc || item.desc || ''}" data-field="shortDesc" />
+                </div>
+                <div>
+                    <label>Full Description</label>
+                    <input class="catalog-input" value="${item.details || item.description || ''}" data-field="details" />
+                </div>
+                <div>
+                    <label>Gallery Images (comma)</label>
+                    <input class="catalog-input" value="${Array.isArray(item.images) ? item.images.join(', ') : ''}" data-field="images" />
+                </div>
+                <div>
+                    <label>Specs (comma)</label>
+                    <input class="catalog-input" value="${Array.isArray(item.specs) ? item.specs.join(', ') : ''}" data-field="specs" />
+                </div>
+                <div class="toggle">
+                    <input type="checkbox" data-field="active" ${item.active === false ? '' : 'checked'} />
+                    <span>Active</span>
+                </div>
+                <div class="inline-actions">
+                    <button class="btn btn-sm btn-secondary" data-action="delete">Delete</button>
+                </div>
+            </div>
+        `).join('');
+
+        list.querySelectorAll('.catalog-item').forEach((row) => {
+            row.querySelectorAll('[data-field]').forEach((input) => {
+                input.addEventListener('input', () => {
+                    const index = parseInt(row.dataset.index, 10);
+                    const field = input.dataset.field;
+                    const record = items[index];
+                    if (!record) return;
+                    const value = input.type === 'checkbox' ? input.checked : input.value;
+
+                    if (field === 'price') {
+                        record.price = parseFloat(value) || 0;
+                        return;
+                    }
+                    if (field === 'images') {
+                        record.images = value
+                            .split(',')
+                            .map(v => v.trim())
+                            .filter(Boolean);
+                        if (!record.image && record.images.length > 0) {
+                            record.image = record.images[0];
+                        }
+                        return;
+                    }
+                    if (field === 'specs') {
+                        record.specs = value
+                            .split(',')
+                            .map(v => v.trim())
+                            .filter(Boolean);
+                        return;
+                    }
+                    if (field === 'active') {
+                        record.active = value;
+                        return;
+                    }
+
+                    record[field] = value;
+                    if (field === 'shortDesc') {
+                        record.desc = value;
+                    }
+                    if (field === 'details') {
+                        record.description = value;
+                    }
+                });
+            });
+
+            row.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
+                const index = parseInt(row.dataset.index, 10);
+                items.splice(index, 1);
+                renderCatalogUsedShop();
             });
         });
     }
@@ -4180,6 +4402,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (pageId === 'other') {
             renderOtherItemsPage();
         }
+        if (pageId === 'used-shop') {
+            renderUsedShopPage();
+        }
         if (pageId === 'profile') {
             renderProfilePage();
         }
@@ -4769,6 +4994,175 @@ document.addEventListener('DOMContentLoaded', function() {
         const closeBtn = document.getElementById('otherDetailsClose');
         if (overlay) overlay.onclick = closeOtherDetails;
         if (closeBtn) closeBtn.onclick = closeOtherDetails;
+    }
+
+    let activeUsedShopItem = null;
+
+    function getUsedShopImages(item) {
+        const rawImages = Array.isArray(item?.images) ? item.images : [];
+        const withFallback = rawImages.length > 0 ? rawImages : [item?.image || ''];
+        return withFallback.filter(Boolean);
+    }
+
+    async function addUsedItemToCart(item) {
+        if (!item) return;
+
+        const firstImage = getUsedShopImages(item)[0] || item.image || '';
+        const cartItem = {
+            device: 'other-item',
+            deviceName: 'Used Shop',
+            brand: item.brand || 'Used Device',
+            brandName: item.brand || 'Used Device',
+            model: item.model || item.name || 'Used Device',
+            repairType: 'used-device',
+            repairName: item.name || 'Used Device',
+            repairDesc: item.details || item.shortDesc || item.desc || '',
+            price: Number(item.price || 0),
+            otherItemName: item.name || 'Used Device',
+            otherItemDesc: item.shortDesc || item.desc || item.details || '',
+            otherItemImage: firstImage,
+            image: firstImage
+        };
+
+        try {
+            if (!Storage.getToken()) {
+                Storage.cart.push(cartItem);
+                await Storage.saveCart();
+            } else {
+                await apiCall('POST', '/cart', cartItem);
+                await Storage.loadCart();
+            }
+            await updateCartCount();
+            showToast(`${item.name || t('Item')} ${t('added to cart')}`, 'success');
+        } catch (error) {
+            console.error('Error adding used shop item to cart:', error);
+            showToast('Failed to add item to cart');
+        }
+    }
+
+    function renderUsedShopPage() {
+        const grid = document.getElementById('usedShopGrid');
+        if (!grid) return;
+
+        const items = filterActiveItems(printingOptions.usedShopItems || defaultUsedShopItems);
+        if (!items.length) {
+            grid.innerHTML = `<div class="no-orders"><h3>${t('No items')}</h3><p>${t('No items yet')}</p></div>`;
+            return;
+        }
+
+        grid.innerHTML = items.map((item) => {
+            const image = getUsedShopImages(item)[0] || '';
+            const previewDesc = item.shortDesc || item.desc || item.details || item.description || '';
+
+            return `
+                <article class="used-item-card" data-used-id="${escapeHtml(item.id || '')}">
+                    <div class="used-item-media">
+                        ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(item.name || 'Used device')}" loading="lazy" decoding="async">` : `<div class="other-item-placeholder">${t('No image')}</div>`}
+                    </div>
+                    <div class="used-item-body">
+                        <h3 class="used-item-title">${escapeHtml(item.name || 'Used Device')}</h3>
+                        ${previewDesc ? `<p class="used-item-desc">${escapeHtml(previewDesc)}</p>` : ''}
+                        <div class="used-item-price">${formatCurrency(Number(item.price || 0))}</div>
+                        <div class="used-item-actions">
+                            <button class="btn btn-secondary" data-used-action="details" data-used-id="${escapeHtml(item.id || '')}">View details</button>
+                            <button class="btn btn-primary" data-used-action="add-to-cart" data-used-id="${escapeHtml(item.id || '')}">Add to Cart</button>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }).join('');
+
+        grid.querySelectorAll('[data-used-action="details"]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const item = items.find((entry) => String(entry.id) === String(btn.getAttribute('data-used-id')));
+                if (item) openUsedDetails(item);
+            });
+        });
+
+        grid.querySelectorAll('[data-used-action="add-to-cart"]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const item = items.find((entry) => String(entry.id) === String(btn.getAttribute('data-used-id')));
+                if (item) {
+                    await addUsedItemToCart(item);
+                }
+            });
+        });
+
+        const modal = document.getElementById('usedDetailsModal');
+        const overlay = modal?.querySelector('.part-details-overlay');
+        const closeBtn = document.getElementById('usedDetailsClose');
+        const prevBtn = document.getElementById('usedThumbsPrev');
+        const nextBtn = document.getElementById('usedThumbsNext');
+        const thumbsEl = document.getElementById('usedDetailsThumbs');
+        const addBtn = document.getElementById('usedDetailsAddToCart');
+
+        if (overlay) overlay.onclick = closeUsedDetails;
+        if (closeBtn) closeBtn.onclick = closeUsedDetails;
+        if (prevBtn && thumbsEl) prevBtn.onclick = () => thumbsEl.scrollBy({ left: -220, behavior: 'smooth' });
+        if (nextBtn && thumbsEl) nextBtn.onclick = () => thumbsEl.scrollBy({ left: 220, behavior: 'smooth' });
+        if (addBtn && !addBtn.dataset.bound) {
+            addBtn.dataset.bound = '1';
+            addBtn.addEventListener('click', async () => {
+                if (activeUsedShopItem) {
+                    await addUsedItemToCart(activeUsedShopItem);
+                }
+            });
+        }
+    }
+
+    function openUsedDetails(item) {
+        const modal = document.getElementById('usedDetailsModal');
+        const nameEl = document.getElementById('usedDetailsName');
+        const titleEl = document.getElementById('usedDetailsTitle');
+        const priceEl = document.getElementById('usedDetailsPrice');
+        const mainImageEl = document.getElementById('usedDetailsMainImage');
+        const thumbsEl = document.getElementById('usedDetailsThumbs');
+        const descEl = document.getElementById('usedDetailsDesc');
+        const specsEl = document.getElementById('usedDetailsSpecs');
+        if (!modal || !nameEl || !titleEl || !priceEl || !mainImageEl || !thumbsEl || !descEl || !specsEl) return;
+
+        activeUsedShopItem = item;
+        const images = getUsedShopImages(item);
+        const title = item.name || 'Used Device';
+        const details = item.details || item.description || item.shortDesc || item.desc || '';
+
+        nameEl.textContent = title;
+        titleEl.textContent = title;
+        priceEl.textContent = formatCurrency(Number(item.price || 0));
+        descEl.textContent = details;
+
+        const firstImage = images[0] || '';
+        mainImageEl.src = firstImage;
+        mainImageEl.alt = title;
+
+        thumbsEl.innerHTML = images.map((img, index) => `
+            <img src="${escapeHtml(img)}" alt="${escapeHtml(title)} ${index + 1}" class="${index === 0 ? 'active' : ''}" loading="lazy" decoding="async" data-used-thumb="${index}">
+        `).join('');
+
+        thumbsEl.querySelectorAll('[data-used-thumb]').forEach((thumb, index) => {
+            thumb.addEventListener('click', () => {
+                const nextImage = images[index] || firstImage;
+                mainImageEl.src = nextImage;
+                mainImageEl.alt = `${title} ${index + 1}`;
+                thumbsEl.querySelectorAll('img').forEach((img) => img.classList.remove('active'));
+                thumb.classList.add('active');
+            });
+        });
+
+        const specs = Array.isArray(item.specs) ? item.specs : [];
+        specsEl.innerHTML = specs.length
+            ? specs.map((spec) => `<li>${escapeHtml(spec)}</li>`).join('')
+            : `<li>${t('No details yet')}</li>`;
+
+        modal.classList.remove('hidden');
+        modal.style.display = '';
+    }
+
+    function closeUsedDetails() {
+        const modal = document.getElementById('usedDetailsModal');
+        if (!modal) return;
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
     }
 
     function openOtherDetails(item) {
@@ -6087,6 +6481,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="order-actions">
                                 <button class="order-action-btn primary" data-order-action="edit-status" data-order-id="${order.id}">${t('Edit Status')}</button>
                                 <button class="order-action-btn info" data-order-action="email" data-order-id="${order.id}" data-order-email="${escapeHtml(order.customer_email || '')}" data-order-name="${escapeHtml(order.customer_name || '')}">${t('Email')}</button>
+                                <button class="order-action-btn" data-order-action="invoice" data-order-id="${order.id}">Invoice</button>
                                 <button class="order-action-btn danger" data-order-action="delete" data-order-id="${order.id}">${t('Delete')}</button>
                             </div>
                         </div>
@@ -6261,6 +6656,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                 <button class="btn btn-primary" onclick="editOrderStatus(${orderId})">${t('Edit Status')}</button>
                                 <button class="btn btn-secondary" onclick="emailCustomer(${orderId}, '${o.customer_email || ''}', '${(o.customer_name || '').replace(/'/g, "\\'") }')">${t('Email')}</button>
+                                <button class="btn btn-secondary" onclick="printInvoiceForOrder(${orderId})">Invoice</button>
                                 <button class="btn btn-info" onclick="printOrderDetails(${orderId})">${t('Print')}</button>
                                 <button class="btn btn-danger" onclick="deleteOrder(${orderId})">${t('Delete')}</button>
                             </div>
@@ -6319,6 +6715,343 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========================================================================
 
     // Functions moved outside DOMContentLoaded for onclick attribute access
+
+    function formatInvoiceAmount(value) {
+        const amount = Number(value || 0);
+        const safeAmount = Number.isFinite(amount) ? amount : 0;
+        return `${safeAmount.toFixed(2)} Kč`;
+    }
+
+    function getNextInvoiceNumber(prefix = 'INV') {
+        const key = 'ezfixInvoiceCounter';
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+
+        let counter = 0;
+        try {
+            const existing = Number(localStorage.getItem(key) || 0);
+            counter = Number.isFinite(existing) ? existing + 1 : 1;
+            localStorage.setItem(key, String(counter));
+        } catch {
+            counter = Math.floor(Math.random() * 9000) + 1000;
+        }
+
+        return `${prefix}-${year}${month}-${String(counter).padStart(4, '0')}`;
+    }
+
+    function formatInvoiceDate(dateValue) {
+        const date = dateValue ? new Date(dateValue) : new Date();
+        if (!Number.isFinite(date.getTime())) {
+            return new Date().toLocaleDateString('cs-CZ');
+        }
+        return date.toLocaleDateString('cs-CZ');
+    }
+
+    function printInvoiceDocument(invoice) {
+        const issueDate = invoice.issueDate || new Date();
+        const dueDate = invoice.dueDate || (() => {
+            const date = new Date(issueDate);
+            date.setDate(date.getDate() + 14);
+            return date;
+        })();
+
+        const items = Array.isArray(invoice.items) ? invoice.items : [];
+        const total = items.reduce((sum, item) => sum + Number(item.total || 0), 0);
+
+        const rowsHtml = items.map((item, index) => `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${escapeHtml(item.description || '')}</td>
+                <td>${escapeHtml(String(item.quantity || 1))}</td>
+                <td>${formatInvoiceAmount(item.unitPrice || 0)}</td>
+                <td style="text-align:right;">${formatInvoiceAmount(item.total || 0)}</td>
+            </tr>
+        `).join('');
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            showToast('Pop-up blocked. Please allow pop-ups for printing invoices.');
+            return;
+        }
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="cs">
+            <head>
+                <meta charset="UTF-8">
+                <title>Faktura ${escapeHtml(invoice.invoiceNumber || '')}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 22px; color: #111827; }
+                    .top { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+                    .box { flex: 1; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; }
+                    h1 { margin: 0 0 10px; font-size: 1.6rem; }
+                    h3 { margin: 0 0 10px; font-size: 1rem; }
+                    p { margin: 3px 0; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+                    th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; font-size: 0.95rem; }
+                    th { background: #f3f4f6; }
+                    .right { text-align: right; }
+                    .summary { margin-top: 16px; display: flex; justify-content: flex-end; }
+                    .summary-box { min-width: 240px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
+                    .summary-row { display: flex; justify-content: space-between; margin: 6px 0; }
+                    .total { font-weight: 700; font-size: 1.08rem; }
+                    .notes { margin-top: 18px; white-space: pre-wrap; }
+                    @media print { body { margin: 0; } }
+                </style>
+            </head>
+            <body>
+                <h1>Faktura</h1>
+                <div class="top">
+                    <div class="box">
+                        <h3>Dodavatel</h3>
+                        <p><strong>EzFix</strong></p>
+                        <p>Web: ezfix.cz</p>
+                        <p>E-mail: ezfix.podpora@gmail.com</p>
+                        <p>Telefon: +420 732 434 201</p>
+                    </div>
+                    <div class="box">
+                        <h3>Odběratel</h3>
+                        <p><strong>${escapeHtml(invoice.customerName || '')}</strong></p>
+                        <p>${escapeHtml(invoice.customerEmail || '')}</p>
+                        <p>${escapeHtml(invoice.customerPhone || '')}</p>
+                        <p>${escapeHtml(invoice.customerAddress || '')}</p>
+                    </div>
+                </div>
+
+                <div class="top" style="margin-bottom: 8px;">
+                    <div class="box">
+                        <p><strong>Číslo faktury:</strong> ${escapeHtml(invoice.invoiceNumber || '')}</p>
+                        <p><strong>Datum vystavení:</strong> ${formatInvoiceDate(issueDate)}</p>
+                        <p><strong>Datum splatnosti:</strong> ${formatInvoiceDate(dueDate)}</p>
+                    </div>
+                    <div class="box">
+                        <p><strong>Variabilní symbol:</strong> ${escapeHtml(String(invoice.variableSymbol || '').replace(/\D/g, '').slice(-10) || '')}</p>
+                        <p><strong>Objednávka:</strong> ${escapeHtml(invoice.orderNumber || 'Vlastní faktura')}</p>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Položka</th>
+                            <th>Množství</th>
+                            <th>Cena/ks</th>
+                            <th class="right">Celkem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml || '<tr><td colspan="5">Bez položek</td></tr>'}
+                    </tbody>
+                </table>
+
+                <div class="summary">
+                    <div class="summary-box">
+                        <div class="summary-row total"><span>Celkem k úhradě</span><span>${formatInvoiceAmount(total)}</span></div>
+                    </div>
+                </div>
+
+                ${invoice.notes ? `<div class="notes"><strong>Poznámka:</strong>\n${escapeHtml(invoice.notes)}</div>` : ''}
+            </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+    }
+
+    async function printInvoiceForOrder(orderId) {
+        try {
+            const result = await apiCall('GET', `/orders/${orderId}`);
+            const order = result.order || {};
+            const items = Array.isArray(order.items) ? order.items : [];
+
+            const mappedItems = items.map((item) => {
+                const quantity = Number(item.parts || 1);
+                const safeQty = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+                const unitPrice = Number(item.price || 0);
+                const safePrice = Number.isFinite(unitPrice) ? unitPrice : 0;
+                const description = item.repair_name || item.repair_type || [item.device, item.brand, item.model].filter(Boolean).join(' ');
+
+                return {
+                    description,
+                    quantity: safeQty,
+                    unitPrice: safePrice,
+                    total: safeQty * safePrice
+                };
+            });
+
+            const addressParts = [order.customer_address, order.customer_city, order.customer_zip, order.country]
+                .map((part) => String(part || '').trim())
+                .filter(Boolean);
+
+            printInvoiceDocument({
+                invoiceNumber: getNextInvoiceNumber('INV'),
+                variableSymbol: order.order_number || String(order.id || ''),
+                orderNumber: order.order_number || '',
+                customerName: order.customer_name || '',
+                customerEmail: order.customer_email || '',
+                customerPhone: order.customer_phone || '',
+                customerAddress: addressParts.join(', '),
+                issueDate: new Date(),
+                dueDate: (() => {
+                    const date = new Date();
+                    date.setDate(date.getDate() + 14);
+                    return date;
+                })(),
+                notes: order.notes || '',
+                items: mappedItems
+            });
+        } catch (error) {
+            console.error('Invoice generation failed:', error);
+            showToast('Failed to create invoice from order');
+        }
+    }
+
+    function closeCustomInvoiceModal() {
+        const modal = document.getElementById('customInvoiceModal');
+        if (modal) modal.remove();
+    }
+
+    function openCustomInvoiceModal() {
+        if (!Storage.getToken() || !canManageOrders(Storage.getUser())) {
+            showToast('Order manager access required');
+            return;
+        }
+
+        closeCustomInvoiceModal();
+
+        const modalHtml = `
+            <div class="modal-overlay" id="customInvoiceModal">
+                <div class="modal manual-order-modal" role="dialog" aria-modal="true" aria-label="Create custom invoice">
+                    <div class="modal-header">
+                        <h3>Create Custom Invoice</h3>
+                        <button class="modal-close" type="button" id="customInvoiceCloseBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <form class="modal-body manual-order-form" id="customInvoiceForm">
+                        <div class="manual-order-grid">
+                            <div class="form-group">
+                                <label for="invoiceCustomerName">Customer Name</label>
+                                <input type="text" id="invoiceCustomerName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="invoiceCustomerEmail">Customer Email</label>
+                                <input type="email" id="invoiceCustomerEmail">
+                            </div>
+                            <div class="form-group">
+                                <label for="invoiceCustomerPhone">Customer Phone</label>
+                                <input type="text" id="invoiceCustomerPhone">
+                            </div>
+                            <div class="form-group">
+                                <label for="invoiceCustomerAddress">Address</label>
+                                <input type="text" id="invoiceCustomerAddress">
+                            </div>
+                            <div class="form-group">
+                                <label for="invoiceItemDescription">Item / Service</label>
+                                <input type="text" id="invoiceItemDescription" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="invoiceItemQuantity">Quantity</label>
+                                <input type="number" id="invoiceItemQuantity" min="1" step="1" value="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="invoiceItemPrice">Unit Price</label>
+                                <input type="number" id="invoiceItemPrice" min="0" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="invoiceDueDays">Due in days</label>
+                                <input type="number" id="invoiceDueDays" min="1" step="1" value="14" required>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top:8px;">
+                            <label for="invoiceNotes">Notes</label>
+                            <textarea id="invoiceNotes" rows="3"></textarea>
+                        </div>
+                        <div class="modal-actions" style="margin-top: 16px;">
+                            <button class="btn btn-secondary" type="button" id="customInvoiceCancelBtn">Cancel</button>
+                            <button class="btn btn-primary" type="submit" id="customInvoiceSubmitBtn">Create Invoice</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const modal = document.getElementById('customInvoiceModal');
+        const closeBtn = document.getElementById('customInvoiceCloseBtn');
+        const cancelBtn = document.getElementById('customInvoiceCancelBtn');
+        const form = document.getElementById('customInvoiceForm');
+        const submitBtn = document.getElementById('customInvoiceSubmitBtn');
+
+        modal?.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeCustomInvoiceModal();
+            }
+        });
+
+        closeBtn?.addEventListener('click', closeCustomInvoiceModal);
+        cancelBtn?.addEventListener('click', closeCustomInvoiceModal);
+
+        form?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!submitBtn) return;
+
+            const original = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating...';
+
+            try {
+                const quantityRaw = Number(document.getElementById('invoiceItemQuantity')?.value || 1);
+                const unitPriceRaw = Number(document.getElementById('invoiceItemPrice')?.value || 0);
+                const dueDaysRaw = Number(document.getElementById('invoiceDueDays')?.value || 14);
+
+                const quantity = Number.isFinite(quantityRaw) && quantityRaw > 0 ? Math.floor(quantityRaw) : 1;
+                const unitPrice = Number.isFinite(unitPriceRaw) && unitPriceRaw >= 0 ? unitPriceRaw : 0;
+                const dueDays = Number.isFinite(dueDaysRaw) && dueDaysRaw > 0 ? Math.floor(dueDaysRaw) : 14;
+
+                const issueDate = new Date();
+                const dueDate = new Date(issueDate);
+                dueDate.setDate(dueDate.getDate() + dueDays);
+                const invoiceNumber = getNextInvoiceNumber('CINV');
+
+                printInvoiceDocument({
+                    invoiceNumber,
+                    variableSymbol: invoiceNumber.replace(/\D/g, '').slice(-10),
+                    customerName: String(document.getElementById('invoiceCustomerName')?.value || '').trim(),
+                    customerEmail: String(document.getElementById('invoiceCustomerEmail')?.value || '').trim(),
+                    customerPhone: String(document.getElementById('invoiceCustomerPhone')?.value || '').trim(),
+                    customerAddress: String(document.getElementById('invoiceCustomerAddress')?.value || '').trim(),
+                    issueDate,
+                    dueDate,
+                    notes: String(document.getElementById('invoiceNotes')?.value || '').trim(),
+                    items: [
+                        {
+                            description: String(document.getElementById('invoiceItemDescription')?.value || '').trim(),
+                            quantity,
+                            unitPrice,
+                            total: quantity * unitPrice
+                        }
+                    ]
+                });
+
+                closeCustomInvoiceModal();
+            } catch (error) {
+                console.error('Custom invoice creation failed:', error);
+                showToast('Failed to create custom invoice');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = original;
+            }
+        });
+    }
 
     /**
      * Print order details
@@ -7310,6 +8043,250 @@ document.addEventListener('DOMContentLoaded', function() {
                 showToast('Failed to delete order: ' + error.message);
             }
         }
+    }
+
+    function closeManualOrderModal() {
+        const modal = document.getElementById('manualOrderModal');
+        if (modal) modal.remove();
+    }
+
+    function openManualOrderModal() {
+        if (!Storage.getToken() || !canManageOrders(Storage.getUser())) {
+            showToast('Order manager access required');
+            return;
+        }
+
+        closeManualOrderModal();
+
+        const modalHtml = `
+            <div class="modal-overlay" id="manualOrderModal">
+                <div class="modal manual-order-modal" role="dialog" aria-modal="true" aria-label="Create order manually">
+                    <div class="modal-header">
+                        <h3>Create Order</h3>
+                        <button class="modal-close" type="button" id="manualOrderCloseBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <form class="modal-body manual-order-form" id="manualOrderForm">
+                        <div class="manual-order-grid">
+                            <div class="form-group">
+                                <label for="manualCustomerName">Customer Name</label>
+                                <input type="text" id="manualCustomerName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="manualCustomerEmail">Customer Email</label>
+                                <input type="email" id="manualCustomerEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="manualCustomerPhone">Customer Phone</label>
+                                <input type="text" id="manualCustomerPhone" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="manualServiceType">Service Type</label>
+                                <select id="manualServiceType" required>
+                                    <option value="pickup">Pickup</option>
+                                    <option value="delivery">Delivery</option>
+                                    <option value="zasilkovna">Zasilkovna</option>
+                                    <option value="ceska-posta">Ceska posta</option>
+                                    <option value="ppl">PPL</option>
+                                    <option value="dpd">DPD</option>
+                                    <option value="gls">GLS</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="manualOrderStatus">Order Status</label>
+                                <select id="manualOrderStatus" required>
+                                    <option value="pending">Pending</option>
+                                    <option value="waiting">Waiting</option>
+                                    <option value="in-progress">In Progress</option>
+                                    <option value="delivering">Delivering</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="delivered">Delivered</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="manualCountry">Country</label>
+                                <input type="text" id="manualCountry" value="Czech Republic">
+                            </div>
+                            <div class="form-group">
+                                <label for="manualAddress">Address</label>
+                                <input type="text" id="manualAddress">
+                            </div>
+                            <div class="form-group">
+                                <label for="manualCity">City</label>
+                                <input type="text" id="manualCity">
+                            </div>
+                            <div class="form-group">
+                                <label for="manualZip">ZIP</label>
+                                <input type="text" id="manualZip">
+                            </div>
+                        </div>
+
+                        <div class="manual-order-items">
+                            <div class="manual-order-items-header">
+                                <h4>Items</h4>
+                                <button class="btn btn-secondary btn-sm" type="button" id="manualAddItemBtn">Add Item</button>
+                            </div>
+                            <div id="manualOrderItemsList"></div>
+                            <div class="manual-order-total" id="manualOrderTotal">Total: 0.00 Kč</div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 8px;">
+                            <label for="manualOrderNotes">Notes</label>
+                            <textarea id="manualOrderNotes" rows="3"></textarea>
+                        </div>
+                        <div class="modal-actions" style="margin-top: 16px;">
+                            <button class="btn btn-secondary" type="button" id="manualOrderCancelBtn">Cancel</button>
+                            <button class="btn btn-primary" type="submit" id="manualOrderSubmitBtn">Create Order</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const modal = document.getElementById('manualOrderModal');
+        const closeBtn = document.getElementById('manualOrderCloseBtn');
+        const cancelBtn = document.getElementById('manualOrderCancelBtn');
+        const form = document.getElementById('manualOrderForm');
+        const submitBtn = document.getElementById('manualOrderSubmitBtn');
+        const addItemBtn = document.getElementById('manualAddItemBtn');
+        const itemsList = document.getElementById('manualOrderItemsList');
+        const totalEl = document.getElementById('manualOrderTotal');
+
+        const rebuildManualOrderTotal = () => {
+            if (!totalEl || !itemsList) return;
+            const rows = Array.from(itemsList.querySelectorAll('.manual-order-item-row'));
+            const total = rows.reduce((sum, row) => {
+                const priceInput = row.querySelector('[data-manual-item="price"]');
+                const raw = Number(priceInput?.value || 0);
+                const safe = Number.isFinite(raw) ? Math.max(0, raw) : 0;
+                return sum + safe;
+            }, 0);
+            totalEl.textContent = `Total: ${total.toFixed(2)} Kč`;
+        };
+
+        const appendManualItemRow = (defaults = {}) => {
+            if (!itemsList) return;
+            const row = document.createElement('div');
+            row.className = 'manual-order-item-row';
+            row.innerHTML = `
+                <div class="manual-order-item-grid">
+                    <div class="form-group">
+                        <label>Device</label>
+                        <input type="text" data-manual-item="device" value="${escapeHtml(String(defaults.device || ''))}" placeholder="phone, tablet, notebook, desktop, other">
+                    </div>
+                    <div class="form-group">
+                        <label>Brand</label>
+                        <input type="text" data-manual-item="brand" value="${escapeHtml(String(defaults.brand || ''))}">
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <input type="text" data-manual-item="model" value="${escapeHtml(String(defaults.model || ''))}">
+                    </div>
+                    <div class="form-group">
+                        <label>Repair Type</label>
+                        <input type="text" data-manual-item="repairType" value="${escapeHtml(String(defaults.repairType || 'manual'))}">
+                    </div>
+                    <div class="form-group">
+                        <label>Repair Name</label>
+                        <input type="text" data-manual-item="repairName" value="${escapeHtml(String(defaults.repairName || ''))}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Price</label>
+                        <input type="number" data-manual-item="price" value="${escapeHtml(String(defaults.price || '0'))}" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="manual-order-item-actions">
+                    <button type="button" class="btn btn-sm btn-danger" data-manual-item-remove>Remove</button>
+                </div>
+            `;
+
+            itemsList.appendChild(row);
+
+            row.querySelectorAll('input').forEach((input) => {
+                input.addEventListener('input', rebuildManualOrderTotal);
+            });
+
+            row.querySelector('[data-manual-item-remove]')?.addEventListener('click', () => {
+                row.remove();
+                if (!itemsList.querySelector('.manual-order-item-row')) {
+                    appendManualItemRow();
+                }
+                rebuildManualOrderTotal();
+            });
+
+            rebuildManualOrderTotal();
+        };
+
+        appendManualItemRow();
+
+        modal?.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeManualOrderModal();
+            }
+        });
+
+        closeBtn?.addEventListener('click', closeManualOrderModal);
+        cancelBtn?.addEventListener('click', closeManualOrderModal);
+        addItemBtn?.addEventListener('click', () => {
+            appendManualItemRow();
+        });
+
+        form?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!submitBtn) return;
+
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating...';
+
+            try {
+                const items = Array.from(document.querySelectorAll('#manualOrderItemsList .manual-order-item-row'))
+                    .map((row) => ({
+                        device: String(row.querySelector('[data-manual-item="device"]')?.value || '').trim(),
+                        brand: String(row.querySelector('[data-manual-item="brand"]')?.value || '').trim(),
+                        model: String(row.querySelector('[data-manual-item="model"]')?.value || '').trim(),
+                        repairType: String(row.querySelector('[data-manual-item="repairType"]')?.value || 'manual').trim(),
+                        repairName: String(row.querySelector('[data-manual-item="repairName"]')?.value || '').trim(),
+                        price: Number(row.querySelector('[data-manual-item="price"]')?.value || 0)
+                    }))
+                    .filter((item) => item.repairName && Number.isFinite(item.price));
+
+                if (!items.length) {
+                    throw new Error('At least one valid item with name and price is required');
+                }
+
+                const payload = {
+                    customerName: String(document.getElementById('manualCustomerName')?.value || '').trim(),
+                    customerEmail: String(document.getElementById('manualCustomerEmail')?.value || '').trim(),
+                    customerPhone: String(document.getElementById('manualCustomerPhone')?.value || '').trim(),
+                    customerAddress: String(document.getElementById('manualAddress')?.value || '').trim(),
+                    customerCity: String(document.getElementById('manualCity')?.value || '').trim(),
+                    customerZip: String(document.getElementById('manualZip')?.value || '').trim(),
+                    country: String(document.getElementById('manualCountry')?.value || '').trim(),
+                    serviceType: String(document.getElementById('manualServiceType')?.value || 'pickup').trim(),
+                    status: String(document.getElementById('manualOrderStatus')?.value || 'pending').trim(),
+                    notes: String(document.getElementById('manualOrderNotes')?.value || '').trim(),
+                    items
+                };
+
+                const result = await apiCall('POST', '/orders/admin/manual', payload);
+                showToast(`Order created: ${result?.order?.orderNumber || 'OK'}`);
+                closeManualOrderModal();
+                await renderAdminOrders();
+            } catch (error) {
+                showToast('Failed to create manual order: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
     }
 
     // ========================================================================
@@ -8576,6 +9553,11 @@ document.addEventListener('DOMContentLoaded', function() {
     window.closeStatusModal = closeStatusModal;
     window.saveOrderStatus = saveOrderStatus;
     window.deleteOrder = deleteOrder;
+    window.printInvoiceForOrder = printInvoiceForOrder;
+    window.openCustomInvoiceModal = openCustomInvoiceModal;
+    window.closeCustomInvoiceModal = closeCustomInvoiceModal;
+    window.openManualOrderModal = openManualOrderModal;
+    window.closeManualOrderModal = closeManualOrderModal;
     window.handleAdminLogin = handleAdminLogin;
     window.handleLogout = handleLogout;
     window.showSupportDialog = showSupportDialog;
@@ -9166,6 +10148,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (event.key === 'Escape') {
             closePartDetails();
             closeOtherDetails();
+            closeUsedDetails();
             closeTermsModal();
             closeContactModal();
             closeNewsDetailsModal();
@@ -9204,6 +10187,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const email = actionBtn.dataset.orderEmail || '';
                 const name = actionBtn.dataset.orderName || '';
                 emailCustomer(orderId, email, name);
+                return;
+            }
+            if (action === 'invoice') {
+                printInvoiceForOrder(orderId);
                 return;
             }
             if (action === 'delete') {
@@ -9376,6 +10363,28 @@ document.addEventListener('DOMContentLoaded', function() {
         renderCatalogOtherItems();
     });
 
+    document.getElementById('catalogAddUsedShopItem')?.addEventListener('click', () => {
+        ensureCatalogState();
+        const name = prompt('Used device name?');
+        if (!name) return;
+        const id = slugify(name) || `used-${Date.now()}`;
+        catalogDraft.printing.usedShopItems = catalogDraft.printing.usedShopItems || [];
+        catalogDraft.printing.usedShopItems.push({
+            id,
+            name,
+            brand: '',
+            model: '',
+            shortDesc: '',
+            details: '',
+            price: 0,
+            image: '',
+            images: [],
+            specs: [],
+            active: true
+        });
+        renderCatalogUsedShop();
+    });
+
     document.getElementById('catalogAddNewsItem')?.addEventListener('click', () => {
         ensureCatalogState();
         const title = prompt('News title?');
@@ -9451,6 +10460,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (document.getElementById('custompc')?.classList.contains('active')) {
                 renderCustomPCPage();
             }
+            if (document.getElementById('used-shop')?.classList.contains('active')) {
+                renderUsedShopPage();
+            }
             showToast('Catalog saved');
         } catch (error) {
             console.error('Catalog save error:', error);
@@ -9523,6 +10535,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 showToast('Failed to clear orders: ' + error.message);
             }
             }
+        });
+
+        document.getElementById('createManualOrderBtn')?.addEventListener('click', () => {
+            openManualOrderModal();
+        });
+
+        document.getElementById('createCustomInvoiceBtn')?.addEventListener('click', () => {
+            openCustomInvoiceModal();
         });
 
         // Social links save

@@ -178,6 +178,159 @@ router.get('/mine', verifyToken, async (req, res) => {
 });
 
 /**
+ * Create a manual order from admin panel (admin only)
+ * POST /api/orders/admin/manual
+ */
+router.post('/admin/manual', verifyToken, verifyOrderManager, async (req, res) => {
+    try {
+        const {
+            customerName,
+            customerEmail,
+            customerPhone,
+            customerAddress,
+            customerCity,
+            customerZip,
+            country,
+            serviceType,
+            notes,
+            status,
+            item,
+            items
+        } = req.body || {};
+
+        const safeName = String(customerName || '').trim();
+        const safeEmail = String(customerEmail || '').trim().toLowerCase();
+        const safePhone = String(customerPhone || '').trim();
+        const safeAddress = String(customerAddress || '').trim();
+        const safeCity = String(customerCity || '').trim();
+        const safeZip = String(customerZip || '').trim();
+        const safeCountry = String(country || '').trim() || 'Czech Republic';
+        const safeServiceType = String(serviceType || 'pickup').trim().toLowerCase();
+        const safeStatus = String(status || 'pending').trim().toLowerCase();
+        const safeNotes = String(notes || '').trim();
+
+        const rawItems = Array.isArray(items)
+            ? items
+            : (item && typeof item === 'object' ? [item] : []);
+
+        const safeItems = rawItems.map((raw) => {
+            const source = raw && typeof raw === 'object' ? raw : {};
+            const priceRaw = typeof source.price === 'number'
+                ? source.price
+                : parseFloat(String(source.price || '0'));
+            const safePrice = Number.isFinite(priceRaw) ? Math.max(0, priceRaw) : NaN;
+
+            return {
+                device: String(source.device || '').trim().toLowerCase(),
+                brand: String(source.brand || '').trim(),
+                model: String(source.model || '').trim(),
+                repairType: String(source.repairType || 'manual').trim(),
+                repairName: String(source.repairName || '').trim(),
+                price: safePrice
+            };
+        }).filter((entry) => entry.repairName && Number.isFinite(entry.price));
+
+        if (!safeName || !safeEmail || !safePhone) {
+            return res.status(400).json({
+                success: false,
+                message: 'Customer name, email and phone are required'
+            });
+        }
+
+        const validServiceTypes = ['delivery', 'pickup', 'zasilkovna', 'ceska-posta', 'ppl', 'dpd', 'gls'];
+        if (!validServiceTypes.includes(safeServiceType)) {
+            return res.status(400).json({ success: false, message: 'Invalid service type' });
+        }
+
+        const validStatuses = ['pending', 'in-progress', 'waiting', 'delivering', 'completed', 'delivered', 'cancelled'];
+        if (!validStatuses.includes(safeStatus)) {
+            return res.status(400).json({ success: false, message: 'Invalid status' });
+        }
+
+        if (!safeItems.length) {
+            return res.status(400).json({
+                success: false,
+                message: 'At least one item with repair name and valid price is required'
+            });
+        }
+
+        const totalAmount = safeItems.reduce((sum, current) => sum + current.price, 0);
+
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        const orderNumber = `EZF-${Date.now()}-${randomSuffix}`;
+
+        const orderResult = await db.runAsync(
+            `INSERT INTO orders
+             (order_number, user_id, customer_name, customer_email, customer_phone,
+              customer_address, customer_city, customer_zip, service_type, delivery_fee,
+              payment_method, payment_fee, payment_status, packeta_point_json, country, total, notes, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                orderNumber,
+                null,
+                safeName,
+                safeEmail,
+                safePhone,
+                safeAddress || 'N/A',
+                safeCity,
+                safeZip,
+                safeServiceType,
+                0,
+                'manual',
+                0,
+                'pending',
+                null,
+                safeCountry,
+                totalAmount,
+                safeNotes,
+                safeStatus
+            ]
+        );
+
+        for (const safeItem of safeItems) {
+            await db.runAsync(
+                `INSERT INTO order_items
+                 (order_id, device, brand, model, repair_type, repair_name, price, printer, filament, color, parts, file_name)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    orderResult.lastID,
+                    safeItem.device || 'other',
+                    safeItem.brand || 'N/A',
+                    safeItem.model || 'N/A',
+                    safeItem.repairType,
+                    safeItem.repairName,
+                    safeItem.price,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                ]
+            );
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'Manual order created successfully',
+            order: {
+                id: orderResult.lastID,
+                orderNumber,
+                status: safeStatus,
+                total: totalAmount,
+                itemCount: safeItems.length
+            }
+        });
+    } catch (err) {
+        console.error('Create manual order error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create manual order',
+            error: err.message
+        });
+    }
+});
+
+/**
  * Get order details with items
  * GET /api/orders/:orderId
  */

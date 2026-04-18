@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EzFix Manager</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">EzFix Manager</div>
+      <div class="small">Windows desktop control panel</div>
+      <div class="status" id="connState">Disconnected</div>
+      <div class="sidebar-section">
+        <button class="tab-btn active" data-tab="orders">Orders</button>
+        <button class="tab-btn" data-tab="inventory">Inventory</button>
+      </div>
+      <div class="sidebar-footer" id="appVersion"></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1>EzFix Operations</h1>
+          <p>Orders, filters, 3D printing overview, and inventory.</p>
+        </div>
+        <div class="actions">
+          <button id="refreshBtn">Refresh</button>
+          <button id="printBtn">Print Current View</button>
+          <button id="logoutBtn" class="danger">Logout</button>
+        </div>
+      </header>
+
+      <section id="loginPanel" class="panel login-panel">
+        <h2>Login</h2>
+        <form id="loginForm">
+          <label>
+            API Base URL
+            <input id="apiBase" type="url" value="https://api.ezfix.cz/api" required />
+          </label>
+          <label>
+            Username or Email
+            <input id="username" type="text" required />
+          </label>
+          <label>
+            Password
+            <input id="password" type="password" required />
+          </label>
+          <button type="submit">Connect</button>
+        </form>
+        <p class="error" id="loginError"></p>
+      </section>
+
+      <section id="dashboard" class="hidden">
+        <section id="ordersTab" class="panel tab-content active">
+          <div class="cards">
+            <div class="card">
+              <h3>Total Orders</h3>
+              <div id="totalOrders">0</div>
+            </div>
+            <div class="card">
+              <h3>Filtered Revenue</h3>
+              <div id="filteredRevenue">0 Kč</div>
+            </div>
+            <div class="card">
+              <h3>3D Printing Orders</h3>
+              <div id="printingOrders">0</div>
+            </div>
+          </div>
+
+          <div class="filters">
+            <label>
+              Status
+              <select id="statusFilter">
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="waiting">Waiting</option>
+                <option value="in-progress">In Progress</option>
+                <option value="delivering">Delivering</option>
+                <option value="completed">Completed</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </label>
+            <label>
+              Type
+              <select id="typeFilter">
+                <option value="all">All</option>
+                <option value="repairs">Repairs</option>
+                <option value="custom-pc">Custom PC</option>
+                <option value="3d-printing">3D Printing</option>
+                <option value="other">Other Items</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Customer</th>
+                  <th>Status</th>
+                  <th>Type</th>
+                  <th>Total</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="inventoryTab" class="panel tab-content">
+          <h2>Inventory</h2>
+          <p class="small">Loaded from /catalog printing and shop items.</p>
+
+          <div class="inventory-grid">
+            <div class="inventory-block">
+              <h3>Printers</h3>
+              <ul id="printersList"></ul>
+            </div>
+            <div class="inventory-block">
+              <h3>Filaments</h3>
+              <ul id="filamentsList"></ul>
+            </div>
+            <div class="inventory-block">
+              <h3>Other Items</h3>
+              <ul id="otherItemsList"></ul>
+            </div>
+            <div class="inventory-block">
+              <h3>Used Shop</h3>
+              <ul id="usedItemsList"></ul>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

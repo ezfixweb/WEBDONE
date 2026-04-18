@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ezfix.cz/sitemap.xml
