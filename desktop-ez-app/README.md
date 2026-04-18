@@ -67,10 +67,12 @@ Installer/uninstaller improvements already enabled:
 
 This app is configured to check updates after startup and periodically while running.
 
-When a newer GitHub release exists, users get:
+When a newer GitHub release exists:
 
-1. prompt to download update
-2. prompt to restart and install when download completes
+1. app downloads the update automatically in background
+2. update installs automatically on next app restart/close
+
+For end users this is simple: install once, then just use the app and restart it normally.
 
 ### How to publish an update (maintainer)
 

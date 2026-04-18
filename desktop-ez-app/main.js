@@ -1,5 +1,5 @@
 const path = require('path');
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow } = require('electron');
 const { autoUpdater } = require('electron-updater');
 
 let mainWindow = null;
@@ -32,24 +32,8 @@ function configureAutoUpdater() {
     return;
   }
 
-  autoUpdater.autoDownload = false;
+  autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
-
-  autoUpdater.on('update-available', async (info) => {
-    const response = await dialog.showMessageBox(mainWindow, {
-      type: 'info',
-      title: 'Aktualizace dostupna',
-      message: `Nova verze ${info.version} je k dispozici.`,
-      detail: 'Chcete ji stahnout a nainstalovat po restartu aplikace?',
-      buttons: ['Stahnout aktualizaci', 'Pozdeji'],
-      defaultId: 0,
-      cancelId: 1
-    });
-
-    if (response.response === 0) {
-      autoUpdater.downloadUpdate();
-    }
-  });
 
   autoUpdater.on('download-progress', (progress) => {
     if (mainWindow) {
@@ -57,24 +41,11 @@ function configureAutoUpdater() {
     }
   });
 
-  autoUpdater.on('update-downloaded', async (info) => {
+  autoUpdater.on('update-downloaded', (info) => {
     if (mainWindow) {
       mainWindow.setProgressBar(-1);
     }
-
-    const response = await dialog.showMessageBox(mainWindow, {
-      type: 'info',
-      title: 'Aktualizace pripravena',
-      message: `Verze ${info.version} je stazena a pripravená k instalaci.`,
-      detail: 'Chcete aplikaci restartovat a nainstalovat aktualizaci?',
-      buttons: ['Restartovat a nainstalovat', 'Pozdeji'],
-      defaultId: 0,
-      cancelId: 1
-    });
-
-    if (response.response === 0) {
-      setImmediate(() => autoUpdater.quitAndInstall());
-    }
+    console.log(`[auto-update] Version ${info.version} downloaded; it will install on next app restart.`);
   });
 
   autoUpdater.on('error', (err) => {
