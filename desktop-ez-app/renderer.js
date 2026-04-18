@@ -195,25 +195,64 @@ function refreshOwnerUiVisibility() {
 
 function renderUsers() {
   if (!isOwner()) {
-    usersTableBody.innerHTML = '<tr><td colspan="4">Nemáte oprávnění k zobrazení uživatelů.</td></tr>';
+    usersTableBody.innerHTML = '<tr><td colspan="5">Nemáte oprávnění k zobrazení uživatelů.</td></tr>';
     return;
   }
 
   if (!Array.isArray(state.users) || state.users.length === 0) {
-    usersTableBody.innerHTML = '<tr><td colspan="4">Žádní uživatelé.</td></tr>';
+    usersTableBody.innerHTML = '<tr><td colspan="5">Žádní uživatelé.</td></tr>';
     return;
   }
 
   usersTableBody.innerHTML = state.users.map((user) => {
+    const isSelf = Number(user.id) === Number(state.currentUser?.id);
+    const isOwnerAccount = String(user.role || '').toLowerCase() === 'owner';
+    const deleteDisabled = isSelf || isOwnerAccount;
+    const deleteTitle = isSelf
+      ? 'Nelze smazat vlastní účet'
+      : (isOwnerAccount ? 'Nelze smazat účet owner' : 'Smazat uživatele');
+
     return `
       <tr>
         <td>${escapeHtml(user.username || '-')}</td>
         <td>${escapeHtml(user.email || '-')}</td>
         <td>${escapeHtml(formatRoleLabel(user.role))}</td>
         <td>${formatDate(user.created_at)}</td>
+        <td>
+          <button class="danger" data-user-delete="${user.id}" ${deleteDisabled ? 'disabled' : ''} title="${escapeHtml(deleteTitle)}">Smazat</button>
+        </td>
       </tr>
     `;
   }).join('');
+
+  usersTableBody.querySelectorAll('[data-user-delete]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const userId = button.getAttribute('data-user-delete');
+      if (!userId) return;
+      button.disabled = true;
+      try {
+        await deleteUserById(userId);
+      } catch (error) {
+        alert(error.message || 'Smazání uživatele selhalo');
+        button.disabled = false;
+      }
+    });
+  });
+}
+
+async function deleteUserById(userId) {
+  if (!isOwner()) {
+    showToast('Pouze owner může mazat uživatele');
+    return;
+  }
+
+  await apiFetch(`/admin/users/${userId}`, {
+    method: 'DELETE'
+  });
+
+  state.users = state.users.filter((user) => String(user.id) !== String(userId));
+  renderUsers();
+  showToast('Uživatel byl smazán');
 }
 
 async function loadUsers() {

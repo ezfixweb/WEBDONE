@@ -129,5 +129,6 @@ Notes:
 - CSV and XLSX export
 - Inventory edit mode with save to API
 - User management tab for creating additional login accounts (owner only)
+- One-click delete user action in User management (owner only)
 - Notification settings (interval, toggle, sound)
 - Czech UI labels and EzFix branding
