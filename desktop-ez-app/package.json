@@ -7,9 +7,11 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win",
+    "dist:publish": "electron-builder --win --publish always"
   },
   "dependencies": {
+    "electron-updater": "^6.3.9",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -24,6 +26,23 @@
       "target": [
         "nsis"
       ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "EzFix Manager",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": true,
+      "uninstallDisplayName": "EzFix Manager"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "ezfixweb",
+      "repo": "WEBDONE",
+      "releaseType": "release"
     }
   }
 }

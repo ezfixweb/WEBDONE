@@ -56,6 +56,38 @@ Recommended: build on Windows host.
 4. Find output in:
   - `desktop-ez-app/dist`
 
+Installer/uninstaller improvements already enabled:
+
+- selectable install directory
+- desktop and start-menu shortcuts
+- uninstall entry name is clear (`EzFix Manager`)
+- app data cleanup on uninstall
+
+## Auto-update from GitHub releases
+
+This app is configured to check updates after startup and periodically while running.
+
+When a newer GitHub release exists, users get:
+
+1. prompt to download update
+2. prompt to restart and install when download completes
+
+### How to publish an update (maintainer)
+
+1. Increase version in `desktop-ez-app/package.json`.
+2. Commit and push the version change.
+3. On Windows in `desktop-ez-app`, set GitHub token for publishing:
+  - CMD: `set GH_TOKEN=your_github_token`
+  - PowerShell: `$env:GH_TOKEN="your_github_token"`
+4. Build and publish release assets:
+  - `npm install`
+  - `npm run dist:publish`
+
+Important:
+
+- `GH_TOKEN` must have repo release permissions.
+- If you only run `npm run dist`, it builds installer locally but does not publish updates.
+
 ## Troubleshooting: winCodeSign / symbolic link error on Windows
 
 If you see an error like `Cannot create symbolic link` or `exit status 2` while building:
