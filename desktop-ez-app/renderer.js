@@ -6,6 +6,7 @@ const state = {
   catalog: null,
   activeTab: 'orders',
   expandedOrderId: null,
+  fullscreenOrderId: null,
   inventoryEditMode: false,
   inventoryDraft: null,
   knownOrderIds: new Set(),
@@ -26,6 +27,147 @@ const toast = document.getElementById('toast');
 const usersTabBtn = document.getElementById('usersTabBtn');
 const usersHint = document.getElementById('usersHint');
 const usersTableBody = document.getElementById('usersTableBody');
+const orderFullscreenModal = document.getElementById('orderFullscreenModal');
+const orderFullscreenContent = document.getElementById('orderFullscreenContent');
+
+const ORDER_STATUSES = ['pending', 'waiting', 'in-progress', 'delivering', 'completed', 'delivered', 'cancelled'];
+
+function canManageOrders() {
+  const role = String(state.currentUser?.role || '').toLowerCase();
+  return role === 'worker' || role === 'manager' || role === 'owner';
+}
+
+function statusLabel(status) {
+  const map = {
+    pending: 'Čeká na potvrzení',
+    waiting: 'Čeká',
+    'in-progress': 'Rozpracováno',
+    delivering: 'Doručování',
+    completed: 'Dokončeno',
+    delivered: 'Doručeno',
+    cancelled: 'Zrušeno'
+  };
+  return map[String(status || '').toLowerCase()] || String(status || '-');
+}
+
+function statusOptionsHtml(currentStatus) {
+  return ORDER_STATUSES.map((status) => {
+    const selected = String(currentStatus || '') === status ? 'selected' : '';
+    return `<option value="${status}" ${selected}>${statusLabel(status)}</option>`;
+  }).join('');
+}
+
+function patchLocalOrderStatus(orderId, status) {
+  const id = String(orderId);
+  const target = state.orders.find((order) => String(order.id) === id);
+  if (target) {
+    target.status = status;
+  }
+
+  const detail = state.detailsById.get(id);
+  if (detail) {
+    detail.status = status;
+    state.detailsById.set(id, detail);
+  }
+}
+
+async function updateOrderStatus(orderId, nextStatus) {
+  if (!canManageOrders()) {
+    showToast('Nemáte oprávnění měnit stav objednávek');
+    return;
+  }
+
+  await apiFetch(`/orders/${orderId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: nextStatus })
+  });
+
+  patchLocalOrderStatus(orderId, nextStatus);
+  renderOrders();
+  renderOrderFullscreen();
+  showToast('Stav objednávky byl změněn a e-mail byl odeslán backendem');
+}
+
+function renderOrderFullscreen() {
+  if (!state.fullscreenOrderId) {
+    orderFullscreenContent.innerHTML = '';
+    return;
+  }
+
+  const order = state.orders.find((x) => String(x.id) === String(state.fullscreenOrderId));
+  if (!order) {
+    orderFullscreenContent.innerHTML = '<p>Objednávka nebyla nalezena.</p>';
+    return;
+  }
+
+  const details = state.detailsById.get(String(order.id)) || {};
+  const items = getOrderItems(order.id);
+  const canEditStatus = canManageOrders();
+
+  orderFullscreenContent.innerHTML = `
+    <div class="overlay-meta">
+      <div><strong>Objednávka:</strong><br>${escapeHtml(order.order_number || order.id)}</div>
+      <div><strong>Zákazník:</strong><br>${escapeHtml(order.customer_name || '-')}</div>
+      <div><strong>Vytvořeno:</strong><br>${formatDate(order.created_at)}</div>
+      <div><strong>E-mail:</strong><br>${escapeHtml(order.customer_email || '-')}</div>
+      <div><strong>Telefon:</strong><br>${escapeHtml(order.customer_phone || '-')}</div>
+      <div><strong>Adresa:</strong><br>${escapeHtml(order.customer_address || '-')}</div>
+      <div><strong>Stav:</strong><br>${escapeHtml(statusLabel(order.status))}</div>
+      <div><strong>Typ:</strong><br>${escapeHtml(toOrderTypeLabel(classifyOrder(details)))}</div>
+      <div><strong>Celkem:</strong><br>${formatMoney(order.total)}</div>
+    </div>
+
+    ${canEditStatus ? `
+      <div class="status-edit">
+        <strong>Změna stavu:</strong>
+        <select id="orderStatusSelectModal-${order.id}">
+          ${statusOptionsHtml(order.status)}
+        </select>
+        <button data-order-status-save="${order.id}" data-select-id="orderStatusSelectModal-${order.id}">Uložit stav + e-mail</button>
+      </div>
+    ` : ''}
+
+    <div class="overlay-items">
+      ${items.length > 0 ? items.map((item) => `
+        <div class="overlay-item">
+          <div><strong>Zařízení:</strong> ${escapeHtml(item.device || '-')}</div>
+          <div><strong>Značka/Model:</strong> ${escapeHtml(item.brand || '-')} ${escapeHtml(item.model || '-')}</div>
+          <div><strong>Služba:</strong> ${escapeHtml(item.repair_name || item.repair_type || 'servis')}</div>
+          <div><strong>Cena:</strong> ${formatMoney(item.price || 0)}</div>
+        </div>
+      `).join('') : '<p>Tato objednávka nemá položky.</p>'}
+    </div>
+  `;
+
+  orderFullscreenContent.querySelectorAll('[data-order-status-save]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const targetId = button.getAttribute('data-order-status-save');
+      const selectId = button.getAttribute('data-select-id');
+      const select = selectId ? document.getElementById(selectId) : null;
+      if (!targetId || !select) return;
+      button.disabled = true;
+      try {
+        await updateOrderStatus(targetId, select.value);
+      } catch (error) {
+        alert(error.message || 'Změna stavu selhala');
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+}
+
+function openOrderFullscreen(orderId) {
+  state.fullscreenOrderId = String(orderId);
+  renderOrderFullscreen();
+  orderFullscreenModal.classList.remove('hidden');
+}
+
+function closeOrderFullscreen() {
+  state.fullscreenOrderId = null;
+  orderFullscreenModal.classList.add('hidden');
+  orderFullscreenContent.innerHTML = '';
+}
 
 function isOwner() {
   return String(state.currentUser?.role || '').toLowerCase() === 'owner';
@@ -228,6 +370,8 @@ function renderOrders() {
     const isExpanded = state.expandedOrderId === String(order.id);
     const items = getOrderItems(order.id);
 
+    const canEditStatus = canManageOrders();
+
     const detailRow = isExpanded
       ? `
         <tr class="details-row">
@@ -251,6 +395,15 @@ function renderOrders() {
                   `).join('')}
                 </ul>
               ` : '<div class="small">Tato objednávka nemá položky k zobrazení.</div>'}
+              ${canEditStatus ? `
+                <div class="status-edit">
+                  <strong>Změna stavu:</strong>
+                  <select id="orderStatusSelectInline-${order.id}">
+                    ${statusOptionsHtml(order.status)}
+                  </select>
+                  <button data-order-status-save="${order.id}" data-select-id="orderStatusSelectInline-${order.id}">Uložit stav + e-mail</button>
+                </div>
+              ` : ''}
             </div>
           </td>
         </tr>
@@ -259,10 +412,15 @@ function renderOrders() {
 
     return `
       <tr>
-        <td><button class="details-btn" data-order-toggle="${order.id}">${isExpanded ? 'Skryt' : 'Otevřít'}</button></td>
+        <td>
+          <div class="details-actions">
+            <button class="details-btn" data-order-toggle="${order.id}">${isExpanded ? 'Skryt' : 'Otevřít'}</button>
+            <button class="details-btn" data-order-fullscreen="${order.id}">Celá obrazovka</button>
+          </div>
+        </td>
         <td>${escapeHtml(order.order_number || order.id)}</td>
         <td>${escapeHtml(order.customer_name || '-')}</td>
-        <td>${escapeHtml(order.status || '-')}</td>
+        <td>${escapeHtml(statusLabel(order.status || '-'))}</td>
         <td>${escapeHtml(toOrderTypeLabel(type))}</td>
         <td>${formatMoney(order.total)}</td>
         <td>${formatDate(order.created_at)}</td>
@@ -276,6 +434,31 @@ function renderOrders() {
       const targetId = String(button.getAttribute('data-order-toggle') || '');
       state.expandedOrderId = state.expandedOrderId === targetId ? null : targetId;
       renderOrders();
+    });
+  });
+
+  ordersTableBody.querySelectorAll('[data-order-fullscreen]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const targetId = button.getAttribute('data-order-fullscreen');
+      if (!targetId) return;
+      openOrderFullscreen(targetId);
+    });
+  });
+
+  ordersTableBody.querySelectorAll('[data-order-status-save]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const targetId = button.getAttribute('data-order-status-save');
+      const selectId = button.getAttribute('data-select-id');
+      const select = selectId ? document.getElementById(selectId) : null;
+      if (!targetId || !select) return;
+      button.disabled = true;
+      try {
+        await updateOrderStatus(targetId, select.value);
+      } catch (error) {
+        alert(error.message || 'Změna stavu selhala');
+      } finally {
+        button.disabled = false;
+      }
     });
   });
 }
@@ -439,6 +622,7 @@ async function loadDashboardData(options = {}) {
   await loadDetailsForOrders(state.orders);
 
   renderOrders();
+  renderOrderFullscreen();
 
   if (!state.inventoryEditMode) {
     state.inventoryDraft = cloneCatalog(state.catalog);
@@ -755,6 +939,12 @@ async function bootstrap() {
   });
 
   document.getElementById('createUserForm').addEventListener('submit', createUserFromForm);
+  document.getElementById('closeOrderFullscreenBtn').addEventListener('click', closeOrderFullscreen);
+  orderFullscreenModal.addEventListener('click', (event) => {
+    if (event.target === orderFullscreenModal) {
+      closeOrderFullscreen();
+    }
+  });
   document.getElementById('usersRefreshBtn').addEventListener('click', async () => {
     if (!state.token) return;
     try {

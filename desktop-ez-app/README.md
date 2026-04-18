@@ -123,6 +123,9 @@ Notes:
 ## Features included
 
 - Orders list with filters and inline detail drawer
+- Full-screen order detail panel (Celá obrazovka)
+- Order status change directly from desktop (`PATCH /orders/:id`)
+- Status change uses backend flow that sends customer status email
 - CSV and XLSX export
 - Inventory edit mode with save to API
 - User management tab for creating additional login accounts (owner only)
