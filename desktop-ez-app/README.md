@@ -8,15 +8,24 @@ This is a Windows desktop management app for EzFix operations.
 - Full orders list with filters:
   - status
   - type (`repairs`, `custom-pc`, `3d-printing`, `other`)
+- Inline order detail drawer with item-level breakdown
 - Summary cards:
   - total orders
   - filtered revenue
   - 3D printing order count
+- Export filtered orders to:
+  - CSV
+  - Excel (`.xlsx`, SheetJS)
 - Inventory view from `/catalog`:
   - printers
   - filaments
   - other items
   - used shop items
+- Inventory edit mode with add/remove and save back to API (`PUT /catalog`)
+- New order notifications with settings:
+  - auto-refresh toggle
+  - polling interval (15s/30s/60s/120s)
+  - toast and optional sound
 - Print current view for quick reporting
 
 ## Setup
@@ -43,6 +52,7 @@ The app expects your backend API endpoints:
 - `GET /orders`
 - `GET /orders/:id`
 - `GET /catalog`
+- `PUT /catalog`
 
 Base URL defaults to:
 `https://api.ezfix.cz/api`
