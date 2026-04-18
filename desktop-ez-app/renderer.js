@@ -39,8 +39,8 @@ function formatMoney(value) {
 
 function toOrderTypeLabel(type) {
   if (type === '3d-printing') return '3D tisk';
-  if (type === 'custom-pc') return 'Vlastni PC';
-  if (type === 'other') return 'Ostatni';
+  if (type === 'custom-pc') return 'Vlastní PC';
+  if (type === 'other') return 'Ostatní';
   return 'Opravy';
 }
 
@@ -139,7 +139,7 @@ function renderOrders() {
         <tr class="details-row">
           <td colspan="7">
             <div class="order-details">
-              <h4>Objednavka ${escapeHtml(order.order_number || order.id)}</h4>
+              <h4>Objednávka ${escapeHtml(order.order_number || order.id)}</h4>
               <div class="order-meta">
                 <span>E-mail: ${escapeHtml(order.customer_email || '-')}</span>
                 <span>Telefon: ${escapeHtml(order.customer_phone || '-')}</span>
@@ -156,7 +156,7 @@ function renderOrders() {
                     </li>
                   `).join('')}
                 </ul>
-              ` : '<div class="small">Tato objednavka nema polozky k zobrazeni.</div>'}
+              ` : '<div class="small">Tato objednávka nemá položky k zobrazení.</div>'}
             </div>
           </td>
         </tr>
@@ -165,7 +165,7 @@ function renderOrders() {
 
     return `
       <tr>
-        <td><button class="details-btn" data-order-toggle="${order.id}">${isExpanded ? 'Skryt' : 'Otevrit'}</button></td>
+        <td><button class="details-btn" data-order-toggle="${order.id}">${isExpanded ? 'Skryt' : 'Otevřít'}</button></td>
         <td>${escapeHtml(order.order_number || order.id)}</td>
         <td>${escapeHtml(order.customer_name || '-')}</td>
         <td>${escapeHtml(order.status || '-')}</td>
@@ -203,22 +203,22 @@ function ensureInventoryArrays(catalog) {
 function createInventoryItem(kind) {
   const stamp = Date.now();
   if (kind === 'printers') {
-    return { id: `printer-${stamp}`, name: 'Nova tiskarna', active: true };
+    return { id: `printer-${stamp}`, name: 'Nová tiskarna', active: true };
   }
   if (kind === 'filaments') {
-    return { id: `filament-${stamp}`, name: 'Novy filament', active: true };
+    return { id: `filament-${stamp}`, name: 'Nový filament', active: true };
   }
   if (kind === 'usedShopItems') {
-    return { id: `used-${stamp}`, name: 'Nova bazarova polozka', price: 0, active: true };
+    return { id: `used-${stamp}`, name: 'Nová bazarová polozka', price: 0, active: true };
   }
-  return { id: `item-${stamp}`, name: 'Nova polozka', price: 0, active: true };
+  return { id: `item-${stamp}`, name: 'Nová polozka', price: 0, active: true };
 }
 
 function buildInventoryList(listId, list, kind) {
   const html = list
     .filter((x) => x && (state.inventoryEditMode || x.active !== false))
     .map((item, index) => {
-      const name = escapeHtml(item.name || item.id || 'Polozka');
+      const name = escapeHtml(item.name || item.id || 'Položka');
       const price = Number(item.price || 0);
       const safePrice = Number.isFinite(price) ? price : 0;
 
@@ -232,7 +232,7 @@ function buildInventoryList(listId, list, kind) {
       return `
         <li class="inventory-edit-item">
           <div class="inventory-edit-row">
-            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="name" value="${escapeHtml(item.name || '')}" placeholder="Nazev" />
+            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="name" value="${escapeHtml(item.name || '')}" placeholder="Název" />
             <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="price" type="number" step="0.01" value="${safePrice}" placeholder="Cena" />
             <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="active" value="${item.active === false ? 'false' : 'true'}" placeholder="true/false" />
           </div>
@@ -242,7 +242,7 @@ function buildInventoryList(listId, list, kind) {
       `;
     }).join('');
 
-  document.getElementById(listId).innerHTML = html || '<li>Zadne polozky</li>';
+  document.getElementById(listId).innerHTML = html || '<li>Žádné položky</li>';
 }
 
 function renderInventory() {
@@ -322,7 +322,7 @@ function syncKnownOrderIds(orders, notify) {
       if (!state.knownOrderIds.has(id)) newCount += 1;
     });
     if (newCount > 0) {
-      showToast(`Nove objednavky: ${newCount}`);
+      showToast(`Nové objednávky: ${newCount}`);
       playNotificationTone();
     }
   }
@@ -359,7 +359,7 @@ async function loadDashboardData(options = {}) {
 function setConnectedUi(connected) {
   loginPanel.classList.toggle('hidden', connected);
   dashboard.classList.toggle('hidden', !connected);
-  connState.textContent = connected ? 'Pripojeno' : 'Odpojeno';
+  connState.textContent = connected ? 'Připojeno' : 'Odpojeno';
   connState.style.color = connected ? '#22c55e' : '#38bdf8';
 }
 
@@ -430,7 +430,7 @@ function downloadBlob(filename, mimeType, content) {
 
 function exportCsv() {
   const rows = buildOrdersExportRows();
-  const headers = ['Objednavka ID', 'Zakaznik', 'E-mail', 'Telefon', 'Stav', 'Typ', 'Cena', 'Vytvoreno', 'Polozky'];
+  const headers = ['Objednávka ID', 'Zákazník', 'E-mail', 'Telefon', 'Stav', 'Typ', 'Cena', 'Vytvořeno', 'Položky'];
   const lines = [headers.map(makeCsvValue).join(',')];
 
   rows.forEach((row) => {
@@ -448,33 +448,33 @@ function exportCsv() {
   });
 
   downloadBlob(`ezfix-orders-${Date.now()}.csv`, 'text/csv;charset=utf-8;', `\ufeff${lines.join('\n')}`);
-  showToast('CSV export byl vytvoren');
+  showToast('CSV export byl vytvořen');
 }
 
 function exportExcel() {
   const rows = buildOrdersExportRows();
   if (!window.XLSX) {
-    showToast('Knihovna pro Excel chybi. Spust npm install v desktop-ez-app.');
+    showToast('Knihovna pro Excel chybí. Spusť npm install v desktop-ez-app.');
     return;
   }
 
   const exportRows = rows.map((row) => ({
-    'Objednavka ID': row.orderId,
-    Zakaznik: row.customer,
+    'Objednávka ID': row.orderId,
+    Zákazník: row.customer,
     'E-mail': row.email,
     Telefon: row.phone,
     Stav: row.status,
     Typ: toOrderTypeLabel(row.type),
     Cena: Number(row.total),
-    Vytvoreno: row.createdAt,
-    Polozky: row.items
+    Vytvořeno: row.createdAt,
+    Položky: row.items
   }));
 
   const worksheet = window.XLSX.utils.json_to_sheet(exportRows);
   const workbook = window.XLSX.utils.book_new();
-  window.XLSX.utils.book_append_sheet(workbook, worksheet, 'Objednavky');
+  window.XLSX.utils.book_append_sheet(workbook, worksheet, 'Objednávky');
   window.XLSX.writeFile(workbook, `ezfix-orders-${Date.now()}.xlsx`);
-  showToast('XLSX export byl vytvoren');
+  showToast('XLSX export byl vytvořen');
 }
 
 function showToast(message) {
@@ -541,7 +541,7 @@ async function saveInventoryDraft() {
   });
   state.catalog = cloneCatalog(state.inventoryDraft);
   setInventoryEditMode(false);
-  showToast('Sklad byl ulozen');
+  showToast('Sklad byl uložen');
 }
 
 async function onLoginSubmit(event) {
@@ -568,9 +568,9 @@ async function onLoginSubmit(event) {
     setConnectedUi(true);
     await loadDashboardData({ silent: true });
     startPolling();
-    showToast('Pripojeno');
+    showToast('Připojeno');
   } catch (error) {
-    loginError.textContent = error.message || 'Prihlaseni selhalo';
+    loginError.textContent = error.message || 'Přihlášení selhalo';
   }
 }
 
@@ -587,7 +587,7 @@ async function bootstrap() {
     try {
       await loadDashboardData();
     } catch (error) {
-      alert(error.message || 'Obnoveni selhalo');
+      alert(error.message || 'Obnovení selhalo');
     }
   });
 
@@ -625,14 +625,14 @@ async function bootstrap() {
 
   document.getElementById('inventoryCancelBtn').addEventListener('click', () => {
     setInventoryEditMode(false);
-    showToast('Zmeny skladu byly zruseny');
+    showToast('Změny skladu byly zrušeny');
   });
 
   document.getElementById('inventorySaveBtn').addEventListener('click', async () => {
     try {
       await saveInventoryDraft();
     } catch (error) {
-      alert(error.message || 'Ulozeni skladu selhalo');
+      alert(error.message || 'Uložení skladu selhalo');
     }
   });
 

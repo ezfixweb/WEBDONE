@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EzFix Sprava</title>
+  <title>EzFix Správa</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -11,22 +11,22 @@
     <aside class="sidebar">
       <div class="brand">
         <img src="../assets/logos/ezfix-logo.png" alt="EzFix logo" class="brand-logo" />
-        <span>EzFix Sprava</span>
+        <span>EzFix Správa</span>
       </div>
-      <div class="small">Desktop panel pro provoz a objednavky</div>
+      <div class="small">Desktop panel pro provoz a objednávky</div>
       <div class="status" id="connState">Odpojeno</div>
       <div class="sidebar-section">
-        <button class="tab-btn active" data-tab="orders">Objednavky</button>
+        <button class="tab-btn active" data-tab="orders">Objednávky</button>
         <button class="tab-btn" data-tab="inventory">Sklad</button>
       </div>
       <div class="sidebar-settings">
-        <div class="small">Upozorneni</div>
+        <div class="small">Upozornění</div>
         <label class="check-row">
           <input id="notifEnabled" type="checkbox" checked />
-          Zapnout automaticka upozorneni
+          Zapnout automatická upozorneni
         </label>
         <label>
-          Interval obnoveni
+          Interval obnovení
           <select id="pollInterval">
             <option value="15000">15s</option>
             <option value="30000" selected>30s</option>
@@ -45,34 +45,34 @@
     <main class="main">
       <header class="topbar">
         <div>
-          <h1>EzFix Provozni Panel</h1>
-          <p>Objednavky, filtry, 3D tisk a prehled skladu.</p>
+          <h1>EzFix Provozní Panel</h1>
+          <p>Objednávky, filtry, 3D tisk a přehled skladu.</p>
         </div>
         <div class="actions">
           <button id="refreshBtn">Obnovit</button>
           <button id="exportCsvBtn">Export CSV</button>
           <button id="exportExcelBtn">Export XLSX</button>
-          <button id="printBtn">Tisk aktualniho zobrazeni</button>
-          <button id="logoutBtn" class="danger">Odhlasit</button>
+          <button id="printBtn">Tisk aktuálního zobrazení</button>
+          <button id="logoutBtn" class="danger">Odhlásit</button>
         </div>
       </header>
 
       <section id="loginPanel" class="panel login-panel">
-        <h2>Prihlaseni</h2>
+        <h2>Přihlášení</h2>
         <form id="loginForm">
           <label>
             API adresa
             <input id="apiBase" type="url" value="https://api.ezfix.cz/api" required />
           </label>
           <label>
-            Uzivatelske jmeno nebo e-mail
+            Uživatelské jméno nebo e-mail
             <input id="username" type="text" required />
           </label>
           <label>
             Heslo
             <input id="password" type="password" required />
           </label>
-          <button type="submit">Pripojit</button>
+          <button type="submit">Připojit</button>
         </form>
         <p class="error" id="loginError"></p>
       </section>
@@ -81,15 +81,15 @@
         <section id="ordersTab" class="panel tab-content active">
           <div class="cards">
             <div class="card">
-              <h3>Celkem objednavek</h3>
+              <h3>Celkem objednávek</h3>
               <div id="totalOrders">0</div>
             </div>
             <div class="card">
-              <h3>Trzba ve filtru</h3>
+              <h3>Tržba ve filtru</h3>
               <div id="filteredRevenue">0 Kč</div>
             </div>
             <div class="card">
-              <h3>Objednavky 3D tisku</h3>
+              <h3>Objednávky 3D tisku</h3>
               <div id="printingOrders">0</div>
             </div>
           </div>
@@ -99,13 +99,13 @@
               Stav
               <select id="statusFilter">
                 <option value="all">Vse</option>
-                <option value="pending">Ceka na potvrzeni</option>
-                <option value="waiting">Ceka</option>
+                <option value="pending">Čeká na potvrzeni</option>
+                <option value="waiting">Čeká</option>
                 <option value="in-progress">Rozpracovano</option>
-                <option value="delivering">Dorucovani</option>
-                <option value="completed">Dokonceno</option>
-                <option value="delivered">Doruceno</option>
-                <option value="cancelled">Zruseno</option>
+                <option value="delivering">Doručování</option>
+                <option value="completed">Dokončeno</option>
+                <option value="delivered">Doručeno</option>
+                <option value="cancelled">Zrušeno</option>
               </select>
             </label>
             <label>
@@ -113,9 +113,9 @@
               <select id="typeFilter">
                 <option value="all">Vse</option>
                 <option value="repairs">Opravy</option>
-                <option value="custom-pc">Vlastni PC</option>
+                <option value="custom-pc">Vlastní PC</option>
                 <option value="3d-printing">3D tisk</option>
-                <option value="other">Ostatni</option>
+                <option value="other">Ostatní</option>
               </select>
             </label>
           </div>
@@ -125,12 +125,12 @@
               <thead>
                 <tr>
                   <th>Detail</th>
-                  <th>Objednavka #</th>
-                  <th>Zakaznik</th>
+                  <th>Objednávka #</th>
+                  <th>Zákazník</th>
                   <th>Stav</th>
                   <th>Typ</th>
                   <th>Cena</th>
-                  <th>Vytvoreno</th>
+                  <th>Vytvořeno</th>
                 </tr>
               </thead>
               <tbody id="ordersTableBody"></tbody>
@@ -143,31 +143,31 @@
             <h2>Sklad</h2>
             <div class="inventory-actions">
               <button id="inventoryEditBtn">Upravit sklad</button>
-              <button id="inventorySaveBtn" class="hidden">Ulozit zmeny</button>
-              <button id="inventoryCancelBtn" class="hidden">Zrusit</button>
+              <button id="inventorySaveBtn" class="hidden">Uložit zmeny</button>
+              <button id="inventoryCancelBtn" class="hidden">Zrušit</button>
             </div>
           </div>
-          <p class="small">Nacitano z /catalog (3D tisk, shop a bazar).</p>
+          <p class="small">Načítáno z /catalog (3D tisk, shop a bazar).</p>
 
           <div class="inventory-grid">
             <div class="inventory-block">
-              <h3>Tiskarny</h3>
-              <button class="inventory-add-btn hidden" data-inv-add="printers">Pridat tiskarnu</button>
+              <h3>Tiskárny</h3>
+              <button class="inventory-add-btn hidden" data-inv-add="printers">Přidat tiskarnu</button>
               <ul id="printersList"></ul>
             </div>
             <div class="inventory-block">
               <h3>Filamenty</h3>
-              <button class="inventory-add-btn hidden" data-inv-add="filaments">Pridat filament</button>
+              <button class="inventory-add-btn hidden" data-inv-add="filaments">Přidat filament</button>
               <ul id="filamentsList"></ul>
             </div>
             <div class="inventory-block">
-              <h3>Ostatni polozky</h3>
-              <button class="inventory-add-btn hidden" data-inv-add="otherItems">Pridat polozku</button>
+              <h3>Ostatní položky</h3>
+              <button class="inventory-add-btn hidden" data-inv-add="otherItems">Přidat položku</button>
               <ul id="otherItemsList"></ul>
             </div>
             <div class="inventory-block">
               <h3>Bazar</h3>
-              <button class="inventory-add-btn hidden" data-inv-add="usedShopItems">Pridat bazarovou polozku</button>
+              <button class="inventory-add-btn hidden" data-inv-add="usedShopItems">Přidat bazarovou položku</button>
               <ul id="usedItemsList"></ul>
             </div>
           </div>
