@@ -29,6 +29,7 @@ const usersHint = document.getElementById('usersHint');
 const usersTableBody = document.getElementById('usersTableBody');
 const orderFullscreenModal = document.getElementById('orderFullscreenModal');
 const orderFullscreenContent = document.getElementById('orderFullscreenContent');
+const statusChangePopup = document.getElementById('statusChangePopup');
 
 const ORDER_STATUSES = ['pending', 'waiting', 'in-progress', 'delivering', 'completed', 'delivered', 'cancelled'];
 
@@ -48,6 +49,15 @@ function statusLabel(status) {
     cancelled: 'Zrušeno'
   };
   return map[String(status || '').toLowerCase()] || String(status || '-');
+}
+
+function statusClass(status) {
+  return String(status || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+}
+
+function statusPillHtml(status) {
+  const cls = statusClass(status);
+  return `<span class="order-status-pill ${cls}">${escapeHtml(statusLabel(status))}</span>`;
 }
 
 function statusOptionsHtml(currentStatus) {
@@ -77,6 +87,13 @@ async function updateOrderStatus(orderId, nextStatus) {
     return;
   }
 
+  const current = state.orders.find((order) => String(order.id) === String(orderId));
+  const previousStatus = current?.status;
+  if (String(previousStatus || '') === String(nextStatus || '')) {
+    showToast('Stav objednávky je už nastaven na tuto hodnotu');
+    return;
+  }
+
   await apiFetch(`/orders/${orderId}`, {
     method: 'PATCH',
     body: JSON.stringify({ status: nextStatus })
@@ -86,6 +103,18 @@ async function updateOrderStatus(orderId, nextStatus) {
   renderOrders();
   renderOrderFullscreen();
   showToast('Stav objednávky byl změněn a e-mail byl odeslán backendem');
+
+  const orderNumber = current?.order_number || current?.id || orderId;
+  showStatusChangePopup(`Objednávka ${orderNumber}: ${statusLabel(previousStatus)} -> ${statusLabel(nextStatus)}`);
+}
+
+function showStatusChangePopup(message) {
+  statusChangePopup.textContent = message;
+  statusChangePopup.classList.remove('hidden');
+  window.clearTimeout(showStatusChangePopup._timer);
+  showStatusChangePopup._timer = window.setTimeout(() => {
+    statusChangePopup.classList.add('hidden');
+  }, 3600);
 }
 
 function renderOrderFullscreen() {
@@ -112,7 +141,7 @@ function renderOrderFullscreen() {
       <div><strong>E-mail:</strong><br>${escapeHtml(order.customer_email || '-')}</div>
       <div><strong>Telefon:</strong><br>${escapeHtml(order.customer_phone || '-')}</div>
       <div><strong>Adresa:</strong><br>${escapeHtml(order.customer_address || '-')}</div>
-      <div><strong>Stav:</strong><br>${escapeHtml(statusLabel(order.status))}</div>
+      <div><strong>Stav:</strong><br>${statusPillHtml(order.status)}</div>
       <div><strong>Typ:</strong><br>${escapeHtml(toOrderTypeLabel(classifyOrder(details)))}</div>
       <div><strong>Celkem:</strong><br>${formatMoney(order.total)}</div>
     </div>
@@ -459,7 +488,7 @@ function renderOrders() {
         </td>
         <td>${escapeHtml(order.order_number || order.id)}</td>
         <td>${escapeHtml(order.customer_name || '-')}</td>
-        <td>${escapeHtml(statusLabel(order.status || '-'))}</td>
+        <td>${statusPillHtml(order.status || '-')}</td>
         <td>${escapeHtml(toOrderTypeLabel(type))}</td>
         <td>${formatMoney(order.total)}</td>
         <td>${formatDate(order.created_at)}</td>
