@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Admin elements
         statusFilter: document.getElementById('statusFilter'),
+        orderTypeFilter: document.getElementById('orderTypeFilter'),
         ordersList: document.getElementById('ordersList'),
         clearOrdersBtn: document.getElementById('clearOrdersBtn'),
         
@@ -210,6 +211,14 @@ document.addEventListener('DOMContentLoaded', function() {
             'Other': 'Jiné',
             'Other Items': 'Jiné položky',
             'Other Item': 'Jiná položka',
+            'Used Shop': 'Bazar',
+            'Used Device': 'Bazarové zařízení',
+            'Used Device Details': 'Detaily bazarového zařízení',
+            'Used Refurbished Notebook & PC Shop': 'Bazar repasovaných notebooků a PC',
+            'Verified used notebooks and PCs with clear specs and transparent prices.': 'Ověřené bazarové notebooky a PC s jasnými specifikacemi a transparentní cenou.',
+            'No used shop orders yet': 'Žádné objednávky z bazaru',
+            'used shop orders': 'objednávky z bazaru',
+            'Used shop orders will appear here': 'Objednávky z bazaru se zobrazí zde',
             'Item': 'Položka',
             'No items': 'Žádné položky',
             'No items yet': 'Žádné položky zatím',
@@ -385,6 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'In Progress': 'V prubehu',
             'Completed': 'Dokonceno',
             'All Status': 'Vsechny stavy',
+            'All Types': 'Vsechny typy',
             'Waiting': 'Ceka',
             'Delivering': 'Doručuje se',
             'Delivered': 'Doručeno',
@@ -920,9 +930,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const defaultUsedShopItems = [
         {
             id: 'used-notebook-1',
-            name: 'Lenovo ThinkPad T14 (Refurbished)',
-            shortDesc: '14" business notebook, refreshed battery, cleaned cooling.',
-            details: 'Reliable refurbished notebook suitable for office work, school, and everyday use. Device is cleaned, tested, and has fresh thermal service.',
+            name: 'Lenovo ThinkPad T14 (Repasovaný)',
+            shortDesc: '14" pracovní notebook, obnovená baterie a vyčištěné chlazení.',
+            details: 'Spolehlivý repasovaný notebook vhodný pro kancelář, školu i běžné použití. Zařízení je vyčištěné, otestované a po novém termálním servisu.',
             brand: 'Lenovo',
             model: 'ThinkPad T14',
             price: 8490,
@@ -931,14 +941,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=80',
                 'https://images.unsplash.com/photo-1517336714739-489689fd1ca8?auto=format&fit=crop&w=1200&q=80'
             ],
-            specs: ['CPU: Intel Core i5', 'RAM: 16 GB', 'Storage: 512 GB SSD', 'Display: 14" Full HD', 'OS: Windows 11 Pro'],
+            specs: ['CPU: Intel Core i5', 'RAM: 16 GB', 'Uložiště: 512 GB SSD', 'Displej: 14" Full HD', 'OS: Windows 11 Pro'],
             active: true
         },
         {
             id: 'used-notebook-2',
-            name: 'HP ProBook 450 G8 (Refurbished)',
-            shortDesc: '15.6" notebook with SSD and verified battery health.',
-            details: 'Refurbished notebook with balanced performance for work and home. Full diagnostic and stress test completed before listing.',
+            name: 'HP ProBook 450 G8 (Repasovaný)',
+            shortDesc: '15.6" notebook s SSD a ověřeným stavem baterie.',
+            details: 'Repasovaný notebook s vyváženým výkonem pro práci i domácí použití. Před zařazením proběhla kompletní diagnostika i zátěžový test.',
             brand: 'HP',
             model: 'ProBook 450 G8',
             price: 9290,
@@ -947,14 +957,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 'https://images.unsplash.com/photo-1588702547923-7093a6c3ba33?auto=format&fit=crop&w=1200&q=80',
                 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=1200&q=80'
             ],
-            specs: ['CPU: Intel Core i5', 'RAM: 16 GB', 'Storage: 512 GB SSD', 'Display: 15.6" Full HD', 'OS: Windows 11'],
+            specs: ['CPU: Intel Core i5', 'RAM: 16 GB', 'Uložiště: 512 GB SSD', 'Displej: 15.6" Full HD', 'OS: Windows 11'],
             active: true
         },
         {
             id: 'used-pc-1',
-            name: 'Gaming PC Ryzen 5 (Refurbished)',
-            shortDesc: 'Desktop tower for 1080p gaming and content work.',
-            details: 'Refurbished desktop PC with cleaned internals, replaced thermal paste, and full hardware stress test. Great entry-level gaming setup.',
+            name: 'Herní PC Ryzen 5 (Repasované)',
+            shortDesc: 'Stolní PC pro 1080p hraní i práci s obsahem.',
+            details: 'Repasované stolní PC s vyčištěným vnitřkem, novou teplovodivou pastou a kompletním zátěžovým testem hardwaru. Skvělá vstupní herní sestava.',
             brand: 'Custom',
             model: 'Ryzen 5 Gaming PC',
             price: 15990,
@@ -963,7 +973,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'https://images.unsplash.com/photo-1587202372634-32705e3bf49c?auto=format&fit=crop&w=1200&q=80',
                 'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&w=1200&q=80'
             ],
-            specs: ['CPU: AMD Ryzen 5', 'GPU: NVIDIA GTX 1660', 'RAM: 16 GB', 'Storage: 1 TB NVMe SSD', 'OS: Windows 11'],
+            specs: ['CPU: AMD Ryzen 5', 'GPU: NVIDIA GTX 1660', 'RAM: 16 GB', 'Uložiště: 1 TB NVMe SSD', 'OS: Windows 11'],
             active: true
         }
     ];
@@ -1898,6 +1908,18 @@ document.addEventListener('DOMContentLoaded', function() {
             document.documentElement.style.setProperty('--announcement-height', `${height}px`);
         };
 
+        const closeAnnouncementBanner = () => {
+            const currentText = String(textEl.textContent || '').trim();
+            try {
+                if (currentText) localStorage.setItem(dismissalKey, currentText);
+            } catch {
+                // Ignore storage errors and still hide visually.
+            }
+            banner.classList.add('hidden');
+            document.body.classList.remove('has-announcement');
+            syncAnnouncementOffset();
+        };
+
         const isActive = announcement && announcement.active && announcement.text;
         if (isActive) {
             const messageText = String(announcement.text || '').trim();
@@ -1923,17 +1945,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (closeBtn && !closeBtn.dataset.bound) {
                 closeBtn.dataset.bound = '1';
-                closeBtn.addEventListener('click', () => {
-                    const currentText = String(textEl.textContent || '').trim();
-                    try {
-                        if (currentText) localStorage.setItem(dismissalKey, currentText);
-                    } catch {
-                        // Ignore storage errors and still hide visually.
-                    }
-                    banner.classList.add('hidden');
-                    document.body.classList.remove('has-announcement');
-                    syncAnnouncementOffset();
-                });
+                closeBtn.addEventListener('click', closeAnnouncementBanner);
+                closeBtn.addEventListener('touchend', (event) => {
+                    event.preventDefault();
+                    closeAnnouncementBanner();
+                }, { passive: false });
             }
 
             if (!window.__announcementResizeBound) {
@@ -3423,7 +3439,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (tabName === 'credentials') return canAccessCredentials(user);
         if (tabName === 'catalog') return canManageCatalog(user);
         if (tabName === 'chats') return canAccessChats(user);
-        if (['repairs', 'custom-pc', 'printing', 'other-items'].includes(tabName)) return canManageOrders(user);
+        if (['repairs', 'custom-pc', 'printing', 'other-items', 'used-shop'].includes(tabName)) return canManageOrders(user);
         return false;
     }
 
@@ -5010,7 +5026,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const firstImage = getUsedShopImages(item)[0] || item.image || '';
         const cartItem = {
             device: 'other-item',
-            deviceName: 'Used Shop',
+            deviceName: 'Bazar',
             brand: item.brand || 'Used Device',
             brandName: item.brand || 'Used Device',
             model: item.model || item.name || 'Used Device',
@@ -6288,11 +6304,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!ordersList) return;
 
             const statusFilter = DOM.statusFilter?.value || 'all';
+            const orderTypeFilter = DOM.orderTypeFilter?.value || 'all';
             const deviceFilter = window.currentDeviceFilter || 'all';
             const customBuildFilter = window.currentCustomPcFilter || 'all';
             const customOrdersList = document.getElementById('customPcOrdersList');
             const printingOrdersList = document.getElementById('printingOrdersList');
             const otherItemsOrdersList = document.getElementById('otherItemsOrdersList');
+            const usedShopOrdersList = document.getElementById('usedShopOrdersList');
 
             // Update stats
             const totalCount = orders.length;
@@ -6350,6 +6368,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const device = (item.device || '').toLowerCase();
                 return device === 'other' || device === 'other-item';
             };
+            const isUsedShopItem = (item) => {
+                if (!isOtherItem(item)) return false;
+                const repairType = String(item.repair_type || item.repairType || '').toLowerCase();
+                return repairType === 'used-device' || repairType === 'used-shop';
+            };
             const resolveBuildType = (item) => {
                 const details = getCustomBuildDetails(item);
                 const type = (details?.buildType || '').toLowerCase();
@@ -6358,8 +6381,22 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             const isRepairItem = (item) => !isCustomItem(item) && !isPrintingItem(item);
             const isGeneralRepairItem = (item) => !isCustomItem(item) && !isPrintingItem(item) && !isOtherItem(item);
+            const isRegularOtherItem = (item) => isOtherItem(item) && !isUsedShopItem(item);
 
-            const repairsEntries = orderDetails.filter(entry => {
+            const passesTypeFilter = (entry) => {
+                if (orderTypeFilter === 'all') return true;
+                const items = Array.isArray(entry?.items) ? entry.items : [];
+                if (orderTypeFilter === 'repairs') return items.some(isGeneralRepairItem) || items.length === 0;
+                if (orderTypeFilter === 'custom-pc') return items.some(isCustomItem);
+                if (orderTypeFilter === 'printing') return items.some(isPrintingItem);
+                if (orderTypeFilter === 'other-items') return items.some(isRegularOtherItem);
+                if (orderTypeFilter === 'used-shop') return items.some(isUsedShopItem);
+                return true;
+            };
+
+            const typeFilteredOrderDetails = orderDetails.filter(passesTypeFilter);
+
+            const repairsEntries = typeFilteredOrderDetails.filter(entry => {
                 const repairItems = entry.items.filter(item => isGeneralRepairItem(item));
                 if (deviceFilter === 'all') return repairItems.length > 0 || entry.items.length === 0;
                 return repairItems.some(item => {
@@ -6368,21 +6405,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
 
-            const customEntries = orderDetails.filter(entry => {
+            const customEntries = typeFilteredOrderDetails.filter(entry => {
                 const customItems = entry.items.filter(isCustomItem);
                 if (customItems.length === 0) return false;
                 if (customBuildFilter === 'all') return true;
                 return customItems.some(item => resolveBuildType(item) === customBuildFilter);
             });
 
-            const printingEntries = orderDetails.filter(entry => {
+            const printingEntries = typeFilteredOrderDetails.filter(entry => {
                 const printingItems = entry.items.filter(isPrintingItem);
                 return printingItems.length > 0;
             });
 
-            const otherEntries = orderDetails.filter(entry => {
-                const otherItems = entry.items.filter(isOtherItem);
+            const otherEntries = typeFilteredOrderDetails.filter(entry => {
+                const otherItems = entry.items.filter(isRegularOtherItem);
                 return otherItems.length > 0;
+            });
+
+            const usedEntries = typeFilteredOrderDetails.filter(entry => {
+                const usedItems = entry.items.filter(isUsedShopItem);
+                return usedItems.length > 0;
             });
 
             const mapEntries = (entries, filterFn) => entries.map(entry => {
@@ -6560,7 +6602,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     `;
                 } else {
-                    otherItemsOrdersList.innerHTML = buildOrdersHtml(mapEntries(otherEntries, isOtherItem));
+                    otherItemsOrdersList.innerHTML = buildOrdersHtml(mapEntries(otherEntries, isRegularOtherItem));
+                }
+            }
+
+            if (usedShopOrdersList) {
+                if (usedEntries.length === 0) {
+                    usedShopOrdersList.innerHTML = `
+                        <div class="no-orders">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="14" rx="2"></rect>
+                                <path d="M3 10h18"></path>
+                                <path d="M8 20h8"></path>
+                            </svg>
+                            <h3>${t('No used shop orders yet')}</h3>
+                            <p>${statusFilter === 'all' ? t('No used shop orders yet') : `${t('No')} ${formatStatusLabel(statusFilter)} ${t('used shop orders')}`}</p>
+                        </div>
+                    `;
+                } else {
+                    usedShopOrdersList.innerHTML = buildOrdersHtml(mapEntries(usedEntries, isUsedShopItem));
                 }
             }
 
@@ -7331,7 +7391,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const catalogContent = document.getElementById('catalog-content');
         const chatsTabBtn = document.querySelector('.admin-tab-btn[data-tab="chats"]');
         const chatsContent = document.getElementById('chats-content');
-        const orderTabs = ['repairs', 'custom-pc', 'printing', 'other-items'];
+        const orderTabs = ['repairs', 'custom-pc', 'printing', 'other-items', 'used-shop'];
 
         if (logoutBtn) logoutBtn.style.display = isLoggedIn ? 'inline-flex' : 'none';
         if (logoutBtnMobile) logoutBtnMobile.style.display = isLoggedIn ? 'inline-flex' : 'none';
@@ -10121,12 +10181,26 @@ document.addEventListener('DOMContentLoaded', function() {
     orderOverlay?.addEventListener('click', closeOrderDetails);
     orderClose?.addEventListener('click', closeOrderDetails);
 
+    function closeMobileMenu() {
+        if (!DOM.mobileMenuBtn || !DOM.navLinks) return;
+        DOM.mobileMenuBtn.classList.remove('active');
+        DOM.navLinks.classList.remove('active');
+        DOM.mobileMenuBtn.setAttribute('aria-expanded', 'false');
+    }
+
     // Mobile menu toggle
     DOM.mobileMenuBtn?.addEventListener('click', function() {
         this.classList.toggle('active');
         DOM.navLinks.classList.toggle('active');
         const expanded = this.classList.contains('active');
         this.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    });
+
+    // Auto-close mobile nav after selecting a destination link.
+    DOM.navLinks?.querySelectorAll('a[data-page]').forEach((link) => {
+        link.addEventListener('click', () => {
+            closeMobileMenu();
+        });
     });
 
     document.getElementById('logoutBtnMobile')?.addEventListener('click', handleLogout);
@@ -10165,6 +10239,7 @@ document.addEventListener('DOMContentLoaded', function() {
         adminBindingsInitialized = true;
 
         DOM.statusFilter?.addEventListener('change', renderAdminOrders);
+        DOM.orderTypeFilter?.addEventListener('change', renderAdminOrders);
 
         document.addEventListener('click', (event) => {
             const actionBtn = event.target.closest('[data-order-action]');

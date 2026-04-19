@@ -18,6 +18,8 @@
       <div class="sidebar-section">
         <button class="tab-btn active" data-tab="orders">Objednávky</button>
         <button class="tab-btn" data-tab="inventory">Sklad</button>
+        <button class="tab-btn hidden" data-tab="catalog" id="catalogTabBtn">Katalog</button>
+        <button class="tab-btn hidden" data-tab="chats" id="chatsTabBtn">Chaty</button>
         <button class="tab-btn hidden" data-tab="users" id="usersTabBtn">Uživatelé</button>
       </div>
       <div class="sidebar-settings">
@@ -117,8 +119,124 @@
                 <option value="custom-pc">Vlastní PC</option>
                 <option value="3d-printing">3D tisk</option>
                 <option value="other">Ostatní</option>
+                <option value="used-shop">Bazar</option>
               </select>
             </label>
+          </div>
+
+          <div class="ops-grid" id="orderOpsPanel">
+            <div class="ops-block">
+              <h3>Vytvořit objednávku</h3>
+              <form id="createManualOrderForm" class="users-form">
+                <label>
+                  Jméno zákazníka
+                  <input id="manualOrderCustomerName" type="text" required />
+                </label>
+                <label>
+                  E-mail zákazníka
+                  <input id="manualOrderCustomerEmail" type="email" required />
+                </label>
+                <label>
+                  Telefon
+                  <input id="manualOrderCustomerPhone" type="text" required />
+                </label>
+                <label>
+                  Název položky/služby
+                  <input id="manualOrderItemName" type="text" required />
+                </label>
+                <label>
+                  Cena položky (Kč)
+                  <input id="manualOrderItemPrice" type="number" step="0.01" min="0" required />
+                </label>
+                <label>
+                  Stav objednávky
+                  <select id="manualOrderStatus">
+                    <option value="pending" selected>Čeká na potvrzení</option>
+                    <option value="in-progress">Rozpracováno</option>
+                    <option value="waiting">Čeká</option>
+                    <option value="delivering">Doručování</option>
+                    <option value="completed">Dokončeno</option>
+                    <option value="delivered">Doručeno</option>
+                    <option value="cancelled">Zrušeno</option>
+                  </select>
+                </label>
+                <label>
+                  Typ služby
+                  <select id="manualOrderServiceType">
+                    <option value="pickup" selected>Vyzvednutí</option>
+                    <option value="delivery">Doručení</option>
+                    <option value="zasilkovna">Zásilkovna</option>
+                    <option value="ceska-posta">Česká pošta</option>
+                    <option value="ppl">PPL</option>
+                    <option value="dpd">DPD</option>
+                    <option value="gls">GLS</option>
+                  </select>
+                </label>
+                <label>
+                  Sken faktury (volitelné)
+                  <input id="manualOrderInvoiceScan" type="file" accept="image/*,.pdf" />
+                </label>
+                <label>
+                  Poznámka
+                  <input id="manualOrderNotes" type="text" />
+                </label>
+                <button type="submit">Vytvořit objednávku</button>
+              </form>
+              <p class="error" id="createManualOrderError"></p>
+            </div>
+
+            <div class="ops-block">
+              <h3>Vytvořit fakturu</h3>
+              <form id="createInvoiceForm" class="users-form">
+                <label>
+                  Číslo faktury (volitelné)
+                  <input id="invoiceNumber" type="text" placeholder="Nechte prázdné pro auto-generování" />
+                </label>
+                <label>
+                  ID objednávky (volitelné)
+                  <input id="invoiceOrderId" type="number" min="1" />
+                </label>
+                <label>
+                  Jméno zákazníka
+                  <input id="invoiceCustomerName" type="text" required />
+                </label>
+                <label>
+                  E-mail zákazníka
+                  <input id="invoiceCustomerEmail" type="email" />
+                </label>
+                <label>
+                  Popis faktury
+                  <input id="invoiceDescription" type="text" />
+                </label>
+                <label>
+                  Částka (Kč)
+                  <input id="invoiceAmount" type="number" step="0.01" min="0" required />
+                </label>
+                <label>
+                  Splatnost
+                  <input id="invoiceDueDate" type="date" />
+                </label>
+                <label>
+                  Stav faktury
+                  <select id="invoiceStatus">
+                    <option value="issued" selected>Vystavena</option>
+                    <option value="paid">Zaplacena</option>
+                    <option value="overdue">Po splatnosti</option>
+                    <option value="cancelled">Stornována</option>
+                  </select>
+                </label>
+                <label>
+                  Sken faktury (volitelné)
+                  <input id="invoiceScanFile" type="file" accept="image/*,.pdf" />
+                </label>
+                <label>
+                  Poznámka
+                  <input id="invoiceNotes" type="text" />
+                </label>
+                <button type="submit">Vytvořit fakturu</button>
+              </form>
+              <p class="error" id="createInvoiceError"></p>
+            </div>
           </div>
 
           <div class="table-wrap">
@@ -162,6 +280,11 @@
               <ul id="filamentsList"></ul>
             </div>
             <div class="inventory-block">
+              <h3>PC díly pro sestavy</h3>
+              <button class="inventory-add-btn hidden" data-inv-add="pcBuildParts">Přidat PC díl</button>
+              <ul id="pcBuildPartsList"></ul>
+            </div>
+            <div class="inventory-block">
               <h3>Ostatní položky</h3>
               <button class="inventory-add-btn hidden" data-inv-add="otherItems">Přidat položku</button>
               <ul id="otherItemsList"></ul>
@@ -171,6 +294,69 @@
               <button class="inventory-add-btn hidden" data-inv-add="usedShopItems">Přidat bazarovou položku</button>
               <ul id="usedItemsList"></ul>
             </div>
+          </div>
+        </section>
+
+        <section id="catalogTab" class="panel tab-content hidden">
+          <div class="users-head">
+            <h2>Správa katalogu (web)</h2>
+            <div class="inventory-actions">
+              <button id="catalogReloadBtn" type="button" class="secondary">Načíst katalog</button>
+              <button id="catalogSaveBtn" type="button">Uložit katalog</button>
+            </div>
+          </div>
+          <p class="small">Upravte JSON katalogu, který používá webová aplikace.</p>
+          <label>
+            Katalog JSON
+            <textarea id="catalogEditorInput" class="json-editor" spellcheck="false"></textarea>
+          </label>
+          <p class="error" id="catalogEditorError"></p>
+        </section>
+
+        <section id="chatsTab" class="panel tab-content hidden">
+          <div class="users-head">
+            <h2>Chat manager</h2>
+            <button id="chatsRefreshBtn" type="button" class="secondary">Obnovit chaty</button>
+          </div>
+          <p class="small">Správa zákaznických chatů stejně jako v admin webu.</p>
+
+          <div class="chat-grid">
+            <div class="chat-list-block">
+              <h3>Konverzace</h3>
+              <div id="chatSessionsList" class="chat-sessions-list"></div>
+            </div>
+
+            <div class="chat-thread-block">
+              <h3>Vlákno</h3>
+              <div class="chat-thread-actions">
+                <button id="chatTakeBtn" type="button" class="secondary">Převzít chat</button>
+                <button id="chatCloseBtn" type="button" class="secondary">Uzavřít chat</button>
+                <button id="chatDeleteBtn" type="button" class="danger">Smazat chat</button>
+              </div>
+              <div id="chatThreadMeta" class="small"></div>
+              <div id="chatMessages" class="chat-messages"></div>
+              <form id="chatReplyForm" class="chat-reply-form">
+                <label>
+                  Odpověď
+                  <textarea id="chatReplyInput" rows="3" placeholder="Napište odpověď..."></textarea>
+                </label>
+                <button type="submit">Odeslat odpověď</button>
+              </form>
+              <p class="error" id="chatReplyError"></p>
+            </div>
+          </div>
+
+          <div class="ops-block chat-ai-block">
+            <h3>AI konfigurace chatu</h3>
+            <div class="chat-thread-actions">
+              <button id="chatAiReloadBtn" type="button" class="secondary">Načíst AI config</button>
+              <button id="chatAiSaveBtn" type="button">Uložit AI config</button>
+            </div>
+            <label>
+              AI config JSON
+              <textarea id="chatAiConfigInput" class="json-editor" spellcheck="false"></textarea>
+            </label>
+            <p class="error" id="chatAiConfigError"></p>
           </div>
         </section>
 
@@ -240,6 +426,46 @@
         <button id="closeOrderFullscreenBtn" class="danger">Zavřít</button>
       </div>
       <div id="orderFullscreenContent"></div>
+    </div>
+  </div>
+
+  <div id="editUserModal" class="overlay hidden">
+    <div class="overlay-panel small-panel">
+      <div class="overlay-head">
+        <h2>Upravit uživatele</h2>
+        <button id="closeEditUserModalBtn" class="secondary" type="button">Zavřít</button>
+      </div>
+
+      <form id="editUserForm" class="users-form">
+        <input id="editUserId" type="hidden" />
+        <label>
+          Uživatelské jméno
+          <input id="editUserUsername" type="text" minlength="3" required />
+        </label>
+        <label>
+          E-mail (volitelné)
+          <input id="editUserEmail" type="email" />
+        </label>
+        <label>
+          Nové heslo (volitelné)
+          <input id="editUserPassword" type="password" minlength="8" placeholder="Nechte prázdné pro beze změny" />
+        </label>
+        <label>
+          Role
+          <select id="editUserRole">
+            <option value="worker">worker</option>
+            <option value="manager">manager</option>
+            <option value="customer">customer</option>
+            <option value="owner">owner</option>
+          </select>
+        </label>
+        <p class="small" id="editUserRoleNote"></p>
+        <div class="users-form-actions">
+          <button type="submit">Uložit změny</button>
+          <button id="cancelEditUserBtn" type="button" class="secondary">Zrušit</button>
+        </div>
+        <p class="error" id="editUserError"></p>
+      </form>
     </div>
   </div>
 

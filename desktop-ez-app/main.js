@@ -1,16 +1,20 @@
 const path = require('path');
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 const { autoUpdater } = require('electron-updater');
 
 let mainWindow = null;
 
 function createWindow() {
+  const appIconPath = process.platform === 'win32'
+    ? path.join(__dirname, 'assets', 'logos', 'favicon.ico')
+    : path.join(__dirname, 'assets', 'logos', 'ezfix-logo.png');
   const win = new BrowserWindow({
     width: 1360,
     height: 900,
     minWidth: 1080,
     minHeight: 700,
-    autoHideMenuBar: false,
+    autoHideMenuBar: true,
+    icon: appIconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -20,6 +24,7 @@ function createWindow() {
   });
 
   win.loadFile(path.join(__dirname, 'index.html'));
+  win.removeMenu();
   mainWindow = win;
 
   win.on('closed', () => {
@@ -64,6 +69,7 @@ function configureAutoUpdater() {
 
 app.whenReady().then(() => {
   app.setAppUserModelId('cz.ezfix.desktop');
+  Menu.setApplicationMenu(null);
   createWindow();
   configureAutoUpdater();
 

@@ -226,7 +226,8 @@ router.post('/admin/manual', verifyToken, verifyOrderManager, async (req, res) =
                 model: String(source.model || '').trim(),
                 repairType: String(source.repairType || 'manual').trim(),
                 repairName: String(source.repairName || '').trim(),
-                price: safePrice
+                price: safePrice,
+                fileName: String(source.fileName || source.file_name || '').trim()
             };
         }).filter((entry) => entry.repairName && Number.isFinite(entry.price));
 
@@ -304,7 +305,7 @@ router.post('/admin/manual', verifyToken, verifyOrderManager, async (req, res) =
                     null,
                     null,
                     null,
-                    null
+                    safeItem.fileName || null
                 ]
             );
         }
@@ -325,6 +326,129 @@ router.post('/admin/manual', verifyToken, verifyOrderManager, async (req, res) =
         res.status(500).json({
             success: false,
             message: 'Failed to create manual order',
+            error: err.message
+        });
+    }
+});
+
+/**
+ * Create invoice from admin panel (manager/owner)
+ * POST /api/orders/admin/invoices
+ */
+router.post('/admin/invoices', verifyToken, verifyOrderManager, async (req, res) => {
+    try {
+        const {
+            invoiceNumber,
+            orderId,
+            customerName,
+            customerEmail,
+            description,
+            amount,
+            dueDate,
+            status,
+            notes,
+            scanFileUrl
+        } = req.body || {};
+
+        const safeCustomerName = String(customerName || '').trim();
+        const safeCustomerEmail = String(customerEmail || '').trim().toLowerCase();
+        const safeDescription = String(description || '').trim();
+        const safeNotes = String(notes || '').trim();
+        const safeStatus = String(status || 'issued').trim().toLowerCase();
+        const safeScanFileUrl = String(scanFileUrl || '').trim();
+        const parsedAmount = typeof amount === 'number' ? amount : parseFloat(String(amount || '0'));
+        const safeAmount = Number.isFinite(parsedAmount) ? Math.max(0, parsedAmount) : NaN;
+
+        if (!safeCustomerName) {
+            return res.status(400).json({ success: false, message: 'Customer name is required' });
+        }
+
+        if (!Number.isFinite(safeAmount) || safeAmount <= 0) {
+            return res.status(400).json({ success: false, message: 'Valid amount is required' });
+        }
+
+        const validStatuses = ['issued', 'paid', 'cancelled', 'overdue'];
+        if (!validStatuses.includes(safeStatus)) {
+            return res.status(400).json({ success: false, message: 'Invalid invoice status' });
+        }
+
+        let safeOrderId = null;
+        if (orderId !== undefined && orderId !== null && String(orderId).trim() !== '') {
+            const parsedOrderId = Number(orderId);
+            if (!Number.isInteger(parsedOrderId) || parsedOrderId <= 0) {
+                return res.status(400).json({ success: false, message: 'Invalid order ID' });
+            }
+
+            const orderExists = await db.getAsync('SELECT id FROM orders WHERE id = ?', [parsedOrderId]);
+            if (!orderExists) {
+                return res.status(404).json({ success: false, message: 'Order not found' });
+            }
+            safeOrderId = parsedOrderId;
+        }
+
+        const now = new Date();
+        const generatedInvoiceNumber = `INV-${now.getFullYear()}-${String(Date.now()).slice(-6)}`;
+        const nextInvoiceNumber = String(invoiceNumber || '').trim() || generatedInvoiceNumber;
+
+        const dueDateText = String(dueDate || '').trim();
+        let safeDueDate = null;
+        if (dueDateText) {
+            const ts = Date.parse(dueDateText);
+            if (!Number.isFinite(ts)) {
+                return res.status(400).json({ success: false, message: 'Invalid due date' });
+            }
+            safeDueDate = new Date(ts).toISOString().slice(0, 10);
+        }
+
+        const existingInvoice = await db.getAsync(
+            'SELECT id FROM invoices WHERE invoice_number = ?',
+            [nextInvoiceNumber]
+        );
+        if (existingInvoice) {
+            return res.status(400).json({ success: false, message: 'Invoice number already exists' });
+        }
+
+        const insertResult = await db.runAsync(
+            `INSERT INTO invoices
+             (invoice_number, order_id, customer_name, customer_email, description, amount, currency, status, due_date, scan_file_url, notes, created_by_user_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                nextInvoiceNumber,
+                safeOrderId,
+                safeCustomerName,
+                safeCustomerEmail || null,
+                safeDescription || null,
+                safeAmount,
+                'CZK',
+                safeStatus,
+                safeDueDate,
+                safeScanFileUrl || null,
+                safeNotes || null,
+                req.user?.id || null
+            ]
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Invoice created successfully',
+            invoice: {
+                id: insertResult.lastID,
+                invoiceNumber: nextInvoiceNumber,
+                orderId: safeOrderId,
+                customerName: safeCustomerName,
+                customerEmail: safeCustomerEmail || null,
+                amount: safeAmount,
+                currency: 'CZK',
+                status: safeStatus,
+                dueDate: safeDueDate,
+                scanFileUrl: safeScanFileUrl || null
+            }
+        });
+    } catch (err) {
+        console.error('Create invoice error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create invoice',
             error: err.message
         });
     }

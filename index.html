@@ -2035,6 +2035,14 @@
                             </svg>
                             Other Items
                         </button>
+                        <button class="admin-tab-btn" data-tab="used-shop">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="14" rx="2"></rect>
+                                <path d="M3 10h18"></path>
+                                <path d="M8 20h8"></path>
+                            </svg>
+                            Bazar
+                        </button>
                         <button class="admin-tab-btn" data-tab="catalog">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M4 4h16v16H4z"></path>
@@ -2099,6 +2107,14 @@
                                 <option value="completed">Completed</option>
                                 <option value="delivered">Delivered</option>
                                 <option value="cancelled">Cancelled</option>
+                            </select>
+                            <select id="orderTypeFilter" class="admin-filter">
+                                <option value="all">All Types</option>
+                                <option value="repairs">Repairs</option>
+                                <option value="custom-pc">Custom PC</option>
+                                <option value="printing">3D Printing</option>
+                                <option value="other-items">Other Items</option>
+                                <option value="used-shop">Bazar</option>
                             </select>
                             <button class="btn btn-primary" id="createManualOrderBtn">Create Order</button>
                             <button class="btn btn-secondary" id="createCustomInvoiceBtn">Create Invoice</button>
@@ -2194,6 +2210,21 @@
                                 </svg>
                                 <h3>No other item orders yet</h3>
                                 <p>Other item orders will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Used Shop Tab Content -->
+                    <div id="used-shop-content" class="admin-tab-content">
+                        <div class="orders-list" id="usedShopOrdersList">
+                            <div class="no-orders">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="14" rx="2"></rect>
+                                    <path d="M3 10h18"></path>
+                                    <path d="M8 20h8"></path>
+                                </svg>
+                                <h3>Zatím žádné objednávky z bazaru</h3>
+                                <p>Objednávky z bazaru se zobrazí zde</p>
                             </div>
                         </div>
                     </div>

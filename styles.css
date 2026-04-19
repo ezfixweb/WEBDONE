@@ -556,15 +556,17 @@ h1, h2, h3, h4 {
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    width: 26px;
-    height: 26px;
+    width: 32px;
+    height: 32px;
     border: 1px solid rgba(185, 28, 28, 0.25);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.55);
     color: #b91c1c;
-    font-size: 1rem;
+    font-size: 1.1rem;
     line-height: 1;
     cursor: pointer;
+    z-index: 3;
+    touch-action: manipulation;
 }
 
 #announcementText {
@@ -4678,12 +4680,16 @@ body.has-announcement .hero {
 
 @media (max-width: 768px) {
     .announcement-banner {
-        padding: 7px 0;
-        font-size: 0.86rem;
+        padding: 6px 0;
+        font-size: 0.74rem;
     }
 
     .announcement-banner .container {
-        padding-right: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 30px;
+        padding-right: 44px;
     }
 
     .announcement-close-btn {
@@ -4693,8 +4699,14 @@ body.has-announcement .hero {
     }
 
     #announcementText {
-        -webkit-line-clamp: 2;
+        display: block;
+        width: 100%;
         line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-height: none;
+        -webkit-line-clamp: unset;
     }
 
     .support-chat-toggle {

@@ -12,6 +12,10 @@ const state = {
   knownOrderIds: new Set(),
   currentUser: null,
   users: [],
+  chatSessions: [],
+  activeChatSessionId: null,
+  activeChatMessages: [],
+  chatAiConfig: null,
   notificationsEnabled: localStorage.getItem('ezfixDesktopNotifEnabled') !== 'false',
   notificationSound: localStorage.getItem('ezfixDesktopNotifSound') !== 'false',
   pollIntervalMs: Number(localStorage.getItem('ezfixDesktopPollMs') || 30000),
@@ -25,17 +29,45 @@ const appVersion = document.getElementById('appVersion');
 const ordersTableBody = document.getElementById('ordersTableBody');
 const toast = document.getElementById('toast');
 const usersTabBtn = document.getElementById('usersTabBtn');
+const catalogTabBtn = document.getElementById('catalogTabBtn');
+const chatsTabBtn = document.getElementById('chatsTabBtn');
 const usersHint = document.getElementById('usersHint');
 const usersTableBody = document.getElementById('usersTableBody');
+const orderOpsPanel = document.getElementById('orderOpsPanel');
 const orderFullscreenModal = document.getElementById('orderFullscreenModal');
 const orderFullscreenContent = document.getElementById('orderFullscreenContent');
 const statusChangePopup = document.getElementById('statusChangePopup');
+const editUserModal = document.getElementById('editUserModal');
 
 const ORDER_STATUSES = ['pending', 'waiting', 'in-progress', 'delivering', 'completed', 'delivered', 'cancelled'];
 
 function canManageOrders() {
   const role = String(state.currentUser?.role || '').toLowerCase();
   return role === 'worker' || role === 'manager' || role === 'owner';
+}
+
+function hasPermission(permission) {
+  if (!permission) return false;
+  const role = String(state.currentUser?.role || '').toLowerCase();
+  if (role === 'owner') return true;
+
+  const permissions = Array.isArray(state.currentUser?.permissions)
+    ? state.currentUser.permissions.map((item) => String(item || '').toLowerCase())
+    : [];
+
+  if (permissions.includes(permission)) return true;
+
+  if (permission === 'catalog') return role === 'manager';
+  if (permission === 'chats') return role === 'worker' || role === 'manager';
+  return false;
+}
+
+function canAccessCatalog() {
+  return hasPermission('catalog');
+}
+
+function canAccessChats() {
+  return hasPermission('chats');
 }
 
 function statusLabel(status) {
@@ -222,6 +254,305 @@ function refreshOwnerUiVisibility() {
   }
 }
 
+function refreshFeatureTabsVisibility() {
+  const showCatalog = canAccessCatalog();
+  const showChats = canAccessChats();
+
+  if (catalogTabBtn) {
+    catalogTabBtn.classList.toggle('hidden', !showCatalog);
+  }
+
+  if (chatsTabBtn) {
+    chatsTabBtn.classList.toggle('hidden', !showChats);
+  }
+
+  if (!showCatalog && state.activeTab === 'catalog') {
+    switchTab('orders');
+  }
+
+  if (!showChats && state.activeTab === 'chats') {
+    switchTab('orders');
+  }
+}
+
+function refreshOrderOpsVisibility() {
+  const canManage = canManageOrders();
+  if (!orderOpsPanel) return;
+  orderOpsPanel.classList.toggle('hidden', !canManage);
+}
+
+function prettyJson(value) {
+  return JSON.stringify(value ?? {}, null, 2);
+}
+
+async function loadCatalogEditor() {
+  const errorEl = document.getElementById('catalogEditorError');
+  const input = document.getElementById('catalogEditorInput');
+  if (!input || !errorEl) return;
+
+  errorEl.textContent = '';
+
+  if (!canAccessCatalog()) {
+    errorEl.textContent = 'Nemáte oprávnění pro správu katalogu.';
+    return;
+  }
+
+  const result = await apiFetch('/catalog');
+  const catalog = result.catalog || {};
+  state.catalog = catalog;
+  input.value = prettyJson(catalog);
+}
+
+async function saveCatalogEditor() {
+  const errorEl = document.getElementById('catalogEditorError');
+  const input = document.getElementById('catalogEditorInput');
+  if (!input || !errorEl) return;
+
+  errorEl.textContent = '';
+
+  if (!canAccessCatalog()) {
+    errorEl.textContent = 'Nemáte oprávnění pro správu katalogu.';
+    return;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(input.value || '{}');
+  } catch {
+    errorEl.textContent = 'Katalog JSON není validní.';
+    return;
+  }
+
+  await apiFetch('/catalog', {
+    method: 'PUT',
+    body: JSON.stringify({ catalog: parsed })
+  });
+
+  state.catalog = parsed;
+  state.inventoryDraft = cloneCatalog(parsed);
+  if (state.inventoryDraft && typeof state.inventoryDraft === 'object') {
+    ensureInventoryArrays(state.inventoryDraft);
+    normalizeInventoryPrices(state.inventoryDraft);
+  }
+  renderInventory();
+  showToast('Katalog byl uložen');
+}
+
+function chatStatusLabel(status) {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized === 'open') return 'Otevřený';
+  if (normalized === 'closed') return 'Uzavřený';
+  if (normalized === 'awaiting_rating') return 'Čeká na hodnocení';
+  return normalized || '-';
+}
+
+function renderChatSessions() {
+  const listEl = document.getElementById('chatSessionsList');
+  if (!listEl) return;
+
+  if (!canAccessChats()) {
+    listEl.innerHTML = '<div class="small">Nemáte oprávnění k chat manageru.</div>';
+    return;
+  }
+
+  if (!Array.isArray(state.chatSessions) || state.chatSessions.length === 0) {
+    listEl.innerHTML = '<div class="small">Žádné chaty.</div>';
+    return;
+  }
+
+  listEl.innerHTML = state.chatSessions.map((session) => {
+    const isActive = String(state.activeChatSessionId || '') === String(session.id || '');
+    const unread = Number(session.unread_count || 0);
+    const title = session.customer_name || session.customer_email || session.id || 'Chat';
+
+    return `
+      <div class="chat-session-item ${isActive ? 'active' : ''}" data-chat-session="${escapeHtml(session.id)}">
+        <div class="chat-session-title">${escapeHtml(title)}</div>
+        <div class="chat-session-meta">
+          ${escapeHtml(chatStatusLabel(session.status))}
+          ${unread > 0 ? ` | Nepřečtené: ${unread}` : ''}
+        </div>
+        <div class="chat-session-meta">${escapeHtml(session.last_message || '-')}</div>
+      </div>
+    `;
+  }).join('');
+
+  listEl.querySelectorAll('[data-chat-session]').forEach((node) => {
+    node.addEventListener('click', () => {
+      const sessionId = node.getAttribute('data-chat-session');
+      if (!sessionId) return;
+      openChatSession(sessionId);
+    });
+  });
+}
+
+function renderChatThread() {
+  const metaEl = document.getElementById('chatThreadMeta');
+  const messagesEl = document.getElementById('chatMessages');
+  if (!metaEl || !messagesEl) return;
+
+  const active = state.chatSessions.find((session) => String(session.id) === String(state.activeChatSessionId));
+
+  if (!active) {
+    metaEl.textContent = 'Vyberte konverzaci vlevo.';
+    messagesEl.innerHTML = '<div class="small">Bez vybraného chatu.</div>';
+    return;
+  }
+
+  metaEl.textContent = `${active.customer_name || '-'} | ${active.customer_email || '-'} | ${chatStatusLabel(active.status)}`;
+
+  if (!Array.isArray(state.activeChatMessages) || state.activeChatMessages.length === 0) {
+    messagesEl.innerHTML = '<div class="small">Chat zatím neobsahuje zprávy.</div>';
+    return;
+  }
+
+  messagesEl.innerHTML = state.activeChatMessages.map((msg) => {
+    const senderType = String(msg.sender_type || '').toLowerCase() || 'user';
+    const senderName = msg.sender_name || (senderType === 'admin' ? 'Admin' : 'Uživatel');
+    return `
+      <div class="chat-message ${escapeHtml(senderType)}">
+        <div class="chat-message-head">${escapeHtml(senderName)} | ${formatDate(msg.created_at)}</div>
+        <div>${escapeHtml(msg.message || '')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadChatSessions() {
+  if (!canAccessChats()) {
+    state.chatSessions = [];
+    state.activeChatSessionId = null;
+    state.activeChatMessages = [];
+    renderChatSessions();
+    renderChatThread();
+    return;
+  }
+
+  const result = await apiFetch('/chat/admin/sessions');
+  state.chatSessions = Array.isArray(result.sessions) ? result.sessions : [];
+
+  if (!state.activeChatSessionId && state.chatSessions.length > 0) {
+    state.activeChatSessionId = String(state.chatSessions[0].id);
+  }
+
+  renderChatSessions();
+
+  if (state.activeChatSessionId) {
+    await openChatSession(state.activeChatSessionId);
+  } else {
+    renderChatThread();
+  }
+}
+
+async function openChatSession(sessionId) {
+  state.activeChatSessionId = String(sessionId || '');
+  renderChatSessions();
+
+  if (!state.activeChatSessionId) {
+    state.activeChatMessages = [];
+    renderChatThread();
+    return;
+  }
+
+  const result = await apiFetch(`/chat/admin/sessions/${state.activeChatSessionId}/messages`);
+  state.activeChatMessages = Array.isArray(result.messages) ? result.messages : [];
+  renderChatThread();
+}
+
+async function sendChatReplyFromForm(event) {
+  event.preventDefault();
+  const errorEl = document.getElementById('chatReplyError');
+  const input = document.getElementById('chatReplyInput');
+  if (!errorEl || !input) return;
+
+  errorEl.textContent = '';
+
+  if (!state.activeChatSessionId) {
+    errorEl.textContent = 'Vyberte nejdřív chat.';
+    return;
+  }
+
+  const message = input.value.trim();
+  if (!message) {
+    errorEl.textContent = 'Zadejte odpověď.';
+    return;
+  }
+
+  await apiFetch(`/chat/admin/sessions/${state.activeChatSessionId}/reply`, {
+    method: 'POST',
+    body: JSON.stringify({ message })
+  });
+
+  input.value = '';
+  await openChatSession(state.activeChatSessionId);
+  await loadChatSessions();
+  showToast('Odpověď byla odeslána');
+}
+
+async function chatAction(action) {
+  if (!state.activeChatSessionId) {
+    showToast('Vyberte nejdřív chat');
+    return;
+  }
+
+  const sessionId = state.activeChatSessionId;
+  if (action === 'take') {
+    await apiFetch(`/chat/admin/sessions/${sessionId}/take`, { method: 'POST', body: JSON.stringify({}) });
+    showToast('Chat byl převzat');
+  } else if (action === 'close') {
+    await apiFetch(`/chat/admin/sessions/${sessionId}/close`, { method: 'POST', body: JSON.stringify({}) });
+    showToast('Chat byl uzavřen');
+  } else if (action === 'delete') {
+    await apiFetch(`/chat/admin/sessions/${sessionId}`, { method: 'DELETE' });
+    showToast('Chat byl smazán');
+    state.activeChatSessionId = null;
+    state.activeChatMessages = [];
+  }
+
+  await loadChatSessions();
+}
+
+async function loadChatAiConfig() {
+  const errorEl = document.getElementById('chatAiConfigError');
+  const input = document.getElementById('chatAiConfigInput');
+  if (!input || !errorEl) return;
+
+  errorEl.textContent = '';
+
+  if (!canAccessChats()) {
+    errorEl.textContent = 'Nemáte oprávnění na AI konfiguraci chatu.';
+    return;
+  }
+
+  const result = await apiFetch('/chat/admin/ai-config');
+  state.chatAiConfig = result.config || {};
+  input.value = prettyJson(state.chatAiConfig);
+}
+
+async function saveChatAiConfig() {
+  const errorEl = document.getElementById('chatAiConfigError');
+  const input = document.getElementById('chatAiConfigInput');
+  if (!input || !errorEl) return;
+
+  errorEl.textContent = '';
+
+  let parsed;
+  try {
+    parsed = JSON.parse(input.value || '{}');
+  } catch {
+    errorEl.textContent = 'AI config JSON není validní.';
+    return;
+  }
+
+  await apiFetch('/chat/admin/ai-config', {
+    method: 'PUT',
+    body: JSON.stringify({ config: parsed })
+  });
+
+  state.chatAiConfig = parsed;
+  showToast('AI konfigurace chatu byla uložena');
+}
+
 function renderUsers() {
   if (!isOwner()) {
     usersTableBody.innerHTML = '<tr><td colspan="5">Nemáte oprávnění k zobrazení uživatelů.</td></tr>';
@@ -248,11 +579,22 @@ function renderUsers() {
         <td>${escapeHtml(formatRoleLabel(user.role))}</td>
         <td>${formatDate(user.created_at)}</td>
         <td>
-          <button class="danger" data-user-delete="${user.id}" ${deleteDisabled ? 'disabled' : ''} title="${escapeHtml(deleteTitle)}">Smazat</button>
+          <div class="users-actions">
+            <button class="secondary" data-user-edit="${user.id}">Upravit</button>
+            <button class="danger" data-user-delete="${user.id}" ${deleteDisabled ? 'disabled' : ''} title="${escapeHtml(deleteTitle)}">Smazat</button>
+          </div>
         </td>
       </tr>
     `;
   }).join('');
+
+  usersTableBody.querySelectorAll('[data-user-edit]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const userId = button.getAttribute('data-user-edit');
+      if (!userId) return;
+      openEditUserModal(userId);
+    });
+  });
 
   usersTableBody.querySelectorAll('[data-user-delete]').forEach((button) => {
     button.addEventListener('click', async () => {
@@ -326,6 +668,128 @@ async function createUserFromForm(event) {
   }
 }
 
+function openEditUserModal(userId) {
+  if (!isOwner() || !editUserModal) {
+    showToast('Pouze owner může upravovat uživatele');
+    return;
+  }
+
+  const user = state.users.find((item) => String(item.id) === String(userId));
+  if (!user) {
+    showToast('Uživatel nebyl nalezen');
+    return;
+  }
+
+  const isSelf = Number(user.id) === Number(state.currentUser?.id);
+  const isOwnerAccount = String(user.role || '').toLowerCase() === 'owner';
+  const roleLocked = isSelf || isOwnerAccount;
+
+  document.getElementById('editUserId').value = String(user.id);
+  document.getElementById('editUserUsername').value = String(user.username || '');
+  document.getElementById('editUserEmail').value = String(user.email || '');
+  document.getElementById('editUserPassword').value = '';
+
+  const roleSelect = document.getElementById('editUserRole');
+  roleSelect.value = String(user.role || 'customer').toLowerCase();
+  roleSelect.disabled = roleLocked;
+
+  const roleNote = document.getElementById('editUserRoleNote');
+  if (isSelf) {
+    roleNote.textContent = 'U vlastního účtu nelze měnit roli.';
+  } else if (isOwnerAccount) {
+    roleNote.textContent = 'U účtu owner nelze měnit roli.';
+  } else {
+    roleNote.textContent = '';
+  }
+
+  document.getElementById('editUserError').textContent = '';
+  editUserModal.classList.remove('hidden');
+}
+
+function closeEditUserModal() {
+  if (!editUserModal) return;
+  editUserModal.classList.add('hidden');
+  document.getElementById('editUserForm').reset();
+  document.getElementById('editUserRole').disabled = false;
+  document.getElementById('editUserRoleNote').textContent = '';
+  document.getElementById('editUserError').textContent = '';
+}
+
+async function updateUserFromForm(event) {
+  event.preventDefault();
+  const errorEl = document.getElementById('editUserError');
+  errorEl.textContent = '';
+
+  if (!isOwner()) {
+    errorEl.textContent = 'Pouze owner může upravovat uživatele.';
+    return;
+  }
+
+  const userId = document.getElementById('editUserId').value;
+  const existing = state.users.find((user) => String(user.id) === String(userId));
+  if (!existing) {
+    errorEl.textContent = 'Uživatel nebyl nalezen.';
+    return;
+  }
+
+  const nextUsername = document.getElementById('editUserUsername').value.trim();
+  const nextEmailRaw = document.getElementById('editUserEmail').value.trim();
+  const nextEmail = nextEmailRaw.toLowerCase();
+  const nextPassword = document.getElementById('editUserPassword').value;
+  const roleSelect = document.getElementById('editUserRole');
+  const roleLocked = roleSelect.disabled;
+
+  const payload = {};
+
+  if (nextUsername && nextUsername !== String(existing.username || '')) {
+    payload.username = nextUsername;
+  }
+
+  const currentEmail = String(existing.email || '').trim().toLowerCase();
+  if (nextEmail !== currentEmail) {
+    payload.email = nextEmail;
+  }
+
+  if (nextPassword) {
+    payload.password = nextPassword;
+  }
+
+  const selectedRole = roleSelect.value;
+  if (!roleLocked && selectedRole !== String(existing.role || '')) {
+    payload.role = selectedRole;
+  }
+
+  if (Object.keys(payload).length === 0) {
+    errorEl.textContent = 'Nejsou žádné změny k uložení.';
+    return;
+  }
+
+  const submitBtn = document.querySelector('#editUserForm button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const result = await apiFetch(`/admin/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+
+    const updatedUser = result.user || { ...existing, ...payload };
+    state.users = state.users.map((user) => (
+      String(user.id) === String(userId)
+        ? { ...user, ...updatedUser }
+        : user
+    ));
+
+    renderUsers();
+    closeEditUserModal();
+    showToast('Uživatel byl upraven');
+  } catch (error) {
+    errorEl.textContent = error.message || 'Uprava uživatele selhala';
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
 function escapeHtml(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -344,6 +808,7 @@ function formatMoney(value) {
 function toOrderTypeLabel(type) {
   if (type === '3d-printing') return '3D tisk';
   if (type === 'custom-pc') return 'Vlastní PC';
+  if (type === 'used-shop') return 'Bazar';
   if (type === 'other') return 'Ostatní';
   return 'Opravy';
 }
@@ -375,6 +840,164 @@ async function apiFetch(endpoint, options = {}) {
   return data;
 }
 
+async function uploadAdminFile(file) {
+  if (!file) return '';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${state.apiBase}/uploads`, {
+    method: 'POST',
+    headers: {
+      ...getAuthHeader()
+    },
+    body: formData
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.success === false) {
+    throw new Error(data.message || `Upload error (${response.status})`);
+  }
+
+  return String(data.url || '');
+}
+
+async function createManualOrderFromForm(event) {
+  event.preventDefault();
+  const errorEl = document.getElementById('createManualOrderError');
+  errorEl.textContent = '';
+
+  if (!canManageOrders()) {
+    errorEl.textContent = 'Nemáte oprávnění vytvářet objednávky.';
+    return;
+  }
+
+  const submitBtn = document.querySelector('#createManualOrderForm button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const customerName = document.getElementById('manualOrderCustomerName').value.trim();
+    const customerEmail = document.getElementById('manualOrderCustomerEmail').value.trim();
+    const customerPhone = document.getElementById('manualOrderCustomerPhone').value.trim();
+    const repairName = document.getElementById('manualOrderItemName').value.trim();
+    const priceValue = Number(document.getElementById('manualOrderItemPrice').value);
+    const status = document.getElementById('manualOrderStatus').value;
+    const serviceType = document.getElementById('manualOrderServiceType').value;
+    const notes = document.getElementById('manualOrderNotes').value.trim();
+    const scanInput = document.getElementById('manualOrderInvoiceScan');
+    const scanFile = scanInput?.files?.[0];
+
+    if (!Number.isFinite(priceValue) || priceValue < 0) {
+      throw new Error('Zadejte platnou cenu položky.');
+    }
+
+    let scanFileUrl = '';
+    if (scanFile) {
+      scanFileUrl = await uploadAdminFile(scanFile);
+    }
+
+    await apiFetch('/orders/admin/manual', {
+      method: 'POST',
+      body: JSON.stringify({
+        customerName,
+        customerEmail,
+        customerPhone,
+        serviceType,
+        status,
+        notes,
+        items: [
+          {
+            device: 'other',
+            brand: 'N/A',
+            model: 'N/A',
+            repairType: 'manual',
+            repairName,
+            price: priceValue,
+            fileName: scanFileUrl
+          }
+        ]
+      })
+    });
+
+    document.getElementById('createManualOrderForm').reset();
+    document.getElementById('manualOrderStatus').value = 'pending';
+    document.getElementById('manualOrderServiceType').value = 'pickup';
+    showToast('Objednávka byla vytvořena');
+    await loadDashboardData({ silent: true });
+  } catch (error) {
+    errorEl.textContent = error.message || 'Vytvoření objednávky selhalo';
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+async function createInvoiceFromForm(event) {
+  event.preventDefault();
+  const errorEl = document.getElementById('createInvoiceError');
+  errorEl.textContent = '';
+
+  if (!canManageOrders()) {
+    errorEl.textContent = 'Nemáte oprávnění vytvářet faktury.';
+    return;
+  }
+
+  const submitBtn = document.querySelector('#createInvoiceForm button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const invoiceNumber = document.getElementById('invoiceNumber').value.trim();
+    const orderIdValue = document.getElementById('invoiceOrderId').value.trim();
+    const customerName = document.getElementById('invoiceCustomerName').value.trim();
+    const customerEmail = document.getElementById('invoiceCustomerEmail').value.trim();
+    const description = document.getElementById('invoiceDescription').value.trim();
+    const amount = Number(document.getElementById('invoiceAmount').value);
+    const dueDate = document.getElementById('invoiceDueDate').value;
+    const status = document.getElementById('invoiceStatus').value;
+    const notes = document.getElementById('invoiceNotes').value.trim();
+    const scanInput = document.getElementById('invoiceScanFile');
+    const scanFile = scanInput?.files?.[0];
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error('Zadejte platnou částku faktury.');
+    }
+
+    let scanFileUrl = '';
+    if (scanFile) {
+      scanFileUrl = await uploadAdminFile(scanFile);
+    }
+
+    const payload = {
+      invoiceNumber,
+      customerName,
+      customerEmail,
+      description,
+      amount,
+      dueDate,
+      status,
+      notes,
+      scanFileUrl
+    };
+
+    if (orderIdValue) {
+      payload.orderId = Number(orderIdValue);
+    }
+
+    const result = await apiFetch('/orders/admin/invoices', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    document.getElementById('createInvoiceForm').reset();
+    document.getElementById('invoiceStatus').value = 'issued';
+    const createdNumber = result?.invoice?.invoiceNumber;
+    showToast(createdNumber ? `Faktura ${createdNumber} byla vytvořena` : 'Faktura byla vytvořena');
+  } catch (error) {
+    errorEl.textContent = error.message || 'Vytvoření faktury selhalo';
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
 function getOrderItems(orderId) {
   const details = state.detailsById.get(String(orderId));
   return Array.isArray(details?.items) ? details.items : [];
@@ -383,8 +1006,10 @@ function getOrderItems(orderId) {
 function classifyOrder(details) {
   const items = Array.isArray(details?.items) ? details.items : [];
   const devices = new Set(items.map((item) => String(item.device || '').toLowerCase()));
+  const repairTypes = new Set(items.map((item) => String(item.repair_type || item.repairType || '').toLowerCase()));
   if ([...devices].some((d) => d === 'printing' || d === '3d-printing')) return '3d-printing';
   if ([...devices].some((d) => d === 'custompc')) return 'custom-pc';
+  if ([...repairTypes].some((r) => r === 'used-device' || r === 'used-shop')) return 'used-shop';
   if ([...devices].some((d) => d === 'other' || d === 'other-item')) return 'other';
   return 'repairs';
 }
@@ -541,17 +1166,68 @@ function ensureInventoryArrays(catalog) {
   }
   if (!Array.isArray(catalog.printing.printers)) catalog.printing.printers = [];
   if (!Array.isArray(catalog.printing.filaments)) catalog.printing.filaments = [];
+  if (!Array.isArray(catalog.printing.pcBuildParts)) catalog.printing.pcBuildParts = [];
   if (!Array.isArray(catalog.printing.otherItems)) catalog.printing.otherItems = [];
   if (!Array.isArray(catalog.printing.usedShopItems)) catalog.printing.usedShopItems = [];
+}
+
+function createPartsSeedFromComponents(components) {
+  if (!components || typeof components !== 'object') return [];
+
+  const labels = {
+    cpu: 'CPU',
+    motherboard: 'Základní deska',
+    gpu: 'GPU',
+    ram: 'RAM',
+    storage: 'Úložiště',
+    psu: 'Zdroj',
+    case: 'Skříň',
+    cooling: 'Chlazení'
+  };
+
+  return Object.entries(components).flatMap(([category, items]) => {
+    if (!Array.isArray(items)) return [];
+    return items.slice(0, 6).map((item, index) => {
+      const itemId = String(item.id || `${category}-${index}`);
+      const itemName = String(item.name || itemId);
+      const label = labels[category] || category.toUpperCase();
+      const parsedPrice = Number(item.price || 0);
+      const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
+
+      return {
+        id: `part-${itemId}`,
+        name: `${label}: ${itemName}`,
+        price: safePrice,
+        active: true
+      };
+    });
+  });
+}
+
+function normalizeInventoryPrices(catalog) {
+  ensureInventoryArrays(catalog);
+  const kinds = ['printers', 'filaments', 'pcBuildParts', 'otherItems', 'usedShopItems'];
+  kinds.forEach((kind) => {
+    const list = catalog.printing[kind];
+    if (!Array.isArray(list)) return;
+    list.forEach((item) => {
+      if (!item || typeof item !== 'object') return;
+      const parsed = Number(item.price || 0);
+      item.price = Number.isFinite(parsed) ? parsed : 0;
+    });
+  });
 }
 
 function createInventoryItem(kind) {
   const stamp = Date.now();
   if (kind === 'printers') {
-    return { id: `printer-${stamp}`, name: 'Nová tiskarna', active: true };
+    return { id: `printer-${stamp}`, name: 'Nová tiskarna', price: 0, active: true };
   }
   if (kind === 'filaments') {
-    return { id: `filament-${stamp}`, name: 'Nový filament', active: true };
+    return { id: `filament-${stamp}`, name: 'Nový filament', price: 0, active: true };
+  }
+  if (kind === 'pcBuildParts') {
+    return { id: `pc-part-${stamp}`, name: 'Nový PC díl', price: 0, active: true };
   }
   if (kind === 'usedShopItems') {
     return { id: `used-${stamp}`, name: 'Nová bazarová polozka', price: 0, active: true };
@@ -568,9 +1244,7 @@ function buildInventoryList(listId, list, kind) {
       const safePrice = Number.isFinite(price) ? price : 0;
 
       if (!state.inventoryEditMode) {
-        const suffix = kind === 'otherItems' || kind === 'usedShopItems'
-          ? ` - ${formatMoney(safePrice)}`
-          : '';
+        const suffix = ` - ${formatMoney(safePrice)}`;
         return `<li>${name}${suffix}</li>`;
       }
 
@@ -595,6 +1269,7 @@ function renderInventory() {
   const printing = sourceCatalog?.printing || {};
   const printers = Array.isArray(printing.printers) ? printing.printers : [];
   const filaments = Array.isArray(printing.filaments) ? printing.filaments : [];
+  const pcBuildParts = Array.isArray(printing.pcBuildParts) ? printing.pcBuildParts : [];
   const otherItems = Array.isArray(printing.otherItems) ? printing.otherItems : [];
   const usedItems = Array.isArray(printing.usedShopItems) ? printing.usedShopItems : [];
 
@@ -604,6 +1279,7 @@ function renderInventory() {
 
   buildInventoryList('printersList', printers, 'printers');
   buildInventoryList('filamentsList', filaments, 'filaments');
+  buildInventoryList('pcBuildPartsList', pcBuildParts, 'pcBuildParts');
   buildInventoryList('otherItemsList', otherItems, 'otherItems');
   buildInventoryList('usedItemsList', usedItems, 'usedShopItems');
 
@@ -677,15 +1353,26 @@ function syncKnownOrderIds(orders, notify) {
 
 async function loadDashboardData(options = {}) {
   const { silent = false, notifyOnNew = false } = options;
-  const [ordersResult, catalogResult] = await Promise.all([
+  const [ordersResult, catalogResult, partsResult] = await Promise.all([
     apiFetch('/orders'),
-    apiFetch('/catalog')
+    apiFetch('/catalog'),
+    apiFetch('/builds/parts').catch(() => ({ components: {} }))
   ]);
 
   const nextOrders = Array.isArray(ordersResult.orders) ? ordersResult.orders : [];
   syncKnownOrderIds(nextOrders, notifyOnNew && state.notificationsEnabled);
   state.orders = nextOrders;
   state.catalog = catalogResult.catalog || {};
+  ensureInventoryArrays(state.catalog);
+
+  if (!Array.isArray(state.catalog.printing.pcBuildParts) || state.catalog.printing.pcBuildParts.length === 0) {
+    const seededParts = createPartsSeedFromComponents(partsResult.components);
+    if (seededParts.length > 0) {
+      state.catalog.printing.pcBuildParts = seededParts;
+    }
+  }
+
+  normalizeInventoryPrices(state.catalog);
   state.detailsById.clear();
   await loadDetailsForOrders(state.orders);
 
@@ -719,6 +1406,23 @@ function switchTab(tab) {
     panel.classList.toggle('active', shouldShow);
     panel.classList.toggle('hidden', !shouldShow);
   });
+
+  if (tab === 'catalog' && canAccessCatalog()) {
+    loadCatalogEditor().catch((error) => {
+      const errorEl = document.getElementById('catalogEditorError');
+      if (errorEl) errorEl.textContent = error.message || 'Načtení katalogu selhalo';
+    });
+  }
+
+  if (tab === 'chats' && canAccessChats()) {
+    Promise.all([
+      loadChatSessions(),
+      loadChatAiConfig()
+    ]).catch((error) => {
+      const errorEl = document.getElementById('chatReplyError');
+      if (errorEl) errorEl.textContent = error.message || 'Načtení chat manageru selhalo';
+    });
+  }
 }
 
 function setInventoryEditMode(enabled) {
@@ -914,6 +1618,8 @@ async function onLoginSubmit(event) {
     state.notificationsEnabled = document.getElementById('notifEnabled').checked;
     setConnectedUi(true);
     refreshOwnerUiVisibility();
+    refreshFeatureTabsVisibility();
+    refreshOrderOpsVisibility();
     await loadDashboardData({ silent: true });
     await loadUsers();
     startPolling();
@@ -954,9 +1660,14 @@ async function bootstrap() {
     state.token = '';
     state.currentUser = null;
     state.users = [];
+    state.chatSessions = [];
+    state.activeChatSessionId = null;
+    state.activeChatMessages = [];
     localStorage.removeItem('ezfixDesktopToken');
     stopPolling();
     refreshOwnerUiVisibility();
+    refreshFeatureTabsVisibility();
+    refreshOrderOpsVisibility();
     setConnectedUi(false);
   });
 
@@ -1007,12 +1718,99 @@ async function bootstrap() {
   });
 
   document.getElementById('createUserForm').addEventListener('submit', createUserFromForm);
+  document.getElementById('createManualOrderForm').addEventListener('submit', createManualOrderFromForm);
+  document.getElementById('createInvoiceForm').addEventListener('submit', createInvoiceFromForm);
+  document.getElementById('catalogReloadBtn').addEventListener('click', async () => {
+    try {
+      await loadCatalogEditor();
+      showToast('Katalog byl načten');
+    } catch (error) {
+      const errorEl = document.getElementById('catalogEditorError');
+      if (errorEl) errorEl.textContent = error.message || 'Načtení katalogu selhalo';
+    }
+  });
+  document.getElementById('catalogSaveBtn').addEventListener('click', async () => {
+    try {
+      await saveCatalogEditor();
+    } catch (error) {
+      const errorEl = document.getElementById('catalogEditorError');
+      if (errorEl) errorEl.textContent = error.message || 'Uložení katalogu selhalo';
+    }
+  });
+  document.getElementById('chatsRefreshBtn').addEventListener('click', async () => {
+    try {
+      await loadChatSessions();
+      showToast('Chaty byly obnoveny');
+    } catch (error) {
+      const errorEl = document.getElementById('chatReplyError');
+      if (errorEl) errorEl.textContent = error.message || 'Načtení chatů selhalo';
+    }
+  });
+  document.getElementById('chatReplyForm').addEventListener('submit', async (event) => {
+    try {
+      await sendChatReplyFromForm(event);
+    } catch (error) {
+      const errorEl = document.getElementById('chatReplyError');
+      if (errorEl) errorEl.textContent = error.message || 'Odeslání odpovědi selhalo';
+    }
+  });
+  document.getElementById('chatTakeBtn').addEventListener('click', async () => {
+    try {
+      await chatAction('take');
+    } catch (error) {
+      const errorEl = document.getElementById('chatReplyError');
+      if (errorEl) errorEl.textContent = error.message || 'Převzetí chatu selhalo';
+    }
+  });
+  document.getElementById('chatCloseBtn').addEventListener('click', async () => {
+    try {
+      await chatAction('close');
+    } catch (error) {
+      const errorEl = document.getElementById('chatReplyError');
+      if (errorEl) errorEl.textContent = error.message || 'Uzavření chatu selhalo';
+    }
+  });
+  document.getElementById('chatDeleteBtn').addEventListener('click', async () => {
+    try {
+      await chatAction('delete');
+    } catch (error) {
+      const errorEl = document.getElementById('chatReplyError');
+      if (errorEl) errorEl.textContent = error.message || 'Smazání chatu selhalo';
+    }
+  });
+  document.getElementById('chatAiReloadBtn').addEventListener('click', async () => {
+    try {
+      await loadChatAiConfig();
+      showToast('AI konfigurace byla načtena');
+    } catch (error) {
+      const errorEl = document.getElementById('chatAiConfigError');
+      if (errorEl) errorEl.textContent = error.message || 'Načtení AI config selhalo';
+    }
+  });
+  document.getElementById('chatAiSaveBtn').addEventListener('click', async () => {
+    try {
+      await saveChatAiConfig();
+    } catch (error) {
+      const errorEl = document.getElementById('chatAiConfigError');
+      if (errorEl) errorEl.textContent = error.message || 'Uložení AI config selhalo';
+    }
+  });
+  document.getElementById('editUserForm').addEventListener('submit', updateUserFromForm);
+  document.getElementById('closeEditUserModalBtn').addEventListener('click', closeEditUserModal);
+  document.getElementById('cancelEditUserBtn').addEventListener('click', closeEditUserModal);
   document.getElementById('closeOrderFullscreenBtn').addEventListener('click', closeOrderFullscreen);
   orderFullscreenModal.addEventListener('click', (event) => {
     if (event.target === orderFullscreenModal) {
       closeOrderFullscreen();
     }
   });
+  if (editUserModal) {
+    editUserModal.addEventListener('click', (event) => {
+      if (event.target === editUserModal) {
+        closeEditUserModal();
+      }
+    });
+  }
   document.getElementById('usersRefreshBtn').addEventListener('click', async () => {
     if (!state.token) return;
     try {
@@ -1025,6 +1823,8 @@ async function bootstrap() {
 
   switchTab('orders');
   refreshOwnerUiVisibility();
+  refreshFeatureTabsVisibility();
+  refreshOrderOpsVisibility();
   renderUsers();
 
   if (state.token) {
@@ -1033,6 +1833,8 @@ async function bootstrap() {
       state.currentUser = meResult.user || null;
       setConnectedUi(true);
       refreshOwnerUiVisibility();
+      refreshFeatureTabsVisibility();
+      refreshOrderOpsVisibility();
       await loadDashboardData({ silent: true });
       await loadUsers();
       startPolling();
@@ -1044,6 +1846,7 @@ async function bootstrap() {
     }
   }
 
+  refreshFeatureTabsVisibility();
   setConnectedUi(false);
 }
 

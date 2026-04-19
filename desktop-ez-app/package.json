@@ -22,6 +22,7 @@
     "appId": "cz.ezfix.desktop",
     "productName": "EzFix Manager",
     "win": {
+      "icon": "assets/logos/favicon.ico",
       "signAndEditExecutable": false,
       "target": [
         "nsis"
