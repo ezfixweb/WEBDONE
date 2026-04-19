@@ -76,19 +76,28 @@ For end users this is simple: install once, then just use the app and restart it
 
 ### How to publish an update (maintainer)
 
-1. Increase version in `desktop-ez-app/package.json`.
-2. Commit and push the version change.
-3. On Windows in `desktop-ez-app`, set GitHub token for publishing:
+Automatic mode (recommended):
+
+1. Push your desktop changes to `main`.
+2. GitHub Action `.github/workflows/desktop-auto-release.yml` will automatically:
+  - bump desktop version
+  - commit version bump
+  - build Windows installer
+  - publish GitHub release assets for auto-update
+
+Manual fallback mode:
+
+1. In `desktop-ez-app`, set token and publish yourself:
   - CMD: `set GH_TOKEN=your_github_token`
   - PowerShell: `$env:GH_TOKEN="your_github_token"`
-4. Build and publish release assets:
+2. Run:
   - `npm install`
   - `npm run dist:publish`
 
 Important:
 
-- `GH_TOKEN` must have repo release permissions.
 - If you only run `npm run dist`, it builds installer locally but does not publish updates.
+- Automatic mode uses GitHub Actions `GITHUB_TOKEN` (no personal token needed on your PC for normal push-based publishing).
 
 ## Troubleshooting: winCodeSign / symbolic link error on Windows
 

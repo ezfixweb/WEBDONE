@@ -1,0 +1,63 @@
+name: Desktop Auto Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - desktop-ez-app/**
+      - .github/workflows/desktop-auto-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-windows:
+    if: github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip desktop-release]')
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop-ez-app/package-lock.json
+
+      - name: Bump desktop version
+        id: version
+        shell: bash
+        run: |
+          cd desktop-ez-app
+          npm version patch --no-git-tag-version
+          echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+
+      - name: Commit version bump
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add desktop-ez-app/package.json desktop-ez-app/package-lock.json
+          git commit -m "chore(desktop): release v${{ steps.version.outputs.version }} [skip desktop-release]" || echo "No changes to commit"
+          git push
+
+      - name: Install desktop dependencies
+        shell: bash
+        run: |
+          cd desktop-ez-app
+          npm ci
+
+      - name: Build and publish Windows update
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          cd desktop-ez-app
+          npm run dist:publish
