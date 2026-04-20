@@ -22,7 +22,7 @@
     "appId": "cz.ezfix.desktop",
     "productName": "EzFix Manager",
     "win": {
-      "icon": "assets/logos/favicon.ico",
+      "icon": "assets/logos/app-icon.ico",
       "signAndEditExecutable": false,
       "target": [
         "nsis"
@@ -35,6 +35,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "EzFix Manager",
+      "installerIcon": "assets/logos/app-icon.ico",
+      "uninstallerIcon": "assets/logos/app-icon.ico",
+      "installerHeaderIcon": "assets/logos/app-icon.ico",
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": true,
       "uninstallDisplayName": "EzFix Manager"

@@ -6,8 +6,8 @@ let mainWindow = null;
 
 function createWindow() {
   const appIconPath = process.platform === 'win32'
-    ? path.join(__dirname, 'assets', 'logos', 'favicon.ico')
-    : path.join(__dirname, 'assets', 'logos', 'ezfix-logo.png');
+    ? path.join(__dirname, 'assets', 'logos', 'app-icon.ico')
+    : path.join(__dirname, 'assets', 'logos', 'app-icon.png');
   const win = new BrowserWindow({
     width: 1360,
     height: 900,
