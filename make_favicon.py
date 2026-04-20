@@ -4,6 +4,7 @@ import numpy as np
 INPUT_FILE = "ezfix-logo.jpeg"
 OUTPUT_PNG_32 = "favicon_32x32.png"
 OUTPUT_ICO = "favicon.ico"
+ICO_SIZES = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
 
 def remove_white_background(img, threshold=245):
     img = img.convert("RGBA")
@@ -23,6 +24,13 @@ def resize_and_sharpen(img, size):
     img = img.resize((size, size), Image.LANCZOS)
     return img.filter(ImageFilter.UnsharpMask(radius=1, percent=150, threshold=3))
 
+def pad_to_square(img):
+    w, h = img.size
+    side = max(w, h)
+    canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    canvas.paste(img, ((side - w) // 2, (side - h) // 2), img)
+    return canvas
+
 def main():
     img = Image.open(INPUT_FILE)
 
@@ -31,6 +39,7 @@ def main():
 
     # Crop tightly
     img = crop_to_content(img)
+    img = pad_to_square(img)
 
     # Create favicon sizes
     img_32 = resize_and_sharpen(img, 32)
@@ -43,13 +52,13 @@ def main():
     img_32.save(
         OUTPUT_ICO,
         format="ICO",
-        sizes=[(16, 16), (32, 32)],
+        sizes=ICO_SIZES,
         append_images=[img_16]
     )
 
     print("✔ Favicon exported:")
     print(" - favicon_32x32.png")
-    print(" - favicon.ico (16x16, 32x32)")
+    print(" - favicon.ico (16x16 to 256x256)")
 
 if __name__ == "__main__":
     main()
