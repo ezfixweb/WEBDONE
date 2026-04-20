@@ -49,11 +49,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
           git add desktop-ez-app/package.json desktop-ez-app/package-lock.json
-          git commit -m "chore(desktop): release v${{ steps.version.outputs.version }} [skip desktop-release]" || echo "No changes to commit"
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore(desktop): release v${{ steps.version.outputs.version }} [skip desktop-release]"
+          fi
 
           for attempt in 1 2 3; do
+            git pull --rebase origin main
+
             if git push origin HEAD:main; then
               break
             fi
@@ -62,8 +68,6 @@ jobs:
               echo "Push failed after 3 attempts"
               exit 1
             fi
-
-            git pull --rebase origin main
           done
 
       - name: Install desktop dependencies
