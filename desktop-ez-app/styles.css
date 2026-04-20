@@ -112,33 +112,6 @@ body {
   white-space: nowrap;
 }
 
-.logo-preview {
-  display: grid;
-  gap: 12px;
-  justify-items: center;
-}
-
-.logo-preview-head {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.logo-preview-head h2 {
-  margin: 0;
-}
-
-.logo-preview-image {
-  width: min(100%, 260px);
-  height: auto;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: #0f0c29;
-  padding: 10px;
-}
-
 button {
   background: linear-gradient(135deg, var(--primary), var(--accent-cyan));
   color: white;

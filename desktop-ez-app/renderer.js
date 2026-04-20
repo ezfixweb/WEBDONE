@@ -1764,15 +1764,6 @@ function showToast(message) {
   }, 2800);
 }
 
-function setLogoPreviewVisible(visible) {
-  const logoPanel = document.getElementById('logoPreviewPanel');
-  const toggleLogoBtn = document.getElementById('toggleLogoBtn');
-  if (!logoPanel || !toggleLogoBtn) return;
-
-  logoPanel.classList.toggle('hidden', !visible);
-  toggleLogoBtn.textContent = visible ? 'Skrýt logo' : 'Logo';
-}
-
 function playNotificationTone() {
   if (!state.notificationSound) return;
   try {
@@ -1925,16 +1916,6 @@ async function bootstrap() {
 
   document.getElementById('printBtn').addEventListener('click', () => {
     window.print();
-  });
-
-  document.getElementById('toggleLogoBtn').addEventListener('click', () => {
-    const logoPanel = document.getElementById('logoPreviewPanel');
-    const currentlyVisible = logoPanel && !logoPanel.classList.contains('hidden');
-    setLogoPreviewVisible(!currentlyVisible);
-  });
-
-  document.getElementById('hideLogoBtn').addEventListener('click', () => {
-    setLogoPreviewVisible(false);
   });
 
   document.querySelectorAll('.tab-btn').forEach((btn) => {
@@ -2122,7 +2103,6 @@ async function bootstrap() {
   });
 
   switchTab('orders');
-  setLogoPreviewVisible(false);
   refreshOwnerUiVisibility();
   refreshFeatureTabsVisibility();
   refreshOrderOpsVisibility();
