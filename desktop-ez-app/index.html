@@ -55,10 +55,19 @@
           <button id="refreshBtn">Obnovit</button>
           <button id="exportCsvBtn">Export CSV</button>
           <button id="exportExcelBtn">Export XLSX</button>
+          <button id="toggleLogoBtn" type="button" class="secondary">Logo</button>
           <button id="printBtn">Tisk aktuálního zobrazení</button>
           <button id="logoutBtn" class="danger">Odhlásit</button>
         </div>
       </header>
+
+      <section id="logoPreviewPanel" class="panel logo-preview hidden">
+        <div class="logo-preview-head">
+          <h2>Logo aplikace</h2>
+          <button id="hideLogoBtn" type="button" class="secondary">Skrýt</button>
+        </div>
+        <img src="./assets/logos/app-icon.png" alt="Logo EzFix" class="logo-preview-image" />
+      </section>
 
       <section id="loginPanel" class="panel login-panel">
         <h2>Přihlášení</h2>
@@ -268,29 +277,70 @@
           </div>
           <p class="small">Načítáno z /catalog (3D tisk, shop a bazar).</p>
 
+          <div class="inventory-summary">
+            <div class="inventory-summary-card">
+              <div class="small">Celkem položek</div>
+              <strong id="inventoryTotalCount">0</strong>
+            </div>
+            <div class="inventory-summary-card">
+              <div class="small">Aktivní položky</div>
+              <strong id="inventoryActiveCount">0</strong>
+            </div>
+          </div>
+
+          <div class="inventory-search-row">
+            <label>
+              Rychlé hledání ve Skladu
+              <input id="inventorySearchInput" type="text" placeholder="Hledej název položky..." />
+            </label>
+          </div>
+
           <div class="inventory-grid">
             <div class="inventory-block">
-              <h3>Tiskárny</h3>
+              <div class="inventory-block-head">
+                <h3>Tiskárny <span class="count-badge" id="printersCount">0</span></h3>
+                <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="printersList">Skrýt</button>
+              </div>
               <button class="inventory-add-btn hidden" data-inv-add="printers">Přidat tiskarnu</button>
               <ul id="printersList"></ul>
             </div>
             <div class="inventory-block">
-              <h3>Filamenty</h3>
+              <div class="inventory-block-head">
+                <h3>Filamenty <span class="count-badge" id="filamentsCount">0</span></h3>
+                <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="filamentsList">Skrýt</button>
+              </div>
               <button class="inventory-add-btn hidden" data-inv-add="filaments">Přidat filament</button>
               <ul id="filamentsList"></ul>
             </div>
             <div class="inventory-block">
-              <h3>PC díly pro sestavy</h3>
+              <div class="inventory-block-head">
+                <h3>PC díly pro sestavy <span class="count-badge" id="pcBuildPartsCount">0</span></h3>
+                <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="pcBuildPartsList">Skrýt</button>
+              </div>
               <button class="inventory-add-btn hidden" data-inv-add="pcBuildParts">Přidat PC díl</button>
               <ul id="pcBuildPartsList"></ul>
             </div>
             <div class="inventory-block">
-              <h3>Ostatní položky</h3>
+              <div class="inventory-block-head">
+                <h3>Ostatní položky <span class="count-badge" id="otherItemsCount">0</span></h3>
+                <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="otherItemsList">Skrýt</button>
+              </div>
               <button class="inventory-add-btn hidden" data-inv-add="otherItems">Přidat položku</button>
               <ul id="otherItemsList"></ul>
             </div>
             <div class="inventory-block">
-              <h3>Bazar</h3>
+              <div class="inventory-block-head">
+                <h3>Další (Other) <span class="count-badge" id="otherCustomItemsCount">0</span></h3>
+                <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="otherCustomItemsList">Skrýt</button>
+              </div>
+              <button class="inventory-add-btn hidden" data-inv-add="otherCustomItems">Přidat položku do Other</button>
+              <ul id="otherCustomItemsList"></ul>
+            </div>
+            <div class="inventory-block">
+              <div class="inventory-block-head">
+                <h3>Bazar <span class="count-badge" id="usedItemsCount">0</span></h3>
+                <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="usedItemsList">Skrýt</button>
+              </div>
               <button class="inventory-add-btn hidden" data-inv-add="usedShopItems">Přidat bazarovou položku</button>
               <ul id="usedItemsList"></ul>
             </div>
@@ -306,11 +356,59 @@
             </div>
           </div>
           <p class="small">Upravte JSON katalogu, který používá webová aplikace.</p>
-          <label>
-            Katalog JSON
-            <textarea id="catalogEditorInput" class="json-editor" spellcheck="false"></textarea>
-          </label>
-          <p class="error" id="catalogEditorError"></p>
+
+          <div class="catalog-mode-switch">
+            <button id="catalogAdvancedBtn" type="button" class="secondary">Advanced JSON</button>
+            <button id="catalogEasyBtn" type="button">Easy editor</button>
+          </div>
+
+          <div id="catalogAdvancedPanel">
+            <label>
+              Katalog JSON
+              <textarea id="catalogEditorInput" class="json-editor" spellcheck="false"></textarea>
+            </label>
+            <p class="error" id="catalogEditorError"></p>
+          </div>
+
+          <div id="catalogEasyPanel" class="hidden">
+            <div class="easy-catalog-toolbar">
+              <label>
+                Sekce
+                <select id="easyCatalogKind">
+                  <option value="printers">Tiskárny</option>
+                  <option value="filaments">Filamenty</option>
+                  <option value="pcBuildParts">PC díly</option>
+                  <option value="otherItems">Ostatní položky</option>
+                  <option value="otherCustomItems">Další (Other)</option>
+                  <option value="usedShopItems">Bazar</option>
+                </select>
+              </label>
+              <label>
+                Název položky
+                <input id="easyCatalogName" type="text" placeholder="Např. Nový produkt" />
+              </label>
+              <label>
+                Cena (Kč)
+                <input id="easyCatalogPrice" type="number" step="0.01" min="0" value="0" />
+              </label>
+              <label class="check-row easy-catalog-active">
+                <input id="easyCatalogActive" type="checkbox" checked />
+                Aktivní
+              </label>
+              <div class="easy-catalog-actions">
+                <button id="easyCatalogAddBtn" type="button">Přidat položku</button>
+                <button id="easyCatalogSaveBtn" type="button" class="secondary">Uložit easy změny</button>
+              </div>
+            </div>
+
+            <div class="easy-catalog-head">
+              <strong id="easyCatalogKindLabel">Tiskárny</strong>
+              <span class="count-badge" id="easyCatalogKindCount">0</span>
+              <button id="easyCatalogToggleListBtn" type="button" class="secondary">Skrýt položky</button>
+            </div>
+            <ul id="easyCatalogList" class="easy-catalog-list"></ul>
+            <p class="error" id="easyCatalogError"></p>
+          </div>
         </section>
 
         <section id="chatsTab" class="panel tab-content hidden">

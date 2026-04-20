@@ -19,7 +19,11 @@ const state = {
   notificationsEnabled: localStorage.getItem('ezfixDesktopNotifEnabled') !== 'false',
   notificationSound: localStorage.getItem('ezfixDesktopNotifSound') !== 'false',
   pollIntervalMs: Number(localStorage.getItem('ezfixDesktopPollMs') || 30000),
-  pollTimer: null
+  pollTimer: null,
+  inventoryCollapsed: {},
+  catalogEditorMode: localStorage.getItem('ezfixDesktopCatalogMode') || 'advanced',
+  easyCatalogListVisible: true,
+  inventorySearchQuery: ''
 };
 
 const loginPanel = document.getElementById('loginPanel');
@@ -40,6 +44,14 @@ const statusChangePopup = document.getElementById('statusChangePopup');
 const editUserModal = document.getElementById('editUserModal');
 
 const ORDER_STATUSES = ['pending', 'waiting', 'in-progress', 'delivering', 'completed', 'delivered', 'cancelled'];
+const EASY_CATALOG_KIND_LABELS = {
+  printers: 'Tiskárny',
+  filaments: 'Filamenty',
+  pcBuildParts: 'PC díly',
+  otherItems: 'Ostatní položky',
+  otherCustomItems: 'Další (Other)',
+  usedShopItems: 'Bazar'
+};
 
 function canManageOrders() {
   const role = String(state.currentUser?.role || '').toLowerCase();
@@ -300,7 +312,10 @@ async function loadCatalogEditor() {
   const result = await apiFetch('/catalog');
   const catalog = result.catalog || {};
   state.catalog = catalog;
+  ensureInventoryArrays(state.catalog);
+  normalizeInventoryPrices(state.catalog);
   input.value = prettyJson(catalog);
+  renderEasyCatalogEditor();
 }
 
 async function saveCatalogEditor() {
@@ -335,7 +350,167 @@ async function saveCatalogEditor() {
     normalizeInventoryPrices(state.inventoryDraft);
   }
   renderInventory();
+  renderEasyCatalogEditor();
   showToast('Katalog byl uložen');
+}
+
+function setCatalogEditorMode(mode) {
+  const nextMode = mode === 'easy' ? 'easy' : 'advanced';
+  state.catalogEditorMode = nextMode;
+  localStorage.setItem('ezfixDesktopCatalogMode', nextMode);
+
+  const advancedPanel = document.getElementById('catalogAdvancedPanel');
+  const easyPanel = document.getElementById('catalogEasyPanel');
+  const advancedBtn = document.getElementById('catalogAdvancedBtn');
+  const easyBtn = document.getElementById('catalogEasyBtn');
+
+  if (advancedPanel) advancedPanel.classList.toggle('hidden', nextMode !== 'advanced');
+  if (easyPanel) easyPanel.classList.toggle('hidden', nextMode !== 'easy');
+  if (advancedBtn) advancedBtn.classList.toggle('secondary', nextMode !== 'advanced');
+  if (easyBtn) easyBtn.classList.toggle('secondary', nextMode !== 'easy');
+}
+
+function getEasyCatalogKind() {
+  const select = document.getElementById('easyCatalogKind');
+  const selected = String(select?.value || 'printers');
+  if (EASY_CATALOG_KIND_LABELS[selected]) return selected;
+  return 'printers';
+}
+
+function getEasyCatalogList(kind) {
+  if (!state.catalog || typeof state.catalog !== 'object') {
+    state.catalog = {};
+  }
+  ensureInventoryArrays(state.catalog);
+  const printing = state.catalog?.printing || {};
+  if (!Array.isArray(printing[kind])) printing[kind] = [];
+  return printing[kind];
+}
+
+function renderEasyCatalogEditor() {
+  const listEl = document.getElementById('easyCatalogList');
+  const kindLabelEl = document.getElementById('easyCatalogKindLabel');
+  const kindCountEl = document.getElementById('easyCatalogKindCount');
+  const toggleBtn = document.getElementById('easyCatalogToggleListBtn');
+  if (!listEl || !kindLabelEl || !kindCountEl || !toggleBtn) return;
+
+  if (!canAccessCatalog()) {
+    listEl.innerHTML = '<li>Nemáte oprávnění pro easy editor katalogu.</li>';
+    kindLabelEl.textContent = '-';
+    kindCountEl.textContent = '0';
+    return;
+  }
+
+  const kind = getEasyCatalogKind();
+  const list = getEasyCatalogList(kind);
+
+  kindLabelEl.textContent = EASY_CATALOG_KIND_LABELS[kind] || kind;
+  kindCountEl.textContent = String(list.length);
+
+  listEl.classList.toggle('hidden', !state.easyCatalogListVisible);
+  toggleBtn.textContent = state.easyCatalogListVisible ? 'Skrýt položky' : 'Zobrazit položky';
+  if (!state.easyCatalogListVisible) return;
+
+  if (list.length === 0) {
+    listEl.innerHTML = '<li>Žádné položky v této sekci.</li>';
+    return;
+  }
+
+  listEl.innerHTML = list.map((item, index) => {
+    const name = escapeHtml(item?.name || item?.id || `Položka ${index + 1}`);
+    const price = Number(item?.price || 0);
+    const safePrice = Number.isFinite(price) ? price : 0;
+    const activeLabel = item?.active === false ? 'Neaktivní' : 'Aktivní';
+
+    return `
+      <li class="easy-catalog-item">
+        <strong>${name}</strong>
+        <span class="small">${safePrice.toFixed(2)} Kč</span>
+        <span class="small">${activeLabel}</span>
+        <button class="danger easy-catalog-remove" type="button" data-easy-remove-index="${index}">Smazat</button>
+      </li>
+    `;
+  }).join('');
+
+  listEl.querySelectorAll('[data-easy-remove-index]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const index = Number(button.getAttribute('data-easy-remove-index'));
+      if (!Number.isFinite(index) || index < 0 || index >= list.length) return;
+      list.splice(index, 1);
+      renderInventory();
+      renderEasyCatalogEditor();
+    });
+  });
+}
+
+function addEasyCatalogItem() {
+  const errorEl = document.getElementById('easyCatalogError');
+  if (errorEl) errorEl.textContent = '';
+
+  if (!canAccessCatalog()) {
+    if (errorEl) errorEl.textContent = 'Nemáte oprávnění pro easy editor katalogu.';
+    return;
+  }
+
+  const nameInput = document.getElementById('easyCatalogName');
+  const priceInput = document.getElementById('easyCatalogPrice');
+  const activeInput = document.getElementById('easyCatalogActive');
+
+  const name = String(nameInput?.value || '').trim();
+  const price = Number(priceInput?.value || 0);
+  const kind = getEasyCatalogKind();
+
+  if (!name) {
+    if (errorEl) errorEl.textContent = 'Zadejte název položky.';
+    return;
+  }
+
+  if (!Number.isFinite(price) || price < 0) {
+    if (errorEl) errorEl.textContent = 'Cena musí být kladné číslo nebo 0.';
+    return;
+  }
+
+  const list = getEasyCatalogList(kind);
+  list.push({
+    id: `${kind}-${Date.now()}`,
+    name,
+    price,
+    active: Boolean(activeInput?.checked)
+  });
+
+  if (nameInput) nameInput.value = '';
+  if (priceInput) priceInput.value = '0';
+
+  renderInventory();
+  renderEasyCatalogEditor();
+}
+
+async function saveEasyCatalogEditor() {
+  const errorEl = document.getElementById('easyCatalogError');
+  if (errorEl) errorEl.textContent = '';
+
+  if (!canAccessCatalog()) {
+    if (errorEl) errorEl.textContent = 'Nemáte oprávnění pro easy editor katalogu.';
+    return;
+  }
+
+  try {
+    ensureInventoryArrays(state.catalog || {});
+    await apiFetch('/catalog', {
+      method: 'PUT',
+      body: JSON.stringify({ catalog: state.catalog })
+    });
+
+    const input = document.getElementById('catalogEditorInput');
+    if (input) input.value = prettyJson(state.catalog);
+
+    state.inventoryDraft = cloneCatalog(state.catalog);
+    renderInventory();
+    renderEasyCatalogEditor();
+    showToast('Easy změny katalogu byly uloženy');
+  } catch (error) {
+    if (errorEl) errorEl.textContent = error.message || 'Uložení easy editoru selhalo';
+  }
 }
 
 function chatStatusLabel(status) {
@@ -1161,6 +1336,7 @@ function cloneCatalog(catalog) {
 }
 
 function ensureInventoryArrays(catalog) {
+  if (!catalog || typeof catalog !== 'object') return;
   if (!catalog.printing || typeof catalog.printing !== 'object') {
     catalog.printing = {};
   }
@@ -1168,6 +1344,7 @@ function ensureInventoryArrays(catalog) {
   if (!Array.isArray(catalog.printing.filaments)) catalog.printing.filaments = [];
   if (!Array.isArray(catalog.printing.pcBuildParts)) catalog.printing.pcBuildParts = [];
   if (!Array.isArray(catalog.printing.otherItems)) catalog.printing.otherItems = [];
+  if (!Array.isArray(catalog.printing.otherCustomItems)) catalog.printing.otherCustomItems = [];
   if (!Array.isArray(catalog.printing.usedShopItems)) catalog.printing.usedShopItems = [];
 }
 
@@ -1206,7 +1383,7 @@ function createPartsSeedFromComponents(components) {
 
 function normalizeInventoryPrices(catalog) {
   ensureInventoryArrays(catalog);
-  const kinds = ['printers', 'filaments', 'pcBuildParts', 'otherItems', 'usedShopItems'];
+  const kinds = ['printers', 'filaments', 'pcBuildParts', 'otherItems', 'otherCustomItems', 'usedShopItems'];
   kinds.forEach((kind) => {
     const list = catalog.printing[kind];
     if (!Array.isArray(list)) return;
@@ -1232,12 +1409,44 @@ function createInventoryItem(kind) {
   if (kind === 'usedShopItems') {
     return { id: `used-${stamp}`, name: 'Nová bazarová polozka', price: 0, active: true };
   }
+  if (kind === 'otherCustomItems') {
+    return { id: `other-${stamp}`, name: 'Nová položka v Other', price: 0, active: true };
+  }
   return { id: `item-${stamp}`, name: 'Nová polozka', price: 0, active: true };
 }
 
+function setTextContent(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = String(value);
+}
+
+function setInventoryListCollapsed(listId, collapsed) {
+  const listEl = document.getElementById(listId);
+  const button = document.querySelector(`[data-inv-toggle="${listId}"]`);
+  if (!listEl || !button) return;
+
+  listEl.classList.toggle('hidden', collapsed);
+  button.textContent = collapsed ? 'Zobrazit' : 'Skrýt';
+  state.inventoryCollapsed[listId] = Boolean(collapsed);
+}
+
+function applyInventoryCollapseState() {
+  const ids = ['printersList', 'filamentsList', 'pcBuildPartsList', 'otherItemsList', 'otherCustomItemsList', 'usedItemsList'];
+  ids.forEach((listId) => {
+    setInventoryListCollapsed(listId, Boolean(state.inventoryCollapsed[listId]));
+  });
+}
+
 function buildInventoryList(listId, list, kind) {
+  const query = String(state.inventorySearchQuery || '').trim().toLowerCase();
   const html = list
     .filter((x) => x && (state.inventoryEditMode || x.active !== false))
+    .filter((x) => {
+      if (!query) return true;
+      const name = String(x?.name || x?.id || '').toLowerCase();
+      return name.includes(query);
+    })
     .map((item, index) => {
       const name = escapeHtml(item.name || item.id || 'Položka');
       const price = Number(item.price || 0);
@@ -1266,12 +1475,29 @@ function buildInventoryList(listId, list, kind) {
 
 function renderInventory() {
   const sourceCatalog = state.inventoryEditMode ? state.inventoryDraft : state.catalog;
+  ensureInventoryArrays(sourceCatalog || {});
   const printing = sourceCatalog?.printing || {};
   const printers = Array.isArray(printing.printers) ? printing.printers : [];
   const filaments = Array.isArray(printing.filaments) ? printing.filaments : [];
   const pcBuildParts = Array.isArray(printing.pcBuildParts) ? printing.pcBuildParts : [];
   const otherItems = Array.isArray(printing.otherItems) ? printing.otherItems : [];
+  const otherCustomItems = Array.isArray(printing.otherCustomItems) ? printing.otherCustomItems : [];
   const usedItems = Array.isArray(printing.usedShopItems) ? printing.usedShopItems : [];
+
+  const totalCount = printers.length + filaments.length + pcBuildParts.length + otherItems.length + otherCustomItems.length + usedItems.length;
+  const activeCount = [printers, filaments, pcBuildParts, otherItems, otherCustomItems, usedItems]
+    .flat()
+    .filter((item) => item && item.active !== false)
+    .length;
+
+  setTextContent('inventoryTotalCount', totalCount);
+  setTextContent('inventoryActiveCount', activeCount);
+  setTextContent('printersCount', printers.length);
+  setTextContent('filamentsCount', filaments.length);
+  setTextContent('pcBuildPartsCount', pcBuildParts.length);
+  setTextContent('otherItemsCount', otherItems.length);
+  setTextContent('otherCustomItemsCount', otherCustomItems.length);
+  setTextContent('usedItemsCount', usedItems.length);
 
   document.querySelectorAll('[data-inv-add]').forEach((button) => {
     button.classList.toggle('hidden', !state.inventoryEditMode);
@@ -1281,7 +1507,9 @@ function renderInventory() {
   buildInventoryList('filamentsList', filaments, 'filaments');
   buildInventoryList('pcBuildPartsList', pcBuildParts, 'pcBuildParts');
   buildInventoryList('otherItemsList', otherItems, 'otherItems');
+  buildInventoryList('otherCustomItemsList', otherCustomItems, 'otherCustomItems');
   buildInventoryList('usedItemsList', usedItems, 'usedShopItems');
+  applyInventoryCollapseState();
 
   if (state.inventoryEditMode) {
     document.querySelectorAll('[data-inv-kind]').forEach((input) => {
@@ -1536,6 +1764,15 @@ function showToast(message) {
   }, 2800);
 }
 
+function setLogoPreviewVisible(visible) {
+  const logoPanel = document.getElementById('logoPreviewPanel');
+  const toggleLogoBtn = document.getElementById('toggleLogoBtn');
+  if (!logoPanel || !toggleLogoBtn) return;
+
+  logoPanel.classList.toggle('hidden', !visible);
+  toggleLogoBtn.textContent = visible ? 'Skrýt logo' : 'Logo';
+}
+
 function playNotificationTone() {
   if (!state.notificationSound) return;
   try {
@@ -1631,10 +1868,25 @@ async function onLoginSubmit(event) {
 
 async function bootstrap() {
   appVersion.textContent = `${window.ezfixDesktop.appName} v${window.ezfixDesktop.appVersion}`;
+  try {
+    const saved = JSON.parse(localStorage.getItem('ezfixDesktopInventoryCollapsed') || '{}');
+    if (saved && typeof saved === 'object') {
+      state.inventoryCollapsed = saved;
+    }
+  } catch {
+    state.inventoryCollapsed = {};
+  }
+
   document.getElementById('apiBase').value = state.apiBase;
   document.getElementById('notifEnabled').checked = state.notificationsEnabled;
   document.getElementById('notifSound').checked = state.notificationSound;
   document.getElementById('pollInterval').value = String(state.pollIntervalMs);
+  setCatalogEditorMode(state.catalogEditorMode);
+  state.inventorySearchQuery = localStorage.getItem('ezfixDesktopInventorySearch') || '';
+  const inventorySearchInput = document.getElementById('inventorySearchInput');
+  if (inventorySearchInput) {
+    inventorySearchInput.value = state.inventorySearchQuery;
+  }
 
   document.getElementById('loginForm').addEventListener('submit', onLoginSubmit);
   document.getElementById('refreshBtn').addEventListener('click', async () => {
@@ -1675,9 +1927,37 @@ async function bootstrap() {
     window.print();
   });
 
+  document.getElementById('toggleLogoBtn').addEventListener('click', () => {
+    const logoPanel = document.getElementById('logoPreviewPanel');
+    const currentlyVisible = logoPanel && !logoPanel.classList.contains('hidden');
+    setLogoPreviewVisible(!currentlyVisible);
+  });
+
+  document.getElementById('hideLogoBtn').addEventListener('click', () => {
+    setLogoPreviewVisible(false);
+  });
+
   document.querySelectorAll('.tab-btn').forEach((btn) => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
+
+  document.querySelectorAll('[data-inv-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const listId = button.getAttribute('data-inv-toggle');
+      if (!listId) return;
+      const isCollapsed = Boolean(state.inventoryCollapsed[listId]);
+      setInventoryListCollapsed(listId, !isCollapsed);
+      localStorage.setItem('ezfixDesktopInventoryCollapsed', JSON.stringify(state.inventoryCollapsed));
+    });
+  });
+
+  if (inventorySearchInput) {
+    inventorySearchInput.addEventListener('input', (event) => {
+      state.inventorySearchQuery = String(event.target.value || '');
+      localStorage.setItem('ezfixDesktopInventorySearch', state.inventorySearchQuery);
+      renderInventory();
+    });
+  }
 
   document.getElementById('statusFilter').addEventListener('change', renderOrders);
   document.getElementById('typeFilter').addEventListener('change', renderOrders);
@@ -1736,6 +2016,26 @@ async function bootstrap() {
       const errorEl = document.getElementById('catalogEditorError');
       if (errorEl) errorEl.textContent = error.message || 'Uložení katalogu selhalo';
     }
+  });
+  document.getElementById('catalogAdvancedBtn').addEventListener('click', () => {
+    setCatalogEditorMode('advanced');
+  });
+  document.getElementById('catalogEasyBtn').addEventListener('click', () => {
+    setCatalogEditorMode('easy');
+    renderEasyCatalogEditor();
+  });
+  document.getElementById('easyCatalogKind').addEventListener('change', () => {
+    renderEasyCatalogEditor();
+  });
+  document.getElementById('easyCatalogToggleListBtn').addEventListener('click', () => {
+    state.easyCatalogListVisible = !state.easyCatalogListVisible;
+    renderEasyCatalogEditor();
+  });
+  document.getElementById('easyCatalogAddBtn').addEventListener('click', () => {
+    addEasyCatalogItem();
+  });
+  document.getElementById('easyCatalogSaveBtn').addEventListener('click', async () => {
+    await saveEasyCatalogEditor();
   });
   document.getElementById('chatsRefreshBtn').addEventListener('click', async () => {
     try {
@@ -1822,6 +2122,7 @@ async function bootstrap() {
   });
 
   switchTab('orders');
+  setLogoPreviewVisible(false);
   refreshOwnerUiVisibility();
   refreshFeatureTabsVisibility();
   refreshOrderOpsVisibility();
