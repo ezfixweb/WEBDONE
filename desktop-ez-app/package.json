@@ -23,7 +23,7 @@
     "productName": "EzFix Manager",
     "win": {
       "icon": "assets/logos/app-icon.ico",
-      "signAndEditExecutable": false,
+      "signAndEditExecutable": true,
       "target": [
         "nsis"
       ]

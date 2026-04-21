@@ -17,6 +17,10 @@ function createWindow() {
     icon: appIconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      additionalArguments: [
+        `--ezfix-app-name=${app.getName()}`,
+        `--ezfix-app-version=${app.getVersion()}`
+      ],
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false
