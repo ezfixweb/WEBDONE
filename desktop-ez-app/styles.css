@@ -453,8 +453,9 @@ th { color: #cbbdf7; font-weight: 600; }
 .inventory-grid {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
+  align-items: start;
 }
 .inventory-block {
   border: 1px solid var(--border);
@@ -467,6 +468,9 @@ th { color: #cbbdf7; font-weight: 600; }
   border-color: transparent;
   background: transparent;
   padding: 0;
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .inventory-block.inventory-block-collapsed .inventory-block-head {
@@ -857,7 +861,7 @@ th { color: #cbbdf7; font-weight: 600; }
   .cards { grid-template-columns: 1fr; }
   .ops-grid { grid-template-columns: 1fr; }
   .chat-grid { grid-template-columns: 1fr; }
-  .inventory-grid { grid-template-columns: 1fr; }
+  .inventory-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
   .users-grid { grid-template-columns: 1fr; }
   .overlay-items { grid-template-columns: 1fr; }
   .overlay-meta { grid-template-columns: 1fr; }
