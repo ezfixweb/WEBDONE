@@ -10,7 +10,7 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <img src="./assets/logos/app-icon.png" alt="EzFix logo" class="brand-logo" />
+        <img src="./assets/logos/ezfix-logo.png" alt="EZFix foto logo" class="brand-logo" />
         <span>EzFix Správa</span>
       </div>
       <div class="small">Desktop panel pro provoz a objednávky</div>
@@ -125,7 +125,12 @@
           </div>
 
           <div class="ops-grid" id="orderOpsPanel">
-            <div class="ops-block">
+            <div class="ops-actions" id="orderOpsActions">
+              <button id="toggleManualOrderFormBtn" type="button" class="secondary">Vytvořit objednávku</button>
+              <button id="toggleInvoiceFormBtn" type="button" class="secondary">Vytvořit fakturu</button>
+            </div>
+
+            <div class="ops-block hidden" id="manualOrderOpsBlock">
               <h3>Vytvořit objednávku</h3>
               <form id="createManualOrderForm" class="users-form">
                 <label>
@@ -185,7 +190,7 @@
               <p class="error" id="createManualOrderError"></p>
             </div>
 
-            <div class="ops-block">
+            <div class="ops-block hidden" id="invoiceOpsBlock">
               <h3>Vytvořit fakturu</h3>
               <form id="createInvoiceForm" class="users-form">
                 <label>
@@ -259,7 +264,10 @@
 
         <section id="inventoryTab" class="panel tab-content">
           <div class="inventory-head">
-            <h2>Sklad</h2>
+            <div>
+              <h2>Sklad</h2>
+              <div id="inventoryEditStatus" class="inventory-edit-status hidden"></div>
+            </div>
             <div class="inventory-actions">
               <button id="inventoryEditBtn">Upravit sklad</button>
               <button id="inventorySaveBtn" class="hidden">Uložit zmeny</button>
@@ -292,7 +300,10 @@
                 <h3>Tiskárny <span class="count-badge" id="printersCount">0</span></h3>
                 <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="printersList">Skrýt</button>
               </div>
-              <button class="inventory-add-btn hidden" data-inv-add="printers">Přidat tiskarnu</button>
+              <div class="inventory-section-actions" data-inv-actions="printersList">
+                <button class="secondary inventory-section-edit-btn" type="button" data-inv-edit="printers">Upravit</button>
+                <button class="inventory-add-btn" type="button" data-inv-add="printers">Přidat tiskarnu</button>
+              </div>
               <ul id="printersList"></ul>
             </div>
             <div class="inventory-block">
@@ -300,7 +311,10 @@
                 <h3>Filamenty <span class="count-badge" id="filamentsCount">0</span></h3>
                 <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="filamentsList">Skrýt</button>
               </div>
-              <button class="inventory-add-btn hidden" data-inv-add="filaments">Přidat filament</button>
+              <div class="inventory-section-actions" data-inv-actions="filamentsList">
+                <button class="secondary inventory-section-edit-btn" type="button" data-inv-edit="filaments">Upravit</button>
+                <button class="inventory-add-btn" type="button" data-inv-add="filaments">Přidat filament</button>
+              </div>
               <ul id="filamentsList"></ul>
             </div>
             <div class="inventory-block">
@@ -308,7 +322,10 @@
                 <h3>PC díly pro sestavy <span class="count-badge" id="pcBuildPartsCount">0</span></h3>
                 <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="pcBuildPartsList">Skrýt</button>
               </div>
-              <button class="inventory-add-btn hidden" data-inv-add="pcBuildParts">Přidat PC díl</button>
+              <div class="inventory-section-actions" data-inv-actions="pcBuildPartsList">
+                <button class="secondary inventory-section-edit-btn" type="button" data-inv-edit="pcBuildParts">Upravit</button>
+                <button class="inventory-add-btn" type="button" data-inv-add="pcBuildParts">Přidat PC díl</button>
+              </div>
               <ul id="pcBuildPartsList"></ul>
             </div>
             <div class="inventory-block">
@@ -316,7 +333,10 @@
                 <h3>Ostatní položky <span class="count-badge" id="otherItemsCount">0</span></h3>
                 <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="otherItemsList">Skrýt</button>
               </div>
-              <button class="inventory-add-btn hidden" data-inv-add="otherItems">Přidat položku</button>
+              <div class="inventory-section-actions" data-inv-actions="otherItemsList">
+                <button class="secondary inventory-section-edit-btn" type="button" data-inv-edit="otherItems">Upravit</button>
+                <button class="inventory-add-btn" type="button" data-inv-add="otherItems">Přidat položku</button>
+              </div>
               <ul id="otherItemsList"></ul>
             </div>
             <div class="inventory-block">
@@ -324,7 +344,10 @@
                 <h3>Další (Other) <span class="count-badge" id="otherCustomItemsCount">0</span></h3>
                 <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="otherCustomItemsList">Skrýt</button>
               </div>
-              <button class="inventory-add-btn hidden" data-inv-add="otherCustomItems">Přidat položku do Other</button>
+              <div class="inventory-section-actions" data-inv-actions="otherCustomItemsList">
+                <button class="secondary inventory-section-edit-btn" type="button" data-inv-edit="otherCustomItems">Upravit</button>
+                <button class="inventory-add-btn" type="button" data-inv-add="otherCustomItems">Přidat položku do Other</button>
+              </div>
               <ul id="otherCustomItemsList"></ul>
             </div>
             <div class="inventory-block">
@@ -332,7 +355,10 @@
                 <h3>Bazar <span class="count-badge" id="usedItemsCount">0</span></h3>
                 <button class="secondary inventory-toggle-btn" type="button" data-inv-toggle="usedItemsList">Skrýt</button>
               </div>
-              <button class="inventory-add-btn hidden" data-inv-add="usedShopItems">Přidat bazarovou položku</button>
+              <div class="inventory-section-actions" data-inv-actions="usedItemsList">
+                <button class="secondary inventory-section-edit-btn" type="button" data-inv-edit="usedShopItems">Upravit</button>
+                <button class="inventory-add-btn" type="button" data-inv-add="usedShopItems">Přidat bazarovou položku</button>
+              </div>
               <ul id="usedItemsList"></ul>
             </div>
           </div>
@@ -389,6 +415,7 @@
               <div class="easy-catalog-actions">
                 <button id="easyCatalogAddBtn" type="button">Přidat položku</button>
                 <button id="easyCatalogSaveBtn" type="button" class="secondary">Uložit easy změny</button>
+                <button id="easyCatalogCancelBtn" type="button" class="secondary hidden">Zrušit editaci</button>
               </div>
             </div>
 
@@ -436,16 +463,21 @@
           </div>
 
           <div class="ops-block chat-ai-block">
-            <h3>AI konfigurace chatu</h3>
-            <div class="chat-thread-actions">
-              <button id="chatAiReloadBtn" type="button" class="secondary">Načíst AI config</button>
-              <button id="chatAiSaveBtn" type="button">Uložit AI config</button>
+            <div class="chat-ai-head">
+              <h3>AI konfigurace chatu</h3>
+              <button id="chatAiToggleBtn" type="button" class="secondary" style="padding: 6px 10px; font-size: 0.8rem;">Minimalizovat</button>
             </div>
-            <label>
-              AI config JSON
-              <textarea id="chatAiConfigInput" class="json-editor" spellcheck="false"></textarea>
-            </label>
-            <p class="error" id="chatAiConfigError"></p>
+            <div class="chat-ai-content">
+              <div class="chat-thread-actions">
+                <button id="chatAiReloadBtn" type="button" class="secondary">Načíst AI config</button>
+                <button id="chatAiSaveBtn" type="button">Uložit AI config</button>
+              </div>
+              <label>
+                AI config JSON
+                <textarea id="chatAiConfigInput" class="json-editor" spellcheck="false"></textarea>
+              </label>
+              <p class="error" id="chatAiConfigError"></p>
+            </div>
           </div>
         </section>
 

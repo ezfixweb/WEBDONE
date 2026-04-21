@@ -40,10 +40,11 @@ body {
 }
 
 .brand-logo {
-  width: 34px;
-  height: 34px;
+  width: 42px;
+  height: 42px;
   border-radius: 8px;
-  object-fit: cover;
+  object-fit: contain;
+  background: #ffffff;
   box-shadow: 0 6px 20px rgba(122, 44, 255, 0.35);
 }
 
@@ -185,6 +186,18 @@ textarea {
   gap: 12px;
 }
 
+.ops-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ops-actions button.active {
+  background: linear-gradient(135deg, var(--primary), var(--accent-cyan));
+  border: 1px solid var(--primary-light);
+}
+
 .ops-block {
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -296,7 +309,40 @@ textarea {
 }
 
 .chat-ai-block {
-  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #171438;
+  padding: 12px;
+}
+
+.chat-ai-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chat-ai-head h3 {
+  margin: 0;
+}
+
+.chat-ai-content {
+  display: grid;
+  gap: 10px;
+}
+
+.chat-ai-block.chat-ai-collapsed .chat-ai-head {
+  margin-bottom: 0;
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #171438;
+  padding: 8px 12px;
+}
+
+.chat-ai-block.chat-ai-collapsed .chat-ai-content {
+  display: none;
 }
 
 .table-wrap { margin-top: 14px; overflow: auto; max-height: 58vh; }
@@ -416,12 +462,44 @@ th { color: #cbbdf7; font-weight: 600; }
   background: #171438;
   padding: 12px;
 }
+
+.inventory-block.inventory-block-collapsed {
+  border-color: transparent;
+  background: transparent;
+  padding: 0;
+}
+
+.inventory-block.inventory-block-collapsed .inventory-block-head {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #171438;
+  padding: 10px 12px;
+}
+
 .inventory-block h3 { margin-top: 0; }
 .inventory-block ul { margin: 0; padding-left: 18px; }
 .inventory-block li { margin-bottom: 8px; }
 
-.inventory-add-btn {
+.inventory-section-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 10px;
+}
+
+.inventory-section-edit-btn {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+}
+
+.inventory-section-edit-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--accent-cyan));
+  border: 1px solid var(--primary-light);
+}
+
+.inventory-add-btn {
   padding: 6px 10px;
   font-size: 0.8rem;
   border-radius: 8px;
@@ -432,6 +510,18 @@ th { color: #cbbdf7; font-weight: 600; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.inventory-edit-status {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.inventory-edit-status.active {
+  color: var(--primary-light);
+  font-weight: 500;
 }
 
 .inventory-actions {
@@ -574,6 +664,32 @@ th { color: #cbbdf7; font-weight: 600; }
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.easy-catalog-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.easy-catalog-item:hover {
+  background-color: rgba(122, 44, 255, 0.15);
+}
+
+.easy-catalog-item.easy-catalog-item-editing {
+  background-color: rgba(122, 44, 255, 0.25);
+  border-color: var(--primary-light);
+}
+
+.easy-catalog-item-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.easy-catalog-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .easy-catalog-item .small {
