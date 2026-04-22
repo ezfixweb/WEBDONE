@@ -41,8 +41,11 @@ function configureAutoUpdater() {
     return;
   }
 
+  // Configure delta/incremental updates
+  autoUpdater.allowDowngrade = false;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.channel = 'latest';
 
   autoUpdater.on('download-progress', (progress) => {
     if (mainWindow) {

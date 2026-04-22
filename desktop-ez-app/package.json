@@ -40,13 +40,15 @@
       "installerHeaderIcon": "assets/logos/app-icon.ico",
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": true,
-      "uninstallDisplayName": "EzFix Manager"
+      "uninstallDisplayName": "EzFix Manager",
+      "differentialPackage": true
     },
     "publish": {
       "provider": "github",
       "owner": "ezfixweb",
       "repo": "WEBDONE",
-      "releaseType": "release"
+      "releaseType": "release",
+      "publishAutoUpdate": true
     }
   }
 }
