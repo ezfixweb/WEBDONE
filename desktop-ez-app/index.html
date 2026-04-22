@@ -16,8 +16,8 @@
       <div class="small">Desktop panel pro provoz a objednávky</div>
       <div class="status" id="connState">Odpojeno</div>
       <div class="sidebar-section">
-        <button class="tab-btn active" data-tab="orders">Objednávky</button>
-        <button class="tab-btn" data-tab="inventory">Sklad</button>
+        <button class="tab-btn active hidden" data-tab="orders" id="ordersTabBtn">Objednávky</button>
+        <button class="tab-btn hidden" data-tab="inventory" id="inventoryTabBtn">Sklad</button>
         <button class="tab-btn hidden" data-tab="catalog" id="catalogTabBtn">Katalog</button>
         <button class="tab-btn hidden" data-tab="chats" id="chatsTabBtn">Chaty</button>
         <button class="tab-btn hidden" data-tab="users" id="usersTabBtn">Uživatelé</button>
@@ -62,11 +62,8 @@
 
       <section id="loginPanel" class="panel login-panel">
         <h2>Přihlášení</h2>
+        <p class="auth-state-line">Stav: <strong id="authStateText">Odhlášen</strong></p>
         <form id="loginForm">
-          <label>
-            API adresa
-            <input id="apiBase" type="url" value="https://api.ezfix.cz/api" required />
-          </label>
           <label>
             Uživatelské jméno nebo e-mail
             <input id="username" type="text" required />
@@ -444,21 +441,28 @@
 
             <div class="chat-thread-block">
               <h3>Vlákno</h3>
-              <div class="chat-thread-actions">
-                <button id="chatTakeBtn" type="button" class="secondary">Převzít chat</button>
-                <button id="chatCloseBtn" type="button" class="secondary">Uzavřít chat</button>
-                <button id="chatDeleteBtn" type="button" class="danger">Smazat chat</button>
+              <div id="chatTakeOverlay" class="chat-take-overlay hidden" aria-live="polite">
+                <h4 id="chatTakeOverlayTitle">Převzetí chatu</h4>
+                <p id="chatTakeOverlayInfo" class="small">Pro odpověď nejprve převezměte chat.</p>
+                <button id="chatTakeOverlayBtn" type="button">Převzít chat</button>
               </div>
-              <div id="chatThreadMeta" class="small"></div>
-              <div id="chatMessages" class="chat-messages"></div>
-              <form id="chatReplyForm" class="chat-reply-form">
-                <label>
-                  Odpověď
-                  <textarea id="chatReplyInput" rows="3" placeholder="Napište odpověď..."></textarea>
-                </label>
-                <button type="submit">Odeslat odpověď</button>
-              </form>
-              <p class="error" id="chatReplyError"></p>
+              <div id="chatThreadContent" class="chat-thread-content">
+                <div class="chat-thread-actions">
+                  <button id="chatTakeBtn" type="button" class="secondary">Převzít chat</button>
+                  <button id="chatCloseBtn" type="button" class="secondary">Uzavřít chat</button>
+                  <button id="chatDeleteBtn" type="button" class="danger">Smazat chat</button>
+                </div>
+                <div id="chatThreadMeta" class="small"></div>
+                <div id="chatMessages" class="chat-messages"></div>
+                <form id="chatReplyForm" class="chat-reply-form">
+                  <label>
+                    Odpověď
+                    <textarea id="chatReplyInput" rows="3" placeholder="Napište odpověď..."></textarea>
+                  </label>
+                  <button type="submit">Odeslat odpověď</button>
+                </form>
+                <p class="error" id="chatReplyError"></p>
+              </div>
             </div>
           </div>
 

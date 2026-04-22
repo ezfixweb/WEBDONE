@@ -1,5 +1,5 @@
 const state = {
-  apiBase: localStorage.getItem('ezfixDesktopApiBase') || 'https://api.ezfix.cz/api',
+  apiBase: 'https://api.ezfix.cz/api',
   token: localStorage.getItem('ezfixDesktopToken') || '',
   orders: [],
   detailsById: new Map(),
@@ -14,14 +14,14 @@ const state = {
   users: [],
   chatSessions: [],
   activeChatSessionId: null,
-  chatAiCollapsed: false,
+  chatAiCollapsed: true,
   notificationSound: localStorage.getItem('ezfixDesktopNotifSound') !== 'false',
   pollIntervalMs: Number(localStorage.getItem('ezfixDesktopPollMs') || 30000),
   pollTimer: null,
-  inventoryCollapsed: {},
+  inventoryCollapsed: getDefaultInventoryCollapsed(),
   inventoryEditKind: null,
   catalogEditorMode: localStorage.getItem('ezfixDesktopCatalogMode') || 'advanced',
-  easyCatalogListVisible: true,
+  easyCatalogListVisible: false,
   inventorySearchQuery: '',
   easyCatalogEditIndex: null
 };
@@ -35,6 +35,8 @@ const toast = document.getElementById('toast');
 const usersTabBtn = document.getElementById('usersTabBtn');
 const catalogTabBtn = document.getElementById('catalogTabBtn');
 const chatsTabBtn = document.getElementById('chatsTabBtn');
+const ordersTabBtn = document.getElementById('ordersTabBtn');
+const inventoryTabBtn = document.getElementById('inventoryTabBtn');
 const usersHint = document.getElementById('usersHint');
 const usersTableBody = document.getElementById('usersTableBody');
 const orderOpsPanel = document.getElementById('orderOpsPanel');
@@ -47,6 +49,9 @@ const orderFullscreenModal = document.getElementById('orderFullscreenModal');
 const orderFullscreenContent = document.getElementById('orderFullscreenContent');
 const statusChangePopup = document.getElementById('statusChangePopup');
 const editUserModal = document.getElementById('editUserModal');
+const mainLayout = document.querySelector('.main');
+const authStateText = document.getElementById('authStateText');
+const topActionButtonIds = ['refreshBtn', 'exportCsvBtn', 'exportExcelBtn', 'printBtn', 'logoutBtn'];
 
 const ORDER_STATUSES = ['pending', 'waiting', 'in-progress', 'delivering', 'completed', 'delivered', 'cancelled'];
 const EASY_CATALOG_KIND_LABELS = {
@@ -57,6 +62,17 @@ const EASY_CATALOG_KIND_LABELS = {
   otherCustomItems: 'Další (Other)',
   usedShopItems: 'Bazar'
 };
+
+function getDefaultInventoryCollapsed() {
+  return {
+    printersList: true,
+    filamentsList: true,
+    pcBuildPartsList: true,
+    otherItemsList: true,
+    otherCustomItemsList: true,
+    usedItemsList: true
+  };
+}
 
 function canManageOrders() {
   const role = String(state.currentUser?.role || '').toLowerCase();
@@ -290,6 +306,23 @@ function refreshFeatureTabsVisibility() {
   if (!showChats && state.activeTab === 'chats') {
     switchTab('orders');
   }
+}
+
+function refreshBaseTabsVisibility(connected) {
+  if (ordersTabBtn) {
+    ordersTabBtn.classList.toggle('hidden', !connected);
+  }
+  if (inventoryTabBtn) {
+    inventoryTabBtn.classList.toggle('hidden', !connected);
+  }
+}
+
+function setTopbarButtonsEnabled(connected) {
+  topActionButtonIds.forEach((id) => {
+    const button = document.getElementById(id);
+    if (!button) return;
+    button.disabled = !connected;
+  });
 }
 
 function refreshOrderOpsVisibility() {
@@ -596,6 +629,90 @@ function chatStatusLabel(status) {
   return normalized || '-';
 }
 
+function getCurrentAdminName() {
+  return String(state.currentUser?.username || '').trim();
+}
+
+function getActiveChatSession() {
+  return state.chatSessions.find((session) => String(session.id) === String(state.activeChatSessionId));
+}
+
+function getChatReplyLockState(session) {
+  if (!session) {
+    return { locked: true, reason: 'none-selected' };
+  }
+
+  const assignedAdmin = String(session.assigned_admin_name || '').trim();
+  const currentAdmin = getCurrentAdminName();
+
+  if (!assignedAdmin) {
+    return { locked: true, reason: 'needs-take' };
+  }
+
+  if (assignedAdmin !== currentAdmin) {
+    return { locked: true, reason: 'taken-by-other', assignedAdmin };
+  }
+
+  return { locked: false, reason: 'taken-by-current' };
+}
+
+function syncChatTakeOverlay() {
+  const overlay = document.getElementById('chatTakeOverlay');
+  const overlayTitle = document.getElementById('chatTakeOverlayTitle');
+  const overlayInfo = document.getElementById('chatTakeOverlayInfo');
+  const overlayBtn = document.getElementById('chatTakeOverlayBtn');
+  const threadBlock = document.querySelector('.chat-thread-block');
+  const replyInput = document.getElementById('chatReplyInput');
+  const replySubmit = document.querySelector('#chatReplyForm button[type="submit"]');
+  const topTakeBtn = document.getElementById('chatTakeBtn');
+  if (!overlay || !overlayTitle || !overlayInfo || !overlayBtn || !threadBlock) return;
+
+  const active = getActiveChatSession();
+  const lock = getChatReplyLockState(active);
+  const isLocked = lock.locked;
+
+  overlay.classList.toggle('hidden', !isLocked);
+  threadBlock.classList.toggle('chat-thread-locked', isLocked);
+
+  if (replyInput) {
+    replyInput.disabled = isLocked;
+    if (isLocked) {
+      replyInput.placeholder = lock.reason === 'taken-by-other'
+        ? 'Tento chat je převzat jiným administrátorem.'
+        : 'Pro odpověď nejprve převezměte chat.';
+    } else {
+      replyInput.placeholder = 'Napište odpověď...';
+    }
+  }
+
+  if (replySubmit) {
+    replySubmit.disabled = isLocked;
+  }
+
+  if (topTakeBtn) {
+    topTakeBtn.disabled = Boolean(active && lock.reason === 'taken-by-other');
+  }
+
+  if (!isLocked) return;
+
+  const customerName = active?.customer_name || '-';
+  const customerEmail = active?.customer_email || '-';
+  const helpTopic = active?.help_topic || '-';
+
+  if (lock.reason === 'taken-by-other') {
+    overlayTitle.textContent = 'Chat je již převzat';
+    overlayInfo.textContent = `Klient: ${customerName} | Email: ${customerEmail} | Téma: ${helpTopic} | Převzal: ${lock.assignedAdmin}`;
+    overlayBtn.textContent = 'Obsazeno';
+    overlayBtn.disabled = true;
+    return;
+  }
+
+  overlayTitle.textContent = 'Převzít chat';
+  overlayInfo.textContent = `Klient: ${customerName} | Email: ${customerEmail} | Téma: ${helpTopic}`;
+  overlayBtn.textContent = 'Převzít chat';
+  overlayBtn.disabled = false;
+}
+
 function renderChatSessions() {
   const listEl = document.getElementById('chatSessionsList');
   if (!listEl) return;
@@ -641,11 +758,12 @@ function renderChatThread() {
   const messagesEl = document.getElementById('chatMessages');
   if (!metaEl || !messagesEl) return;
 
-  const active = state.chatSessions.find((session) => String(session.id) === String(state.activeChatSessionId));
+  const active = getActiveChatSession();
 
   if (!active) {
     metaEl.textContent = 'Vyberte konverzaci vlevo.';
     messagesEl.innerHTML = '<div class="small">Bez vybraného chatu.</div>';
+    syncChatTakeOverlay();
     return;
   }
 
@@ -653,6 +771,7 @@ function renderChatThread() {
 
   if (!Array.isArray(state.activeChatMessages) || state.activeChatMessages.length === 0) {
     messagesEl.innerHTML = '<div class="small">Chat zatím neobsahuje zprávy.</div>';
+    syncChatTakeOverlay();
     return;
   }
 
@@ -666,6 +785,8 @@ function renderChatThread() {
       </div>
     `;
   }).join('');
+
+  syncChatTakeOverlay();
 }
 
 async function loadChatSessions() {
@@ -706,6 +827,15 @@ async function openChatSession(sessionId) {
 
   const result = await apiFetch(`/chat/admin/sessions/${state.activeChatSessionId}/messages`);
   state.activeChatMessages = Array.isArray(result.messages) ? result.messages : [];
+
+  if (result.session && typeof result.session === 'object') {
+    state.chatSessions = state.chatSessions.map((session) => (
+      String(session.id) === String(state.activeChatSessionId)
+        ? { ...session, ...result.session }
+        : session
+    ));
+  }
+
   renderChatThread();
 }
 
@@ -719,6 +849,14 @@ async function sendChatReplyFromForm(event) {
 
   if (!state.activeChatSessionId) {
     errorEl.textContent = 'Vyberte nejdřív chat.';
+    return;
+  }
+
+  const lock = getChatReplyLockState(getActiveChatSession());
+  if (lock.locked) {
+    errorEl.textContent = lock.reason === 'taken-by-other'
+      ? 'Chat je převzat jiným administrátorem.'
+      : 'Pro odpověď nejprve klikněte na Převzít chat.';
     return;
   }
 
@@ -1751,6 +1889,14 @@ function setConnectedUi(connected) {
   dashboard.classList.toggle('hidden', !connected);
   connState.textContent = connected ? 'Připojeno' : 'Odpojeno';
   connState.style.color = connected ? '#22c55e' : '#38bdf8';
+  if (authStateText) {
+    authStateText.textContent = connected ? 'Přihlášen' : 'Odhlášen';
+  }
+  if (mainLayout) {
+    mainLayout.classList.toggle('login-centered', !connected);
+  }
+  refreshBaseTabsVisibility(connected);
+  setTopbarButtonsEnabled(connected);
 }
 
 function switchTab(tab) {
@@ -1963,11 +2109,8 @@ async function onLoginSubmit(event) {
   loginError.textContent = '';
 
   try {
-    state.apiBase = document.getElementById('apiBase').value.trim().replace(/\/$/, '');
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
-
-    localStorage.setItem('ezfixDesktopApiBase', state.apiBase);
 
     const result = await apiFetch('/auth/login', {
       method: 'POST',
@@ -1994,16 +2137,8 @@ async function onLoginSubmit(event) {
 
 async function bootstrap() {
   appVersion.textContent = `${window.ezfixDesktop.appName} v${window.ezfixDesktop.appVersion}`;
-  try {
-    const saved = JSON.parse(localStorage.getItem('ezfixDesktopInventoryCollapsed') || '{}');
-    if (saved && typeof saved === 'object') {
-      state.inventoryCollapsed = saved;
-    }
-  } catch {
-    state.inventoryCollapsed = {};
-  }
+  state.inventoryCollapsed = getDefaultInventoryCollapsed();
 
-  document.getElementById('apiBase').value = state.apiBase;
   document.getElementById('notifEnabled').checked = state.notificationsEnabled;
   document.getElementById('notifSound').checked = state.notificationSound;
   document.getElementById('pollInterval').value = String(state.pollIntervalMs);
@@ -2202,6 +2337,14 @@ async function bootstrap() {
       if (errorEl) errorEl.textContent = error.message || 'Převzetí chatu selhalo';
     }
   });
+  document.getElementById('chatTakeOverlayBtn').addEventListener('click', async () => {
+    try {
+      await chatAction('take');
+    } catch (error) {
+      const errorEl = document.getElementById('chatReplyError');
+      if (errorEl) errorEl.textContent = error.message || 'Převzetí chatu selhalo';
+    }
+  });
   document.getElementById('chatCloseBtn').addEventListener('click', async () => {
     try {
       await chatAction('close');
@@ -2243,6 +2386,14 @@ async function bootstrap() {
       if (errorEl) errorEl.textContent = error.message || 'Uložení AI config selhalo';
     }
   });
+  const chatAiBlock = document.querySelector('.chat-ai-block');
+  if (chatAiBlock) {
+    chatAiBlock.classList.toggle('chat-ai-collapsed', state.chatAiCollapsed);
+  }
+  const chatAiToggleBtn = document.getElementById('chatAiToggleBtn');
+  if (chatAiToggleBtn) {
+    chatAiToggleBtn.textContent = state.chatAiCollapsed ? 'Rozbalít' : 'Minimalizovat';
+  }
   document.getElementById('editUserForm').addEventListener('submit', updateUserFromForm);
   document.getElementById('closeEditUserModalBtn').addEventListener('click', closeEditUserModal);
   document.getElementById('cancelEditUserBtn').addEventListener('click', closeEditUserModal);
@@ -2274,6 +2425,7 @@ async function bootstrap() {
   refreshFeatureTabsVisibility();
   refreshOrderOpsVisibility();
   renderUsers();
+  syncChatTakeOverlay();
 
   if (state.token) {
     try {

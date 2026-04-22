@@ -7036,7 +7036,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="modal-actions" style="margin-top: 16px;">
                             <button class="btn btn-secondary" type="button" id="customInvoiceCancelBtn">Cancel</button>
-                            <button class="btn btn-primary" type="submit" id="customInvoiceSubmitBtn">Create Invoice</button>
+                            <button class="btn btn-primary" type="submit" id="customInvoiceSubmitBtn">Vytvořit fakturu</button>
                         </div>
                     </form>
                 </div>
@@ -8122,7 +8122,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="modal-overlay" id="manualOrderModal">
                 <div class="modal manual-order-modal" role="dialog" aria-modal="true" aria-label="Create order manually">
                     <div class="modal-header">
-                        <h3>Create Order</h3>
+                        <h3>Vytvořit objednávku</h3>
                         <button class="modal-close" type="button" id="manualOrderCloseBtn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -8201,7 +8201,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="modal-actions" style="margin-top: 16px;">
                             <button class="btn btn-secondary" type="button" id="manualOrderCancelBtn">Cancel</button>
-                            <button class="btn btn-primary" type="submit" id="manualOrderSubmitBtn">Create Order</button>
+                            <button class="btn btn-primary" type="submit" id="manualOrderSubmitBtn">Vytvořit objednávku</button>
                         </div>
                     </form>
                 </div>
@@ -10547,43 +10547,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         document.getElementById('catalogSaveBtn')?.addEventListener('click', saveCatalogHandler);
         document.getElementById('catalogSaveBtnTop')?.addEventListener('click', saveCatalogHandler);
-
-        const catalogUploadInput = document.getElementById('catalogUploadInput');
-        const catalogUploadResult = document.getElementById('catalogUploadResult');
-        if (catalogUploadInput) {
-            catalogUploadInput.addEventListener('change', async () => {
-            const file = catalogUploadInput.files && catalogUploadInput.files[0];
-            if (!file) return;
-
-            const formData = new FormData();
-            formData.append('file', file);
-            if (catalogUploadResult) catalogUploadResult.textContent = t('Uploading...');
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/uploads`, {
-                    method: 'POST',
-                    headers: {
-                        ...getAuthHeader()
-                    },
-                    body: formData
-                });
-                const result = await response.json();
-                if (!response.ok || !result.success) {
-                    throw new Error(result.message || 'Upload failed');
-                }
-                if (catalogUploadResult) {
-                    catalogUploadResult.textContent = result.url;
-                }
-                showToast('Image uploaded');
-            } catch (err) {
-                console.error('Upload error:', err);
-                if (catalogUploadResult) catalogUploadResult.textContent = t('Upload failed');
-                showToast('Upload failed');
-            } finally {
-                catalogUploadInput.value = '';
-            }
-            });
-        }
 
         DOM.clearOrdersBtn?.addEventListener('click', async function() {
             if (confirm(t('Are you sure you want to clear ALL orders? This action cannot be undone.'))) {
