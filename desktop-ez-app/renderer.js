@@ -1,3 +1,37 @@
+function getDefaultLabelTemplate() {
+  return {
+    header: 'EZFix',
+    footer: 'Dekuji za objednavku',
+    widthMm: 58,
+    heightMm: 38,
+    fontSize: 11,
+    showPhone: true,
+    showDate: true
+  };
+}
+
+function loadLabelTemplateFromStorage() {
+  const fallback = getDefaultLabelTemplate();
+  try {
+    const raw = localStorage.getItem('ezfixDesktopLabelTemplate');
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return fallback;
+
+    return {
+      header: String(parsed.header || fallback.header),
+      footer: String(parsed.footer || fallback.footer),
+      widthMm: Number.isFinite(Number(parsed.widthMm)) ? Number(parsed.widthMm) : fallback.widthMm,
+      heightMm: Number.isFinite(Number(parsed.heightMm)) ? Number(parsed.heightMm) : fallback.heightMm,
+      fontSize: Number.isFinite(Number(parsed.fontSize)) ? Number(parsed.fontSize) : fallback.fontSize,
+      showPhone: Boolean(parsed.showPhone),
+      showDate: Boolean(parsed.showDate)
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 const state = {
   apiBase: 'https://api.ezfix.cz/api',
   token: localStorage.getItem('ezfixDesktopToken') || '',
@@ -15,15 +49,24 @@ const state = {
   chatSessions: [],
   activeChatSessionId: null,
   chatAiCollapsed: true,
+  notificationsEnabled: localStorage.getItem('ezfixDesktopNotifEnabled') !== 'false',
   notificationSound: localStorage.getItem('ezfixDesktopNotifSound') !== 'false',
   pollIntervalMs: Number(localStorage.getItem('ezfixDesktopPollMs') || 30000),
   pollTimer: null,
+  availablePrinters: [],
+  fullPrintPrinter: localStorage.getItem('ezfixDesktopFullPrintPrinter') || '',
+  receiptPrinter: localStorage.getItem('ezfixDesktopReceiptPrinter') || '',
+  labelPrinter: localStorage.getItem('ezfixDesktopLabelPrinter') || '',
+  labelTemplate: loadLabelTemplateFromStorage(),
   inventoryCollapsed: getDefaultInventoryCollapsed(),
   inventoryEditKind: null,
-  catalogEditorMode: localStorage.getItem('ezfixDesktopCatalogMode') || 'advanced',
+  catalogEditorMode: 'easy',
   easyCatalogListVisible: false,
   inventorySearchQuery: '',
-  easyCatalogEditIndex: null
+  easyCatalogEditIndex: null,
+  customEasyCatalogCategories: new Map(),
+  easyCatalogShowAddCategoryForm: false,
+  easyCatalogNewCategoryName: ''
 };
 
 const loginPanel = document.getElementById('loginPanel');
@@ -50,6 +93,7 @@ const orderFullscreenContent = document.getElementById('orderFullscreenContent')
 const statusChangePopup = document.getElementById('statusChangePopup');
 const editUserModal = document.getElementById('editUserModal');
 const mainLayout = document.querySelector('.main');
+const appShell = document.querySelector('.app-shell');
 const authStateText = document.getElementById('authStateText');
 const topActionButtonIds = ['refreshBtn', 'exportCsvBtn', 'exportExcelBtn', 'printBtn', 'logoutBtn'];
 
@@ -211,6 +255,8 @@ function renderOrderFullscreen() {
       <div><strong>Celkem:</strong><br>${formatMoney(order.total)}</div>
     </div>
 
+    ${createOrderActionButtons(order.id)}
+
     ${canEditStatus ? `
       <div class="status-edit">
         <strong>Změna stavu:</strong>
@@ -249,6 +295,8 @@ function renderOrderFullscreen() {
       }
     });
   });
+
+  bindOrderActionButtons(orderFullscreenContent);
 }
 
 function openOrderFullscreen(orderId) {
@@ -341,6 +389,473 @@ function setOrderOpsFormPanel(panel) {
   invoiceOpsBlock.classList.toggle('hidden', !showInvoice);
   toggleManualOrderFormBtn.classList.toggle('active', showManual);
   toggleInvoiceFormBtn.classList.toggle('active', showInvoice);
+}
+
+function closeOrderOpsModals() {
+  setOrderOpsFormPanel(null);
+
+  const manualError = document.getElementById('createManualOrderError');
+  const invoiceError = document.getElementById('createInvoiceError');
+  if (manualError) manualError.textContent = '';
+  if (invoiceError) invoiceError.textContent = '';
+}
+
+function closeVisibleOverlayByPriority() {
+  if (manualOrderOpsBlock && !manualOrderOpsBlock.classList.contains('hidden')) {
+    closeOrderOpsModals();
+    return true;
+  }
+  if (invoiceOpsBlock && !invoiceOpsBlock.classList.contains('hidden')) {
+    closeOrderOpsModals();
+    return true;
+  }
+  if (orderFullscreenModal && !orderFullscreenModal.classList.contains('hidden')) {
+    closeOrderFullscreen();
+    return true;
+  }
+  if (editUserModal && !editUserModal.classList.contains('hidden')) {
+    closeEditUserModal();
+    return true;
+  }
+  return false;
+}
+
+function handleGlobalEscape(event) {
+  if (event.key !== 'Escape') return;
+  const didClose = closeVisibleOverlayByPriority();
+  if (didClose) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}
+
+function renderPrinterSelect(selectId, selectedValue) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const printers = Array.isArray(state.availablePrinters) ? state.availablePrinters : [];
+  const uniquePrinters = [...new Set(printers.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'cs'));
+
+  const options = ['<option value="">Výchozí systémová tiskárna</option>'];
+  if (selectedValue && !uniquePrinters.includes(selectedValue)) {
+    options.push(`<option value="${escapeHtml(selectedValue)}">${escapeHtml(selectedValue)} (uložená)</option>`);
+  }
+
+  uniquePrinters.forEach((printerName) => {
+    options.push(`<option value="${escapeHtml(printerName)}">${escapeHtml(printerName)}</option>`);
+  });
+
+  select.innerHTML = options.join('');
+  select.value = selectedValue || '';
+}
+
+function renderPrinterSettings() {
+  renderPrinterSelect('fullPrintPrinter', state.fullPrintPrinter);
+  renderPrinterSelect('receiptPrinter', state.receiptPrinter);
+  renderPrinterSelect('labelPrinter', state.labelPrinter);
+}
+
+function renderLabelTemplateEditor() {
+  const template = state.labelTemplate || getDefaultLabelTemplate();
+  const headerInput = document.getElementById('labelHeaderInput');
+  const footerInput = document.getElementById('labelFooterInput');
+  const widthInput = document.getElementById('labelWidthMmInput');
+  const heightInput = document.getElementById('labelHeightMmInput');
+  const fontSizeInput = document.getElementById('labelFontSizeInput');
+  const showPhoneInput = document.getElementById('labelShowPhoneInput');
+  const showDateInput = document.getElementById('labelShowDateInput');
+  const previewBox = document.getElementById('labelPreviewBox');
+
+  if (headerInput) headerInput.value = String(template.header || '');
+  if (footerInput) footerInput.value = String(template.footer || '');
+  if (widthInput) widthInput.value = String(template.widthMm || 58);
+  if (heightInput) heightInput.value = String(template.heightMm || 38);
+  if (fontSizeInput) fontSizeInput.value = String(template.fontSize || 11);
+  if (showPhoneInput) showPhoneInput.checked = Boolean(template.showPhone);
+  if (showDateInput) showDateInput.checked = Boolean(template.showDate);
+
+  if (previewBox) {
+    const preview = [
+      String(template.header || 'EZFix'),
+      'Objednavka EZF-... ',
+      'Zakaznik: Jan Novak',
+      template.showPhone ? 'Tel: +420...' : '',
+      template.showDate ? 'Datum: 23. 4. 2026' : '',
+      String(template.footer || '')
+    ].filter(Boolean).join('\n');
+    previewBox.textContent = preview;
+    previewBox.style.fontSize = `${Math.max(8, Math.min(18, Number(template.fontSize || 11)))}px`;
+  }
+}
+
+function persistLabelTemplate() {
+  localStorage.setItem('ezfixDesktopLabelTemplate', JSON.stringify(state.labelTemplate || getDefaultLabelTemplate()));
+}
+
+function clampNumber(value, min, max, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
+
+function updateLabelTemplateFromForm() {
+  const template = state.labelTemplate || getDefaultLabelTemplate();
+  const headerInput = document.getElementById('labelHeaderInput');
+  const footerInput = document.getElementById('labelFooterInput');
+  const widthInput = document.getElementById('labelWidthMmInput');
+  const heightInput = document.getElementById('labelHeightMmInput');
+  const fontSizeInput = document.getElementById('labelFontSizeInput');
+  const showPhoneInput = document.getElementById('labelShowPhoneInput');
+  const showDateInput = document.getElementById('labelShowDateInput');
+
+  state.labelTemplate = {
+    header: String(headerInput?.value || template.header || '').slice(0, 40),
+    footer: String(footerInput?.value || template.footer || '').slice(0, 60),
+    widthMm: clampNumber(widthInput?.value, 30, 120, template.widthMm || 58),
+    heightMm: clampNumber(heightInput?.value, 20, 120, template.heightMm || 38),
+    fontSize: clampNumber(fontSizeInput?.value, 8, 18, template.fontSize || 11),
+    showPhone: Boolean(showPhoneInput?.checked),
+    showDate: Boolean(showDateInput?.checked)
+  };
+
+  persistLabelTemplate();
+  renderLabelTemplateEditor();
+}
+
+async function loadPrinterOptions(showFeedback = false) {
+  if (!window.ezfixDesktop?.listPrinters) {
+    renderPrinterSettings();
+    return;
+  }
+
+  try {
+    const printers = await window.ezfixDesktop.listPrinters();
+    state.availablePrinters = Array.isArray(printers)
+      ? printers.map((printer) => String(printer?.name || '')).filter(Boolean)
+      : [];
+    renderPrinterSettings();
+    if (showFeedback) {
+      showToast(state.availablePrinters.length > 0 ? 'Tiskárny byly načteny' : 'Nebyla nalezena žádná tiskárna');
+    }
+  } catch (error) {
+    renderPrinterSettings();
+    if (showFeedback) {
+      alert(error.message || 'Načtení tiskáren selhalo');
+    }
+  }
+}
+
+function savePrinterSetting(storageKey, stateKey, value) {
+  state[stateKey] = String(value || '');
+  localStorage.setItem(storageKey, state[stateKey]);
+}
+
+function getOrderById(orderId) {
+  return state.orders.find((order) => String(order.id) === String(orderId)) || null;
+}
+
+async function ensureOrderData(orderId) {
+  let order = getOrderById(orderId);
+  if (!order) {
+    await loadDashboardData({ silent: true });
+    order = getOrderById(orderId);
+  }
+  if (!order) {
+    throw new Error('Objednávka nebyla nalezena');
+  }
+
+  let details = state.detailsById.get(String(orderId));
+  if (!details) {
+    const result = await apiFetch(`/orders/${orderId}`);
+    details = result.order || {};
+    state.detailsById.set(String(orderId), details);
+  }
+
+  return {
+    order,
+    details,
+    items: Array.isArray(details?.items) ? details.items : []
+  };
+}
+
+function createOrderActionButtons(orderId) {
+  const deleteButton = canManageOrders()
+    ? `<button type="button" class="danger" data-order-action="delete" data-order-id="${orderId}">Smazat</button>`
+    : '';
+
+  return `
+    <div class="order-detail-actions">
+      <button type="button" class="secondary" data-order-action="invoice-print" data-order-id="${orderId}">Tisk faktury</button>
+      <button type="button" class="secondary" data-order-action="invoice-save" data-order-id="${orderId}">Uložit fakturu</button>
+      <button type="button" class="secondary" data-order-action="receipt-print" data-order-id="${orderId}">Tisk účtenky</button>
+      <button type="button" class="ghost-btn" data-order-action="label-print" data-order-id="${orderId}">Tisk štítku</button>
+      ${deleteButton}
+    </div>
+  `;
+}
+
+function buildInvoiceDocumentHtml(order, items) {
+  const lineItems = items.length > 0
+    ? items.map((item, index) => `
+        <tr>
+          <td>${index + 1}.</td>
+          <td>${escapeHtml(item.repair_name || item.repair_type || item.device || 'Položka')}</td>
+          <td>${escapeHtml(item.brand || '-')} ${escapeHtml(item.model || '')}</td>
+          <td style="text-align:right;">${formatMoney(item.price || 0)}</td>
+        </tr>
+      `).join('')
+    : '<tr><td colspan="4">Objednávka neobsahuje položky.</td></tr>';
+
+  return `<!DOCTYPE html>
+  <html lang="cs">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Faktura ${escapeHtml(order.order_number || order.id)}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 32px; color: #111827; }
+        .head { display: flex; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+        .card { border: 1px solid #d1d5db; border-radius: 12px; padding: 16px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; }
+        .summary { margin-top: 20px; display: flex; justify-content: flex-end; }
+        .summary-box { min-width: 220px; border: 1px solid #d1d5db; border-radius: 12px; padding: 16px; }
+        h1, h2, p { margin: 0; }
+        .muted { color: #6b7280; }
+      </style>
+    </head>
+    <body>
+      <div class="head">
+        <div>
+          <h1>EzFix</h1>
+          <p class="muted">Faktura k objednávce ${escapeHtml(order.order_number || order.id)}</p>
+        </div>
+        <div class="card">
+          <strong>Doklad</strong><br />
+          Číslo: ${escapeHtml(order.order_number || order.id)}<br />
+          Datum: ${escapeHtml(formatDate(order.created_at))}<br />
+          Stav: ${escapeHtml(statusLabel(order.status))}
+        </div>
+      </div>
+      <div class="head">
+        <div class="card" style="flex:1;">
+          <h2>Odběratel</h2>
+          <p>${escapeHtml(order.customer_name || '-')}</p>
+          <p>${escapeHtml(order.customer_email || '-')}</p>
+          <p>${escapeHtml(order.customer_phone || '-')}</p>
+          <p>${escapeHtml(order.customer_address || '-')}</p>
+        </div>
+        <div class="card" style="width:280px;">
+          <h2>Souhrn</h2>
+          <p>Typ: ${escapeHtml(toOrderTypeLabel(classifyOrder(state.detailsById.get(String(order.id)) || {})))}</p>
+          <p>Položek: ${items.length}</p>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Služba</th>
+            <th>Zařízení</th>
+            <th style="text-align:right;">Cena</th>
+          </tr>
+        </thead>
+        <tbody>${lineItems}</tbody>
+      </table>
+      <div class="summary">
+        <div class="summary-box">
+          <strong>Celkem</strong>
+          <div style="font-size: 24px; margin-top: 8px;">${formatMoney(order.total || 0)}</div>
+        </div>
+      </div>
+    </body>
+  </html>`;
+}
+
+function buildReceiptDocumentHtml(order, items) {
+  const lineItems = items.length > 0
+    ? items.map((item) => `<div class="row"><span>${escapeHtml(item.repair_name || item.repair_type || 'Položka')}</span><strong>${formatMoney(item.price || 0)}</strong></div>`).join('')
+    : '<div class="row"><span>Bez položek</span><strong>0 Kč</strong></div>';
+
+  return `<!DOCTYPE html>
+  <html lang="cs">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Účtenka ${escapeHtml(order.order_number || order.id)}</title>
+      <style>
+        body { font-family: Arial, sans-serif; width: 72mm; margin: 0 auto; color: #111; }
+        .wrap { padding: 10px 8px; }
+        h1 { font-size: 18px; margin: 0 0 8px; text-align: center; }
+        .muted { font-size: 11px; color: #555; text-align: center; margin-bottom: 10px; }
+        .row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; margin: 6px 0; }
+        .divider { border-top: 1px dashed #888; margin: 10px 0; }
+        .total { font-size: 16px; font-weight: 700; }
+      </style>
+    </head>
+    <body>
+      <div class="wrap">
+        <h1>EzFix</h1>
+        <div class="muted">Objednávka ${escapeHtml(order.order_number || order.id)}</div>
+        <div class="row"><span>Zákazník</span><strong>${escapeHtml(order.customer_name || '-')}</strong></div>
+        <div class="row"><span>Datum</span><strong>${escapeHtml(formatDate(order.created_at))}</strong></div>
+        <div class="divider"></div>
+        ${lineItems}
+        <div class="divider"></div>
+        <div class="row total"><span>Celkem</span><strong>${formatMoney(order.total || 0)}</strong></div>
+      </div>
+    </body>
+  </html>`;
+}
+
+function buildLabelDocumentHtml(order) {
+  const template = state.labelTemplate || getDefaultLabelTemplate();
+  const widthMm = clampNumber(template.widthMm, 30, 120, 58);
+  const heightMm = clampNumber(template.heightMm, 20, 120, 38);
+  const fontSize = clampNumber(template.fontSize, 8, 18, 11);
+  const customer = escapeHtml(order.customer_name || '-');
+  const orderNumber = escapeHtml(order.order_number || order.id || '-');
+  const phone = escapeHtml(order.customer_phone || '-');
+  const created = escapeHtml(formatDate(order.created_at));
+
+  return `<!DOCTYPE html>
+  <html lang="cs">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Stitek ${orderNumber}</title>
+      <style>
+        @page { size: ${widthMm}mm ${heightMm}mm; margin: 1.2mm; }
+        html, body { margin: 0; padding: 0; }
+        body { width: ${widthMm}mm; height: ${heightMm}mm; font-family: Arial, sans-serif; font-size: ${fontSize}px; color: #111; }
+        .label { box-sizing: border-box; width: 100%; height: 100%; border: 1px solid #333; border-radius: 2mm; padding: 2mm; display: grid; gap: 1mm; align-content: start; }
+        .head { font-weight: 700; text-align: center; border-bottom: 1px dashed #555; padding-bottom: 1mm; }
+        .line { display: flex; justify-content: space-between; gap: 2mm; }
+        .footer { margin-top: 1mm; text-align: center; font-size: ${Math.max(8, fontSize - 1)}px; color: #444; }
+      </style>
+    </head>
+    <body>
+      <div class="label">
+        <div class="head">${escapeHtml(template.header || 'EZFix')}</div>
+        <div class="line"><span>Objednavka</span><strong>${orderNumber}</strong></div>
+        <div class="line"><span>Zakaznik</span><strong>${customer}</strong></div>
+        ${template.showPhone ? `<div class="line"><span>Telefon</span><strong>${phone}</strong></div>` : ''}
+        ${template.showDate ? `<div class="line"><span>Datum</span><strong>${created}</strong></div>` : ''}
+        <div class="footer">${escapeHtml(template.footer || '')}</div>
+      </div>
+    </body>
+  </html>`;
+}
+
+async function printHtmlDocument({ title, html, printerName }) {
+  if (window.ezfixDesktop?.printHtml) {
+    await window.ezfixDesktop.printHtml({ title, html, printerName: printerName || '' });
+    return;
+  }
+
+  const printWindow = window.open('', '_blank', 'width=960,height=720');
+  if (!printWindow) {
+    throw new Error('Nepodařilo se otevřít tiskové okno');
+  }
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  printWindow.close();
+}
+
+async function savePdfDocument({ title, html, defaultFileName }) {
+  if (!window.ezfixDesktop?.savePdf) {
+    throw new Error('Uložení PDF není v tomto prostředí dostupné');
+  }
+  await window.ezfixDesktop.savePdf({ title, html, defaultFileName });
+}
+
+async function printOrderInvoice(orderId) {
+  const { order, items } = await ensureOrderData(orderId);
+  await printHtmlDocument({
+    title: `Faktura ${order.order_number || order.id}`,
+    html: buildInvoiceDocumentHtml(order, items),
+    printerName: state.fullPrintPrinter
+  });
+  showToast('Faktura byla odeslána na tisk');
+}
+
+async function saveOrderInvoicePdf(orderId) {
+  const { order, items } = await ensureOrderData(orderId);
+  await savePdfDocument({
+    title: `Faktura ${order.order_number || order.id}`,
+    html: buildInvoiceDocumentHtml(order, items),
+    defaultFileName: `faktura-${String(order.order_number || order.id).replace(/[^a-zA-Z0-9-_]+/g, '-')}.pdf`
+  });
+  showToast('Faktura byla uložena do PDF');
+}
+
+async function printOrderReceipt(orderId) {
+  const { order, items } = await ensureOrderData(orderId);
+  await printHtmlDocument({
+    title: `Účtenka ${order.order_number || order.id}`,
+    html: buildReceiptDocumentHtml(order, items),
+    printerName: state.receiptPrinter
+  });
+  showToast('Účtenka byla odeslána na tisk');
+}
+
+function showLabelPrintPlaceholder() {
+  showToast('Tisk štítků bude doplněn později');
+}
+
+async function printOrderLabel(orderId) {
+  const { order } = await ensureOrderData(orderId);
+  const html = buildLabelDocumentHtml(order);
+  await printHtmlDocument({
+    title: `Stitek ${order.order_number || order.id}`,
+    html,
+    printerName: state.labelPrinter
+  });
+  showToast('Štítek byl odeslán na tisk');
+}
+
+async function deleteOrder(orderId) {
+  if (!canManageOrders()) {
+    throw new Error('Nemáte oprávnění mazat objednávky.');
+  }
+
+  const order = getOrderById(orderId);
+  const label = order?.order_number || orderId;
+  if (!window.confirm(`Opravdu smazat objednávku ${label}?`)) {
+    return;
+  }
+
+  await apiFetch(`/orders/${orderId}`, { method: 'DELETE' });
+  state.orders = state.orders.filter((item) => String(item.id) !== String(orderId));
+  state.detailsById.delete(String(orderId));
+  if (String(state.expandedOrderId) === String(orderId)) state.expandedOrderId = null;
+  if (String(state.fullscreenOrderId) === String(orderId)) closeOrderFullscreen();
+  renderOrders();
+  showToast('Objednávka byla smazána');
+}
+
+function bindOrderActionButtons(root) {
+  if (!root) return;
+
+  root.querySelectorAll('[data-order-action]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const action = button.getAttribute('data-order-action');
+      const orderId = button.getAttribute('data-order-id');
+      if (!action || !orderId) return;
+
+      button.disabled = true;
+      try {
+        if (action === 'invoice-print') await printOrderInvoice(orderId);
+        if (action === 'invoice-save') await saveOrderInvoicePdf(orderId);
+        if (action === 'receipt-print') await printOrderReceipt(orderId);
+        if (action === 'label-print') await printOrderLabel(orderId);
+        if (action === 'delete') await deleteOrder(orderId);
+      } catch (error) {
+        alert(error.message || 'Akce nad objednávkou selhala');
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
 }
 
 function prettyJson(value) {
@@ -442,7 +957,13 @@ function renderEasyCatalogEditor() {
   const kindLabelEl = document.getElementById('easyCatalogKindLabel');
   const kindCountEl = document.getElementById('easyCatalogKindCount');
   const toggleBtn = document.getElementById('easyCatalogToggleListBtn');
+  const addCategoryBtn = document.getElementById('easyCatalogAddCategoryBtn');
   if (!listEl || !kindLabelEl || !kindCountEl || !toggleBtn) return;
+
+  // Zobrazit tlačítko jen když je editace zapnutá
+  if (addCategoryBtn) {
+    addCategoryBtn.classList.toggle('hidden', !state.inventoryEditMode);
+  }
 
   if (!canAccessCatalog()) {
     listEl.innerHTML = '<li>Nemáte oprávnění pro easy editor katalogu.</li>';
@@ -1310,6 +1831,7 @@ async function createManualOrderFromForm(event) {
     document.getElementById('createManualOrderForm').reset();
     document.getElementById('manualOrderStatus').value = 'pending';
     document.getElementById('manualOrderServiceType').value = 'pickup';
+    closeOrderOpsModals();
     showToast('Objednávka byla vytvořena');
     await loadDashboardData({ silent: true });
   } catch (error) {
@@ -1377,6 +1899,7 @@ async function createInvoiceFromForm(event) {
 
     document.getElementById('createInvoiceForm').reset();
     document.getElementById('invoiceStatus').value = 'issued';
+    closeOrderOpsModals();
     const createdNumber = result?.invoice?.invoiceNumber;
     showToast(createdNumber ? `Faktura ${createdNumber} byla vytvořena` : 'Faktura byla vytvořena');
   } catch (error) {
@@ -1476,6 +1999,7 @@ function renderOrders() {
                   `).join('')}
                 </ul>
               ` : '<div class="small">Tato objednávka nemá položky k zobrazení.</div>'}
+              ${createOrderActionButtons(order.id)}
               ${canEditStatus ? `
                 <div class="status-edit">
                   <strong>Změna stavu:</strong>
@@ -1542,6 +2066,8 @@ function renderOrders() {
       }
     });
   });
+
+  bindOrderActionButtons(ordersTableBody);
 }
 
 function cloneCatalog(catalog) {
@@ -1895,6 +2421,9 @@ function setConnectedUi(connected) {
   if (mainLayout) {
     mainLayout.classList.toggle('login-centered', !connected);
   }
+  if (appShell) {
+    appShell.classList.toggle('sidebar-hidden', !connected);
+  }
   refreshBaseTabsVisibility(connected);
   setTopbarButtonsEnabled(connected);
 }
@@ -2111,6 +2640,7 @@ async function onLoginSubmit(event) {
   try {
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
+    const rememberDevice = document.getElementById('rememberDevice').checked;
 
     const result = await apiFetch('/auth/login', {
       method: 'POST',
@@ -2121,6 +2651,15 @@ async function onLoginSubmit(event) {
     state.token = result.token;
     state.currentUser = result.user || null;
     localStorage.setItem('ezfixDesktopToken', state.token);
+    
+    if (rememberDevice) {
+      localStorage.setItem('ezfixDesktopRememberedToken', state.token);
+      localStorage.setItem('ezfixDesktopRememberedUser', username);
+    } else {
+      localStorage.removeItem('ezfixDesktopRememberedToken');
+      localStorage.removeItem('ezfixDesktopRememberedUser');
+    }
+    
     state.notificationsEnabled = document.getElementById('notifEnabled').checked;
     setConnectedUi(true);
     refreshOwnerUiVisibility();
@@ -2142,6 +2681,8 @@ async function bootstrap() {
   document.getElementById('notifEnabled').checked = state.notificationsEnabled;
   document.getElementById('notifSound').checked = state.notificationSound;
   document.getElementById('pollInterval').value = String(state.pollIntervalMs);
+  renderPrinterSettings();
+  renderLabelTemplateEditor();
   setCatalogEditorMode(state.catalogEditorMode);
   state.inventorySearchQuery = localStorage.getItem('ezfixDesktopInventorySearch') || '';
   const inventorySearchInput = document.getElementById('inventorySearchInput');
@@ -2177,6 +2718,8 @@ async function bootstrap() {
     state.activeChatSessionId = null;
     state.activeChatMessages = [];
     localStorage.removeItem('ezfixDesktopToken');
+    localStorage.removeItem('ezfixDesktopRememberedToken');
+    localStorage.removeItem('ezfixDesktopRememberedUser');
     stopPolling();
     refreshOwnerUiVisibility();
     refreshFeatureTabsVisibility();
@@ -2248,6 +2791,37 @@ async function bootstrap() {
     startPolling();
   });
 
+  document.getElementById('fullPrintPrinter').addEventListener('change', (event) => {
+    savePrinterSetting('ezfixDesktopFullPrintPrinter', 'fullPrintPrinter', event.target.value);
+  });
+
+  document.getElementById('receiptPrinter').addEventListener('change', (event) => {
+    savePrinterSetting('ezfixDesktopReceiptPrinter', 'receiptPrinter', event.target.value);
+  });
+
+  document.getElementById('labelPrinter').addEventListener('change', (event) => {
+    savePrinterSetting('ezfixDesktopLabelPrinter', 'labelPrinter', event.target.value);
+  });
+
+  [
+    'labelHeaderInput',
+    'labelFooterInput',
+    'labelWidthMmInput',
+    'labelHeightMmInput',
+    'labelFontSizeInput',
+    'labelShowPhoneInput',
+    'labelShowDateInput'
+  ].forEach((id) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    const eventName = input.type === 'checkbox' ? 'change' : 'input';
+    input.addEventListener(eventName, updateLabelTemplateFromForm);
+  });
+
+  document.getElementById('reloadPrintersBtn').addEventListener('click', async () => {
+    await loadPrinterOptions(true);
+  });
+
   document.getElementById('createUserForm').addEventListener('submit', createUserFromForm);
   document.getElementById('createManualOrderForm').addEventListener('submit', createManualOrderFromForm);
   document.getElementById('createInvoiceForm').addEventListener('submit', createInvoiceFromForm);
@@ -2298,6 +2872,9 @@ async function bootstrap() {
   document.getElementById('easyCatalogAddBtn').addEventListener('click', () => {
     addEasyCatalogItem();
   });
+    document.getElementById('easyCatalogAddCategoryBtn').addEventListener('click', () => {
+      addEasyCatalogCategory();
+    });
   document.getElementById('easyCatalogSaveBtn').addEventListener('click', async () => {
     await saveEasyCatalogEditor();
   });
@@ -2398,11 +2975,27 @@ async function bootstrap() {
   document.getElementById('closeEditUserModalBtn').addEventListener('click', closeEditUserModal);
   document.getElementById('cancelEditUserBtn').addEventListener('click', closeEditUserModal);
   document.getElementById('closeOrderFullscreenBtn').addEventListener('click', closeOrderFullscreen);
+  document.getElementById('closeManualOrderModalBtn').addEventListener('click', closeOrderOpsModals);
+  document.getElementById('closeInvoiceModalBtn').addEventListener('click', closeOrderOpsModals);
   orderFullscreenModal.addEventListener('click', (event) => {
     if (event.target === orderFullscreenModal) {
       closeOrderFullscreen();
     }
   });
+  if (manualOrderOpsBlock) {
+    manualOrderOpsBlock.addEventListener('click', (event) => {
+      if (event.target === manualOrderOpsBlock) {
+        closeOrderOpsModals();
+      }
+    });
+  }
+  if (invoiceOpsBlock) {
+    invoiceOpsBlock.addEventListener('click', (event) => {
+      if (event.target === invoiceOpsBlock) {
+        closeOrderOpsModals();
+      }
+    });
+  }
   if (editUserModal) {
     editUserModal.addEventListener('click', (event) => {
       if (event.target === editUserModal) {
@@ -2410,6 +3003,7 @@ async function bootstrap() {
       }
     });
   }
+  document.addEventListener('keydown', handleGlobalEscape);
   document.getElementById('usersRefreshBtn').addEventListener('click', async () => {
     if (!state.token) return;
     try {
@@ -2425,6 +3019,7 @@ async function bootstrap() {
   refreshFeatureTabsVisibility();
   refreshOrderOpsVisibility();
   renderUsers();
+  await loadPrinterOptions();
   syncChatTakeOverlay();
 
   if (state.token) {
@@ -2443,6 +3038,31 @@ async function bootstrap() {
     } catch {
       state.token = '';
       localStorage.removeItem('ezfixDesktopToken');
+    }
+  }
+
+  // Zkusit načíst pamatovaný token
+  const rememberedToken = localStorage.getItem('ezfixDesktopRememberedToken');
+  const rememberedUser = localStorage.getItem('ezfixDesktopRememberedUser');
+  if (rememberedToken && rememberedUser) {
+    state.token = rememberedToken;
+    try {
+      const meResult = await apiFetch('/auth/me');
+      state.currentUser = meResult.user || null;
+      localStorage.setItem('ezfixDesktopToken', state.token);
+      setConnectedUi(true);
+      refreshOwnerUiVisibility();
+      refreshFeatureTabsVisibility();
+      refreshOrderOpsVisibility();
+      await loadDashboardData({ silent: true });
+      await loadUsers();
+      startPolling();
+      showToast('Automatické přihlášení úspěšné');
+      return;
+    } catch {
+      state.token = '';
+      localStorage.removeItem('ezfixDesktopRememberedToken');
+      localStorage.removeItem('ezfixDesktopRememberedUser');
     }
   }
 

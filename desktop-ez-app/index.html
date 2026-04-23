@@ -23,7 +23,61 @@
         <button class="tab-btn hidden" data-tab="users" id="usersTabBtn">Uživatelé</button>
       </div>
       <div class="sidebar-settings">
-        <div class="small">Upozornění</div>
+        <div class="small">Nastavení</div>
+        <label>
+          Hlavní tiskárna faktur
+          <select id="fullPrintPrinter">
+            <option value="">Výchozí systémová tiskárna</option>
+          </select>
+        </label>
+        <label>
+          Tiskárna účtenek
+          <select id="receiptPrinter">
+            <option value="">Výchozí systémová tiskárna</option>
+          </select>
+        </label>
+        <label>
+          Tiskárna štítků
+          <select id="labelPrinter">
+            <option value="">Výchozí systémová tiskárna</option>
+          </select>
+        </label>
+        <div class="label-editor" id="labelEditorPanel">
+          <div class="small">Editor štítku</div>
+          <label>
+            Nadpis
+            <input id="labelHeaderInput" type="text" maxlength="40" placeholder="EZFix" />
+          </label>
+          <label>
+            Poznámka dole
+            <input id="labelFooterInput" type="text" maxlength="60" placeholder="Děkujeme" />
+          </label>
+          <div class="label-editor-grid">
+            <label>
+              Šířka (mm)
+              <input id="labelWidthMmInput" type="number" min="30" max="120" step="1" />
+            </label>
+            <label>
+              Výška (mm)
+              <input id="labelHeightMmInput" type="number" min="20" max="120" step="1" />
+            </label>
+            <label>
+              Velikost písma
+              <input id="labelFontSizeInput" type="number" min="8" max="18" step="1" />
+            </label>
+          </div>
+          <label class="check-row">
+            <input id="labelShowPhoneInput" type="checkbox" />
+            Zobrazit telefon
+          </label>
+          <label class="check-row">
+            <input id="labelShowDateInput" type="checkbox" />
+            Zobrazit datum
+          </label>
+          <div class="label-preview" id="labelPreviewBox">Náhled štítku</div>
+        </div>
+        <button id="reloadPrintersBtn" type="button" class="secondary">Načíst tiskárny</button>
+        <div class="small">Upozornění a obnovování</div>
         <label class="check-row">
           <input id="notifEnabled" type="checkbox" checked />
           Zapnout automatická upozorneni
@@ -71,6 +125,10 @@
           <label>
             Heslo
             <input id="password" type="password" required />
+          </label>
+          <label class="check-row">
+            <input id="rememberDevice" type="checkbox" />
+            Pamatovat si toto zařízení
           </label>
           <button type="submit">Připojit</button>
         </form>
@@ -125,119 +183,6 @@
             <div class="ops-actions" id="orderOpsActions">
               <button id="toggleManualOrderFormBtn" type="button" class="secondary">Vytvořit objednávku</button>
               <button id="toggleInvoiceFormBtn" type="button" class="secondary">Vytvořit fakturu</button>
-            </div>
-
-            <div class="ops-block hidden" id="manualOrderOpsBlock">
-              <h3>Vytvořit objednávku</h3>
-              <form id="createManualOrderForm" class="users-form">
-                <label>
-                  Jméno zákazníka
-                  <input id="manualOrderCustomerName" type="text" required />
-                </label>
-                <label>
-                  E-mail zákazníka
-                  <input id="manualOrderCustomerEmail" type="email" required />
-                </label>
-                <label>
-                  Telefon
-                  <input id="manualOrderCustomerPhone" type="text" required />
-                </label>
-                <label>
-                  Název položky/služby
-                  <input id="manualOrderItemName" type="text" required />
-                </label>
-                <label>
-                  Cena položky (Kč)
-                  <input id="manualOrderItemPrice" type="number" step="0.01" min="0" required />
-                </label>
-                <label>
-                  Stav objednávky
-                  <select id="manualOrderStatus">
-                    <option value="pending" selected>Čeká na potvrzení</option>
-                    <option value="in-progress">Rozpracováno</option>
-                    <option value="waiting">Čeká</option>
-                    <option value="delivering">Doručování</option>
-                    <option value="completed">Dokončeno</option>
-                    <option value="delivered">Doručeno</option>
-                    <option value="cancelled">Zrušeno</option>
-                  </select>
-                </label>
-                <label>
-                  Typ služby
-                  <select id="manualOrderServiceType">
-                    <option value="pickup" selected>Vyzvednutí</option>
-                    <option value="delivery">Doručení</option>
-                    <option value="zasilkovna">Zásilkovna</option>
-                    <option value="ceska-posta">Česká pošta</option>
-                    <option value="ppl">PPL</option>
-                    <option value="dpd">DPD</option>
-                    <option value="gls">GLS</option>
-                  </select>
-                </label>
-                <label>
-                  Sken faktury (volitelné)
-                  <input id="manualOrderInvoiceScan" type="file" accept="image/*,.pdf" />
-                </label>
-                <label>
-                  Poznámka
-                  <input id="manualOrderNotes" type="text" />
-                </label>
-                <button type="submit">Vytvořit objednávku</button>
-              </form>
-              <p class="error" id="createManualOrderError"></p>
-            </div>
-
-            <div class="ops-block hidden" id="invoiceOpsBlock">
-              <h3>Vytvořit fakturu</h3>
-              <form id="createInvoiceForm" class="users-form">
-                <label>
-                  Číslo faktury (volitelné)
-                  <input id="invoiceNumber" type="text" placeholder="Nechte prázdné pro auto-generování" />
-                </label>
-                <label>
-                  ID objednávky (volitelné)
-                  <input id="invoiceOrderId" type="number" min="1" />
-                </label>
-                <label>
-                  Jméno zákazníka
-                  <input id="invoiceCustomerName" type="text" required />
-                </label>
-                <label>
-                  E-mail zákazníka
-                  <input id="invoiceCustomerEmail" type="email" />
-                </label>
-                <label>
-                  Popis faktury
-                  <input id="invoiceDescription" type="text" />
-                </label>
-                <label>
-                  Částka (Kč)
-                  <input id="invoiceAmount" type="number" step="0.01" min="0" required />
-                </label>
-                <label>
-                  Splatnost
-                  <input id="invoiceDueDate" type="date" />
-                </label>
-                <label>
-                  Stav faktury
-                  <select id="invoiceStatus">
-                    <option value="issued" selected>Vystavena</option>
-                    <option value="paid">Zaplacena</option>
-                    <option value="overdue">Po splatnosti</option>
-                    <option value="cancelled">Stornována</option>
-                  </select>
-                </label>
-                <label>
-                  Sken faktury (volitelné)
-                  <input id="invoiceScanFile" type="file" accept="image/*,.pdf" />
-                </label>
-                <label>
-                  Poznámka
-                  <input id="invoiceNotes" type="text" />
-                </label>
-                <button type="submit">Vytvořit fakturu</button>
-              </form>
-              <p class="error" id="createInvoiceError"></p>
             </div>
           </div>
 
@@ -411,6 +356,7 @@
               </label>
               <div class="easy-catalog-actions">
                 <button id="easyCatalogAddBtn" type="button">Přidat položku</button>
+                <button id="easyCatalogAddCategoryBtn" type="button" class="secondary hidden">➕ Nová sekce</button>
                 <button id="easyCatalogSaveBtn" type="button" class="secondary">Uložit easy změny</button>
                 <button id="easyCatalogCancelBtn" type="button" class="secondary hidden">Zrušit editaci</button>
               </div>
@@ -551,6 +497,129 @@
         <button id="closeOrderFullscreenBtn" class="danger">Zavřít</button>
       </div>
       <div id="orderFullscreenContent"></div>
+    </div>
+  </div>
+
+  <div id="manualOrderOpsBlock" class="overlay hidden">
+    <div class="overlay-panel small-panel order-form-modal-panel">
+      <div class="overlay-head">
+        <h2>Vytvořit objednávku</h2>
+        <button id="closeManualOrderModalBtn" class="secondary" type="button">Zavřít</button>
+      </div>
+      <form id="createManualOrderForm" class="users-form order-form-modal-form">
+        <label class="full-row">
+          Jméno zákazníka
+          <input id="manualOrderCustomerName" type="text" required />
+        </label>
+        <label>
+          E-mail zákazníka
+          <input id="manualOrderCustomerEmail" type="email" required />
+        </label>
+        <label>
+          Telefon
+          <input id="manualOrderCustomerPhone" type="text" required />
+        </label>
+        <label class="full-row">
+          Název položky/služby
+          <input id="manualOrderItemName" type="text" required />
+        </label>
+        <label>
+          Cena položky (Kč)
+          <input id="manualOrderItemPrice" type="number" step="0.01" min="0" required />
+        </label>
+        <label>
+          Stav objednávky
+          <select id="manualOrderStatus">
+            <option value="pending" selected>Čeká na potvrzení</option>
+            <option value="in-progress">Rozpracováno</option>
+            <option value="waiting">Čeká</option>
+            <option value="delivering">Doručování</option>
+            <option value="completed">Dokončeno</option>
+            <option value="delivered">Doručeno</option>
+            <option value="cancelled">Zrušeno</option>
+          </select>
+        </label>
+        <label>
+          Typ služby
+          <select id="manualOrderServiceType">
+            <option value="pickup" selected>Vyzvednutí</option>
+            <option value="delivery">Doručení</option>
+            <option value="zasilkovna">Zásilkovna</option>
+            <option value="ceska-posta">Česká pošta</option>
+            <option value="ppl">PPL</option>
+            <option value="dpd">DPD</option>
+            <option value="gls">GLS</option>
+          </select>
+        </label>
+        <label class="full-row">
+          Sken faktury (volitelné)
+          <input id="manualOrderInvoiceScan" type="file" accept="image/*,.pdf" />
+        </label>
+        <label class="full-row">
+          Poznámka
+          <input id="manualOrderNotes" type="text" />
+        </label>
+        <button type="submit" class="full-row">Vytvořit objednávku</button>
+      </form>
+      <p class="error" id="createManualOrderError"></p>
+    </div>
+  </div>
+
+  <div id="invoiceOpsBlock" class="overlay hidden">
+    <div class="overlay-panel small-panel order-form-modal-panel">
+      <div class="overlay-head">
+        <h2>Vytvořit fakturu</h2>
+        <button id="closeInvoiceModalBtn" class="secondary" type="button">Zavřít</button>
+      </div>
+      <form id="createInvoiceForm" class="users-form order-form-modal-form">
+        <label class="full-row">
+          Číslo faktury (volitelné)
+          <input id="invoiceNumber" type="text" placeholder="Nechte prázdné pro auto-generování" />
+        </label>
+        <label>
+          ID objednávky (volitelné)
+          <input id="invoiceOrderId" type="number" min="1" />
+        </label>
+        <label class="full-row">
+          Jméno zákazníka
+          <input id="invoiceCustomerName" type="text" required />
+        </label>
+        <label>
+          E-mail zákazníka
+          <input id="invoiceCustomerEmail" type="email" />
+        </label>
+        <label class="full-row">
+          Popis faktury
+          <input id="invoiceDescription" type="text" />
+        </label>
+        <label>
+          Částka (Kč)
+          <input id="invoiceAmount" type="number" step="0.01" min="0" required />
+        </label>
+        <label>
+          Splatnost
+          <input id="invoiceDueDate" type="date" />
+        </label>
+        <label>
+          Stav faktury
+          <select id="invoiceStatus">
+            <option value="issued" selected>Vystavena</option>
+            <option value="paid">Zaplacena</option>
+            <option value="overdue">Po splatnosti</option>
+            <option value="cancelled">Stornována</option>
+          </select>
+        </label>
+        <label class="full-row">
+          Sken faktury (volitelné)
+          <input id="invoiceScanFile" type="file" accept="image/*,.pdf" />
+        </label>
+        <label class="full-row">
+          Poznámka
+          <input id="invoiceNotes" type="text" />
+        </label>
+        <button type="submit" class="full-row">Vytvořit fakturu</button>
+      </form>
+      <p class="error" id="createInvoiceError"></p>
     </div>
   </div>
 

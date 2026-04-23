@@ -1,8 +1,101 @@
 const path = require('path');
-const { app, BrowserWindow, Menu } = require('electron');
+const fs = require('fs/promises');
+const { app, BrowserWindow, Menu, dialog, ipcMain } = require('electron');
 const { autoUpdater } = require('electron-updater');
 
 let mainWindow = null;
+
+function buildPrintableHtmlDocument(title, bodyHtml) {
+  if (/<html[\s>]/i.test(String(bodyHtml || ''))) {
+    return String(bodyHtml);
+  }
+
+  return `<!DOCTYPE html>
+  <html lang="cs">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>${String(title || 'EzFix tisk')}</title>
+    </head>
+    <body>${String(bodyHtml || '')}</body>
+  </html>`;
+}
+
+async function createPrintWindow(html) {
+  const printWindow = new BrowserWindow({
+    show: false,
+    autoHideMenuBar: true,
+    webPreferences: {
+      sandbox: true,
+      contextIsolation: true
+    }
+  });
+
+  await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+  return printWindow;
+}
+
+function registerDesktopIpc() {
+  ipcMain.handle('ezfix:list-printers', async (event) => {
+    return event.sender.getPrintersAsync();
+  });
+
+  ipcMain.handle('ezfix:print-html', async (_event, payload = {}) => {
+    const html = buildPrintableHtmlDocument(payload.title, payload.html);
+    const printerName = String(payload.printerName || '').trim();
+    const printWindow = await createPrintWindow(html);
+
+    try {
+      await new Promise((resolve, reject) => {
+        printWindow.webContents.print({
+          silent: Boolean(printerName),
+          deviceName: printerName || undefined,
+          printBackground: true,
+          margins: { marginType: 'printableArea' }
+        }, (success, failureReason) => {
+          if (!success) {
+            reject(new Error(failureReason || 'Tisk selhal'));
+            return;
+          }
+          resolve();
+        });
+      });
+      return { success: true };
+    } finally {
+      if (!printWindow.isDestroyed()) {
+        printWindow.close();
+      }
+    }
+  });
+
+  ipcMain.handle('ezfix:save-pdf', async (_event, payload = {}) => {
+    const html = buildPrintableHtmlDocument(payload.title, payload.html);
+    const pdfWindow = await createPrintWindow(html);
+
+    try {
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        title: 'Uložit PDF',
+        defaultPath: String(payload.defaultFileName || 'ezfix-dokument.pdf'),
+        filters: [{ name: 'PDF', extensions: ['pdf'] }]
+      });
+
+      if (canceled || !filePath) {
+        return { canceled: true };
+      }
+
+      const pdfBuffer = await pdfWindow.webContents.printToPDF({
+        printBackground: true,
+        preferCSSPageSize: true
+      });
+      await fs.writeFile(filePath, pdfBuffer);
+      return { success: true, filePath };
+    } finally {
+      if (!pdfWindow.isDestroyed()) {
+        pdfWindow.close();
+      }
+    }
+  });
+}
 
 function createWindow() {
   const appIconPath = process.platform === 'win32'
@@ -77,6 +170,7 @@ function configureAutoUpdater() {
 app.whenReady().then(() => {
   app.setAppUserModelId('cz.ezfix.desktop');
   Menu.setApplicationMenu(null);
+  registerDesktopIpc();
   createWindow();
   configureAutoUpdater();
 
