@@ -1,6 +1,6 @@
 {
   "name": "ezfix-windows-app",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Desktop management app for EzFix orders and inventory",
   "main": "main.js",
   "author": "EzFix",
