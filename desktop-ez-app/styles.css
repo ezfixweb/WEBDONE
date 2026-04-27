@@ -38,6 +38,7 @@ body {
   background: linear-gradient(180deg, #181537, #120f2c);
   border-right: 1px solid var(--border);
   padding: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .brand {
   font-size: 1.2rem;
@@ -182,6 +183,11 @@ body {
   justify-content: center;
   font-size: 1.2rem;
   line-height: 1;
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
 }
 
 button {
@@ -1206,7 +1212,8 @@ th { color: #cbbdf7; font-weight: 600; }
   .overlay-items { grid-template-columns: 1fr; }
   .overlay-meta { grid-template-columns: 1fr; }
   .topbar { align-items: flex-start; flex-direction: column; }
-  .actions { flex-wrap: wrap; }
+  .actions { flex-wrap: wrap; gap: 4px; }
+  .actions button { padding: 8px 10px; font-size: 0.9rem; }
   .inventory-head { align-items: flex-start; flex-direction: column; }
   .users-head { align-items: flex-start; flex-direction: column; }
   .inventory-edit-row { grid-template-columns: 1fr; }
@@ -1215,4 +1222,10 @@ th { color: #cbbdf7; font-weight: 600; }
   .settings-modal-grid { grid-template-columns: 1fr; }
   .label-editor-grid { grid-template-columns: 1fr; }
   .inventory-summary { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .actions button { padding: 6px 8px; font-size: 0.85rem; }
+  .topbar h1 { font-size: 1.3rem; }
+  .topbar p { font-size: 0.85rem; }
 }
