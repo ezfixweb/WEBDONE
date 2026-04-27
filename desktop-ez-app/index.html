@@ -22,80 +22,6 @@
         <button class="tab-btn hidden" data-tab="chats" id="chatsTabBtn">Chaty</button>
         <button class="tab-btn hidden" data-tab="users" id="usersTabBtn">Uživatelé</button>
       </div>
-      <div class="sidebar-settings">
-        <div class="small">Nastavení</div>
-        <label>
-          Hlavní tiskárna faktur
-          <select id="fullPrintPrinter">
-            <option value="">Výchozí systémová tiskárna</option>
-          </select>
-        </label>
-        <label>
-          Tiskárna účtenek
-          <select id="receiptPrinter">
-            <option value="">Výchozí systémová tiskárna</option>
-          </select>
-        </label>
-        <label>
-          Tiskárna štítků
-          <select id="labelPrinter">
-            <option value="">Výchozí systémová tiskárna</option>
-          </select>
-        </label>
-        <div class="label-editor" id="labelEditorPanel">
-          <div class="small">Editor štítku</div>
-          <label>
-            Nadpis
-            <input id="labelHeaderInput" type="text" maxlength="40" placeholder="EZFix" />
-          </label>
-          <label>
-            Poznámka dole
-            <input id="labelFooterInput" type="text" maxlength="60" placeholder="Děkujeme" />
-          </label>
-          <div class="label-editor-grid">
-            <label>
-              Šířka (mm)
-              <input id="labelWidthMmInput" type="number" min="30" max="120" step="1" />
-            </label>
-            <label>
-              Výška (mm)
-              <input id="labelHeightMmInput" type="number" min="20" max="120" step="1" />
-            </label>
-            <label>
-              Velikost písma
-              <input id="labelFontSizeInput" type="number" min="8" max="18" step="1" />
-            </label>
-          </div>
-          <label class="check-row">
-            <input id="labelShowPhoneInput" type="checkbox" />
-            Zobrazit telefon
-          </label>
-          <label class="check-row">
-            <input id="labelShowDateInput" type="checkbox" />
-            Zobrazit datum
-          </label>
-          <div class="label-preview" id="labelPreviewBox">Náhled štítku</div>
-        </div>
-        <button id="reloadPrintersBtn" type="button" class="secondary">Načíst tiskárny</button>
-        <div class="small">Upozornění a obnovování</div>
-        <label class="check-row">
-          <input id="notifEnabled" type="checkbox" checked />
-          Zapnout automatická upozorneni
-        </label>
-        <label>
-          Interval obnovení
-          <select id="pollInterval">
-            <option value="15000">15s</option>
-            <option value="30000" selected>30s</option>
-            <option value="60000">60s</option>
-            <option value="120000">120s</option>
-          </select>
-        </label>
-        <label class="check-row">
-          <input id="notifSound" type="checkbox" checked />
-          Zvuk
-        </label>
-      </div>
       <div class="sidebar-footer" id="appVersion"></div>
     </aside>
 
@@ -106,10 +32,12 @@
           <p>Objednávky, filtry, 3D tisk a přehled skladu.</p>
         </div>
         <div class="actions">
+          <button id="sidebarToggleBtn" class="secondary" type="button">Sbalit menu</button>
           <button id="refreshBtn">Obnovit</button>
           <button id="exportCsvBtn">Export CSV</button>
           <button id="exportExcelBtn">Export XLSX</button>
           <button id="printBtn">Tisk aktuálního zobrazení</button>
+          <button id="openSettingsBtn" class="secondary" type="button">Nastavení</button>
           <button id="logoutBtn" class="danger">Odhlásit</button>
         </div>
       </header>
@@ -620,6 +548,97 @@
         <button type="submit" class="full-row">Vytvořit fakturu</button>
       </form>
       <p class="error" id="createInvoiceError"></p>
+    </div>
+  </div>
+
+  <div id="settingsModal" class="overlay hidden">
+    <div class="overlay-panel small-panel settings-modal-panel">
+      <div class="overlay-head">
+        <h2>Nastavení</h2>
+        <button id="closeSettingsModalBtn" class="secondary" type="button">Zavřít</button>
+      </div>
+      <div class="settings-modal-grid">
+        <section class="settings-card">
+          <div class="small">Tiskárny</div>
+          <label>
+            Hlavní tiskárna faktur
+            <select id="fullPrintPrinter">
+              <option value="">Výchozí systémová tiskárna</option>
+            </select>
+          </label>
+          <label>
+            Tiskárna účtenek
+            <select id="receiptPrinter">
+              <option value="">Výchozí systémová tiskárna</option>
+            </select>
+          </label>
+          <label>
+            Tiskárna štítků
+            <select id="labelPrinter">
+              <option value="">Výchozí systémová tiskárna</option>
+            </select>
+          </label>
+          <button id="reloadPrintersBtn" type="button" class="secondary">Načíst tiskárny</button>
+        </section>
+
+        <section class="settings-card">
+          <div class="small">Upozornění a obnovování</div>
+          <label class="check-row">
+            <input id="notifEnabled" type="checkbox" checked />
+            Zapnout automatická upozorneni
+          </label>
+          <label>
+            Interval obnovení
+            <select id="pollInterval">
+              <option value="15000">15s</option>
+              <option value="30000" selected>30s</option>
+              <option value="60000">60s</option>
+              <option value="120000">120s</option>
+            </select>
+          </label>
+          <label class="check-row">
+            <input id="notifSound" type="checkbox" checked />
+            Zvuk
+          </label>
+        </section>
+
+        <section class="settings-card settings-card-wide">
+          <div class="label-editor" id="labelEditorPanel">
+            <div class="small">Editor štítku</div>
+            <label>
+              Nadpis
+              <input id="labelHeaderInput" type="text" maxlength="40" placeholder="EZFix" />
+            </label>
+            <label>
+              Poznámka dole
+              <input id="labelFooterInput" type="text" maxlength="60" placeholder="Děkujeme" />
+            </label>
+            <div class="label-editor-grid">
+              <label>
+                Šířka (mm)
+                <input id="labelWidthMmInput" type="number" min="30" max="120" step="1" />
+              </label>
+              <label>
+                Výška (mm)
+                <input id="labelHeightMmInput" type="number" min="20" max="120" step="1" />
+              </label>
+              <label>
+                Velikost písma
+                <input id="labelFontSizeInput" type="number" min="8" max="18" step="1" />
+              </label>
+            </div>
+            <label class="check-row">
+              <input id="labelShowPhoneInput" type="checkbox" />
+              Zobrazit telefon
+            </label>
+            <label class="check-row">
+              <input id="labelShowDateInput" type="checkbox" />
+              Zobrazit datum
+            </label>
+            <div class="label-preview" id="labelPreviewBox">Náhled štítku</div>
+          </div>
+        </section>
+      </div>
     </div>
   </div>
 

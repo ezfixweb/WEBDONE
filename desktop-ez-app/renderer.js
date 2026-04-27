@@ -52,6 +52,7 @@ const state = {
   notificationsEnabled: localStorage.getItem('ezfixDesktopNotifEnabled') !== 'false',
   notificationSound: localStorage.getItem('ezfixDesktopNotifSound') !== 'false',
   pollIntervalMs: Number(localStorage.getItem('ezfixDesktopPollMs') || 30000),
+  sidebarCollapsed: localStorage.getItem('ezfixDesktopSidebarCollapsed') === 'true',
   pollTimer: null,
   availablePrinters: [],
   fullPrintPrinter: localStorage.getItem('ezfixDesktopFullPrintPrinter') || '',
@@ -86,8 +87,11 @@ const orderOpsPanel = document.getElementById('orderOpsPanel');
 const inventoryEditStatus = document.getElementById('inventoryEditStatus');
 const manualOrderOpsBlock = document.getElementById('manualOrderOpsBlock');
 const invoiceOpsBlock = document.getElementById('invoiceOpsBlock');
+const settingsModal = document.getElementById('settingsModal');
 const toggleManualOrderFormBtn = document.getElementById('toggleManualOrderFormBtn');
 const toggleInvoiceFormBtn = document.getElementById('toggleInvoiceFormBtn');
+const openSettingsBtn = document.getElementById('openSettingsBtn');
+const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
 const orderFullscreenModal = document.getElementById('orderFullscreenModal');
 const orderFullscreenContent = document.getElementById('orderFullscreenContent');
 const statusChangePopup = document.getElementById('statusChangePopup');
@@ -95,7 +99,7 @@ const editUserModal = document.getElementById('editUserModal');
 const mainLayout = document.querySelector('.main');
 const appShell = document.querySelector('.app-shell');
 const authStateText = document.getElementById('authStateText');
-const topActionButtonIds = ['refreshBtn', 'exportCsvBtn', 'exportExcelBtn', 'printBtn', 'logoutBtn'];
+const topActionButtonIds = ['sidebarToggleBtn', 'refreshBtn', 'exportCsvBtn', 'exportExcelBtn', 'printBtn', 'openSettingsBtn', 'logoutBtn'];
 
 const ORDER_STATUSES = ['pending', 'waiting', 'in-progress', 'delivering', 'completed', 'delivered', 'cancelled'];
 const EASY_CATALOG_KIND_LABELS = {
@@ -373,6 +377,17 @@ function setTopbarButtonsEnabled(connected) {
   });
 }
 
+function applySidebarVisibility(connected = Boolean(state.token)) {
+  const shouldHideSidebar = !connected || state.sidebarCollapsed;
+  if (appShell) {
+    appShell.classList.toggle('sidebar-hidden', shouldHideSidebar);
+  }
+  if (sidebarToggleBtn) {
+    sidebarToggleBtn.textContent = state.sidebarCollapsed ? 'Rozbalit menu' : 'Sbalit menu';
+    sidebarToggleBtn.setAttribute('aria-pressed', String(state.sidebarCollapsed));
+  }
+}
+
 function refreshOrderOpsVisibility() {
   const canManage = canManageOrders();
   if (!orderOpsPanel) return;
@@ -400,6 +415,16 @@ function closeOrderOpsModals() {
   if (invoiceError) invoiceError.textContent = '';
 }
 
+function openSettingsModal() {
+  if (!settingsModal) return;
+  settingsModal.classList.remove('hidden');
+}
+
+function closeSettingsModal() {
+  if (!settingsModal) return;
+  settingsModal.classList.add('hidden');
+}
+
 function closeVisibleOverlayByPriority() {
   if (manualOrderOpsBlock && !manualOrderOpsBlock.classList.contains('hidden')) {
     closeOrderOpsModals();
@@ -407,6 +432,10 @@ function closeVisibleOverlayByPriority() {
   }
   if (invoiceOpsBlock && !invoiceOpsBlock.classList.contains('hidden')) {
     closeOrderOpsModals();
+    return true;
+  }
+  if (settingsModal && !settingsModal.classList.contains('hidden')) {
+    closeSettingsModal();
     return true;
   }
   if (orderFullscreenModal && !orderFullscreenModal.classList.contains('hidden')) {
@@ -2411,6 +2440,9 @@ async function loadDashboardData(options = {}) {
 }
 
 function setConnectedUi(connected) {
+  if (!connected) {
+    closeSettingsModal();
+  }
   loginPanel.classList.toggle('hidden', connected);
   dashboard.classList.toggle('hidden', !connected);
   connState.textContent = connected ? 'Připojeno' : 'Odpojeno';
@@ -2421,9 +2453,7 @@ function setConnectedUi(connected) {
   if (mainLayout) {
     mainLayout.classList.toggle('login-centered', !connected);
   }
-  if (appShell) {
-    appShell.classList.toggle('sidebar-hidden', !connected);
-  }
+  applySidebarVisibility(connected);
   refreshBaseTabsVisibility(connected);
   setTopbarButtonsEnabled(connected);
 }
@@ -2731,6 +2761,20 @@ async function bootstrap() {
     window.print();
   });
 
+  if (openSettingsBtn) {
+    openSettingsBtn.addEventListener('click', () => {
+      openSettingsModal();
+    });
+  }
+  if (sidebarToggleBtn) {
+    sidebarToggleBtn.addEventListener('click', () => {
+      if (!state.token) return;
+      state.sidebarCollapsed = !state.sidebarCollapsed;
+      localStorage.setItem('ezfixDesktopSidebarCollapsed', String(state.sidebarCollapsed));
+      applySidebarVisibility(true);
+    });
+  }
+
   document.querySelectorAll('.tab-btn').forEach((btn) => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
@@ -2977,6 +3021,7 @@ async function bootstrap() {
   document.getElementById('closeOrderFullscreenBtn').addEventListener('click', closeOrderFullscreen);
   document.getElementById('closeManualOrderModalBtn').addEventListener('click', closeOrderOpsModals);
   document.getElementById('closeInvoiceModalBtn').addEventListener('click', closeOrderOpsModals);
+  document.getElementById('closeSettingsModalBtn').addEventListener('click', closeSettingsModal);
   orderFullscreenModal.addEventListener('click', (event) => {
     if (event.target === orderFullscreenModal) {
       closeOrderFullscreen();
@@ -2993,6 +3038,13 @@ async function bootstrap() {
     invoiceOpsBlock.addEventListener('click', (event) => {
       if (event.target === invoiceOpsBlock) {
         closeOrderOpsModals();
+      }
+    });
+  }
+  if (settingsModal) {
+    settingsModal.addEventListener('click', (event) => {
+      if (event.target === settingsModal) {
+        closeSettingsModal();
       }
     });
   }
