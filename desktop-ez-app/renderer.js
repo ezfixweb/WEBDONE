@@ -383,7 +383,10 @@ function applySidebarVisibility(connected = Boolean(state.token)) {
     appShell.classList.toggle('sidebar-hidden', shouldHideSidebar);
   }
   if (sidebarToggleBtn) {
-    sidebarToggleBtn.textContent = state.sidebarCollapsed ? 'Rozbalit menu' : 'Sbalit menu';
+    const actionLabel = state.sidebarCollapsed ? 'Rozbalit menu' : 'Sbalit menu';
+    sidebarToggleBtn.textContent = '☰';
+    sidebarToggleBtn.setAttribute('aria-label', actionLabel);
+    sidebarToggleBtn.setAttribute('title', 'Menu');
     sidebarToggleBtn.setAttribute('aria-pressed', String(state.sidebarCollapsed));
   }
 }
