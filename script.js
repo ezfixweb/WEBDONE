@@ -222,6 +222,12 @@ document.addEventListener('DOMContentLoaded', function() {
             'Item': 'Položka',
             'No items': 'Žádné položky',
             'No items yet': 'Žádné položky zatím',
+            'No details yet': 'Detaily zatím nejsou k dispozici',
+            'View details': 'Detaily',
+            'Show details': 'Zobrazit detaily',
+            'Hide details': 'Skrýt detaily',
+            'No item details available.': 'Detaily položky nejsou k dispozici.',
+            'Order details unavailable.': 'Detaily objednávky nejsou dostupné.',
             'No image': 'Bez obrázku',
             'Item added to cart': 'Položka přidána do košíku',
             'Failed to add item to cart': 'Nepodařilo se přidat položku do košíku',
@@ -551,6 +557,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'Show password': 'Zobrazit heslo',
             'Hide password': 'Skryt heslo',
             'Switch language': 'Prepnout jazyk',
+            'View cart': 'Zobrazit kosik',
+            'Close announcement': 'Zavrit oznameni',
+            'Profile': 'Profil',
             'EzFix - Phone, Tablet, Notebook & PC Repair': 'EzFix - Opravy telefonu, tabletu, notebooku a PC',
             'Logging in...': 'Prihlasuji...',
             'Invalid username or password': 'Neplatne uzivatelske jmeno nebo heslo',
@@ -921,10 +930,10 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     const defaultOtherItems = [
-        { id: 'other-1', name: 'Servisni sluzba', desc: '', price: 0, image: '', details: 'Popis bude doplnen pozdeji.', specs: [], showContact: true, active: true },
-        { id: 'other-2', name: 'Other Item 2', desc: '', price: 0, image: '', details: '', specs: [], showContact: false, active: true },
-        { id: 'other-3', name: 'Other Item 3', desc: '', price: 0, image: '', details: '', specs: [], showContact: false, active: true },
-        { id: 'other-4', name: 'Other Item 4', desc: '', price: 0, image: '', details: '', specs: [], showContact: false, active: true }
+        { id: 'other-1', name: 'Servisní služba', desc: '', price: 0, image: '', details: 'Popis bude doplněn později.', specs: [], showContact: true, active: true },
+        { id: 'other-2', name: 'Jiná položka 2', desc: '', price: 0, image: '', details: '', specs: [], showContact: false, active: true },
+        { id: 'other-3', name: 'Jiná položka 3', desc: '', price: 0, image: '', details: '', specs: [], showContact: false, active: true },
+        { id: 'other-4', name: 'Jiná položka 4', desc: '', price: 0, image: '', details: '', specs: [], showContact: false, active: true }
     ];
 
     const defaultUsedShopItems = [
@@ -4523,16 +4532,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         const itemsHtml = items.length
                             ? `<div class="profile-order-items">${items.map((item) => `
                                 <div class="profile-order-item">
-                                    <div><strong>${escapeHtml(item.repair_name || item.repair_type || 'Item')}</strong></div>
+                                    <div><strong>${escapeHtml(item.repair_name || item.repair_type || t('Item'))}</strong></div>
                                     <div class="meta">${escapeHtml([item.device, item.brand, item.model].filter(Boolean).join(' • '))}</div>
                                     <div class="meta">${escapeHtml(formatCurrency(item.price || 0))}</div>
                                 </div>
                             `).join('')}</div>`
-                            : '<div class="profile-empty">No item details available.</div>';
+                            : `<div class="profile-empty">${t('No item details available.')}</div>`;
 
                         const detailsHtml = details
                             ? `${detailRows}${itemsHtml}`
-                            : '<div class="profile-empty">Order details unavailable.</div>';
+                            : `<div class="profile-empty">${t('Order details unavailable.')}</div>`;
 
                         return `
                             <div class="profile-history-item">
@@ -4998,7 +5007,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             showToast(`${item.name} ${t('added to cart')}`, 'success');
                         } catch (error) {
                             console.error('Error adding other item to cart:', error);
-                            showToast('Failed to add item to cart');
+                            showToast(t('Failed to add item to cart'));
                         }
                     })();
                 }
@@ -5052,7 +5061,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast(`${item.name || t('Item')} ${t('added to cart')}`, 'success');
         } catch (error) {
             console.error('Error adding used shop item to cart:', error);
-            showToast('Failed to add item to cart');
+            showToast(t('Failed to add item to cart'));
         }
     }
 
@@ -5073,15 +5082,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return `
                 <article class="used-item-card" data-used-id="${escapeHtml(item.id || '')}">
                     <div class="used-item-media">
-                        ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(item.name || 'Used device')}" loading="lazy" decoding="async">` : `<div class="other-item-placeholder">${t('No image')}</div>`}
+                        ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(item.name || t('Used Device'))}" loading="lazy" decoding="async">` : `<div class="other-item-placeholder">${t('No image')}</div>`}
                     </div>
                     <div class="used-item-body">
-                        <h3 class="used-item-title">${escapeHtml(item.name || 'Used Device')}</h3>
+                        <h3 class="used-item-title">${escapeHtml(item.name || t('Used Device'))}</h3>
                         ${previewDesc ? `<p class="used-item-desc">${escapeHtml(previewDesc)}</p>` : ''}
                         <div class="used-item-price">${formatCurrency(Number(item.price || 0))}</div>
                         <div class="used-item-actions">
-                            <button class="btn btn-secondary" data-used-action="details" data-used-id="${escapeHtml(item.id || '')}">View details</button>
-                            <button class="btn btn-primary" data-used-action="add-to-cart" data-used-id="${escapeHtml(item.id || '')}">Add to Cart</button>
+                            <button class="btn btn-secondary" data-used-action="details" data-used-id="${escapeHtml(item.id || '')}">${t('View details')}</button>
+                            <button class="btn btn-primary" data-used-action="add-to-cart" data-used-id="${escapeHtml(item.id || '')}">${t('Add to Cart')}</button>
                         </div>
                     </div>
                 </article>
@@ -5139,7 +5148,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         activeUsedShopItem = item;
         const images = getUsedShopImages(item);
-        const title = item.name || 'Used Device';
+        const title = item.name || t('Used Device');
         const details = item.details || item.description || item.shortDesc || item.desc || '';
 
         nameEl.textContent = title;
@@ -7829,16 +7838,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     const itemsHtml = items.length
                         ? `<div class="profile-order-items">${items.map((item) => `
                             <div class="profile-order-item">
-                                <div><strong>${escapeHtml(item.repair_name || item.repair_type || 'Item')}</strong></div>
+                                <div><strong>${escapeHtml(item.repair_name || item.repair_type || t('Item'))}</strong></div>
                                 <div class="meta">${escapeHtml([item.device, item.brand, item.model].filter(Boolean).join(' • '))}</div>
                                 <div class="meta">${escapeHtml(formatCurrency(item.price || 0))}</div>
                             </div>
                         `).join('')}</div>`
-                        : '<div class="profile-empty">No item details available.</div>';
+                        : `<div class="profile-empty">${t('No item details available.')}</div>`;
 
                     const detailsHtml = details
                         ? `${detailRows}${itemsHtml}`
-                        : '<div class="profile-empty">Order details unavailable.</div>';
+                        : `<div class="profile-empty">${t('Order details unavailable.')}</div>`;
 
                     return `
                         <div class="profile-history-item">
@@ -10186,6 +10195,7 @@ document.addEventListener('DOMContentLoaded', function() {
         DOM.mobileMenuBtn.classList.remove('active');
         DOM.navLinks.classList.remove('active');
         DOM.mobileMenuBtn.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('mobile-nav-open');
     }
 
     // Mobile menu toggle
@@ -10194,6 +10204,16 @@ document.addEventListener('DOMContentLoaded', function() {
         DOM.navLinks.classList.toggle('active');
         const expanded = this.classList.contains('active');
         this.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        document.body.classList.toggle('mobile-nav-open', expanded);
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!DOM.mobileMenuBtn || !DOM.navLinks) return;
+        if (!DOM.navLinks.classList.contains('active')) return;
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (DOM.navLinks.contains(target) || DOM.mobileMenuBtn.contains(target)) return;
+        closeMobileMenu();
     });
 
     // Auto-close mobile nav after selecting a destination link.
@@ -10201,6 +10221,20 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', () => {
             closeMobileMenu();
         });
+    });
+
+    document.getElementById('logoutBtnMobile')?.addEventListener('click', () => {
+        closeMobileMenu();
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            closeMobileMenu();
+        }
+    });
+
+    window.addEventListener('orientationchange', () => {
+        closeMobileMenu();
     });
 
     document.getElementById('logoutBtnMobile')?.addEventListener('click', handleLogout);
@@ -10220,6 +10254,7 @@ document.addEventListener('DOMContentLoaded', function() {
     otherClose?.addEventListener('click', closeOtherDetails);
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
+            closeMobileMenu();
             closePartDetails();
             closeOtherDetails();
             closeUsedDetails();
