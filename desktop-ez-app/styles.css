@@ -807,48 +807,12 @@ th { color: #cbbdf7; font-weight: 600; }
 
 .inventory-edit-row {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr);
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 8px;
 }
 
 .inventory-edit-row input {
   width: 100%;
-}
-
-.inventory-barcode-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.inventory-barcode-upload-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-.inventory-barcode-upload-label input {
-  display: none;
-}
-
-.inventory-item-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 8px;
-  color: #c8c9d8;
-  font-size: 0.9rem;
-}
-
-.inventory-item-barcode {
-  font-weight: 600;
 }
 
 .inventory-item-sub {

@@ -54,7 +54,6 @@ const state = {
   pollIntervalMs: Number(localStorage.getItem('ezfixDesktopPollMs') || 30000),
   sidebarCollapsed: localStorage.getItem('ezfixDesktopSidebarCollapsed') === 'true',
   pollTimer: null,
-  presenceTimer: null,
   availablePrinters: [],
   fullPrintPrinter: localStorage.getItem('ezfixDesktopFullPrintPrinter') || '',
   receiptPrinter: localStorage.getItem('ezfixDesktopReceiptPrinter') || '',
@@ -2274,14 +2273,6 @@ function ensureInventoryArrays(catalog) {
   if (!Array.isArray(catalog.printing.otherItems)) catalog.printing.otherItems = [];
   if (!Array.isArray(catalog.printing.otherCustomItems)) catalog.printing.otherCustomItems = [];
   if (!Array.isArray(catalog.printing.usedShopItems)) catalog.printing.usedShopItems = [];
-
-  ['printers', 'filaments', 'pcBuildParts', 'otherItems', 'otherCustomItems', 'usedShopItems'].forEach((listName) => {
-    catalog.printing[listName].forEach((item) => {
-      if (!item || typeof item !== 'object') return;
-      item.qty = Number.isFinite(Number(item.qty || 0)) ? Number(item.qty || 0) : 1;
-      item.barcode = typeof item.barcode === 'string' ? item.barcode : '';
-    });
-  });
 }
 
 function createPartsSeedFromComponents(components) {
@@ -2327,9 +2318,6 @@ function normalizeInventoryPrices(catalog) {
       if (!item || typeof item !== 'object') return;
       const parsed = Number(item.price || 0);
       item.price = Number.isFinite(parsed) ? parsed : 0;
-      const parsedQty = Number(item.qty || 1);
-      item.qty = Number.isFinite(parsedQty) ? Math.max(0, parsedQty) : 1;
-      item.barcode = typeof item.barcode === 'string' ? item.barcode : '';
     });
   });
 }
@@ -2337,25 +2325,21 @@ function normalizeInventoryPrices(catalog) {
 function createInventoryItem(kind) {
   const stamp = Date.now();
   if (kind === 'printers') {
-    return { id: `printer-${stamp}`, name: 'Nová tiskarna', price: 0, qty: 1, barcode: '', active: true };
+    return { id: `printer-${stamp}`, name: 'Nová tiskarna', price: 0, active: true };
   }
   if (kind === 'filaments') {
-    return { id: `filament-${stamp}`, name: 'Nový filament', price: 0, qty: 1, barcode: '', active: true };
+    return { id: `filament-${stamp}`, name: 'Nový filament', price: 0, active: true };
   }
   if (kind === 'pcBuildParts') {
-    return { id: `pc-part-${stamp}`, name: 'Nový PC díl', price: 0, qty: 1, barcode: '', active: true };
+    return { id: `pc-part-${stamp}`, name: 'Nový PC díl', price: 0, active: true };
   }
   if (kind === 'usedShopItems') {
-    return { id: `used-${stamp}`, name: 'Nová bazarová polozka', price: 0, qty: 1, barcode: '', active: true };
+    return { id: `used-${stamp}`, name: 'Nová bazarová polozka', price: 0, active: true };
   }
   if (kind === 'otherCustomItems') {
-    return { id: `other-${stamp}`, name: 'Nová položka v Other', price: 0, qty: 1, barcode: '', active: true };
+    return { id: `other-${stamp}`, name: 'Nová položka v Other', price: 0, active: true };
   }
-  return { id: `item-${stamp}`, name: 'Nová polozka', price: 0, qty: 1, barcode: '', active: true };
-}
-
-function createRandomBarcode() {
-  return Array.from({ length: 12 }, () => String(Math.floor(Math.random() * 10))).join('');
+  return { id: `item-${stamp}`, name: 'Nová polozka', price: 0, active: true };
 }
 
 function setTextContent(id, value) {
@@ -2405,39 +2389,18 @@ function buildInventoryList(listId, list, kind) {
       const safePrice = Number.isFinite(price) ? price : 0;
 
       if (!isSectionEditable) {
-        const barcodeInfo = item.barcode ? `<span class="inventory-item-barcode">Barcode: ${escapeHtml(item.barcode)}</span>` : '';
-        return `
-          <li>
-            <div class="inventory-item-main">${name}</div>
-            <div class="inventory-item-meta">
-              <span>Cena: ${formatMoney(safePrice)}</span>
-              <span>Množství: ${item.qty || 0}</span>
-              ${barcodeInfo}
-            </div>
-          </li>
-        `;
+        const suffix = ` - ${formatMoney(safePrice)}`;
+        return `<li>${name}${suffix}</li>`;
       }
 
-      const safeQty = Number.isFinite(Number(item.qty || 0)) ? Number(item.qty || 0) : 1;
       return `
         <li class="inventory-edit-item">
           <div class="inventory-edit-row">
             <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="name" value="${escapeHtml(item.name || '')}" placeholder="Název" />
             <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="price" type="number" step="0.01" value="${safePrice}" placeholder="Cena" />
-            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="qty" type="number" step="1" min="0" value="${safeQty}" placeholder="Množství" />
-            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="barcode" value="${escapeHtml(item.barcode || '')}" placeholder="Barcode / SKU" />
+            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="active" value="${item.active === false ? 'false' : 'true'}" placeholder="true/false" />
           </div>
-          <div class="inventory-barcode-actions">
-            <button class="secondary" type="button" data-inv-action="generate-barcode" data-inv-kind="${kind}" data-inv-index="${index}">Vytvořit barcode</button>
-            <label class="inventory-barcode-upload-label">
-              Nahrát barcode
-              <input type="file" accept="image/*,text/*" class="inventory-barcode-upload" data-inv-kind="${kind}" data-inv-index="${index}" />
-            </label>
-          </div>
-          <div class="inventory-item-sub">
-            <span>${escapeHtml(item.id || '')}</span>
-            ${item.barcode ? `<span>Barcode: ${escapeHtml(item.barcode)}</span>` : ''}
-          </div>
+          <div class="inventory-item-sub">${escapeHtml(item.id || '')}</div>
           <button class="inventory-remove-btn" data-inv-remove="${kind}" data-inv-index="${index}">Smazat</button>
         </li>
       `;
@@ -2543,19 +2506,8 @@ function renderInventory() {
           return;
         }
 
-        if (field === 'qty') {
-          const parsed = Number(input.value);
-          list[index][field] = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
-          return;
-        }
-
         if (field === 'active') {
           list[index][field] = String(input.value).trim().toLowerCase() !== 'false';
-          return;
-        }
-
-        if (field === 'barcode') {
-          list[index][field] = input.value;
           return;
         }
 
@@ -2570,30 +2522,6 @@ function renderInventory() {
         const list = state.inventoryDraft?.printing?.[kind || ''];
         if (!Array.isArray(list) || !Number.isFinite(index) || index < 0 || index >= list.length) return;
         list.splice(index, 1);
-        renderInventory();
-      });
-    });
-
-    document.querySelectorAll('[data-inv-action="generate-barcode"]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const kind = button.getAttribute('data-inv-kind');
-        const index = Number(button.getAttribute('data-inv-index'));
-        const list = state.inventoryDraft?.printing?.[kind || ''];
-        if (!Array.isArray(list) || !Number.isFinite(index) || index < 0 || index >= list.length) return;
-        list[index].barcode = createRandomBarcode();
-        renderInventory();
-      });
-    });
-
-    document.querySelectorAll('.inventory-barcode-upload').forEach((input) => {
-      input.addEventListener('change', () => {
-        const kind = input.getAttribute('data-inv-kind');
-        const index = Number(input.getAttribute('data-inv-index'));
-        const list = state.inventoryDraft?.printing?.[kind || ''];
-        if (!Array.isArray(list) || !Number.isFinite(index) || index < 0 || index >= list.length) return;
-        const file = input.files?.[0];
-        if (!file) return;
-        list[index].barcode = file.name || list[index].barcode || '';
         renderInventory();
       });
     });
@@ -2664,8 +2592,6 @@ async function loadDashboardData(options = {}) {
     state.inventoryDraft = cloneCatalog(state.catalog);
   }
   renderInventory();
-
-  startDesktopPresence();
 
   if (!silent) {
     showToast('Panel byl obnoven');
@@ -2881,32 +2807,6 @@ function stopPolling() {
   if (!state.pollTimer) return;
   window.clearInterval(state.pollTimer);
   state.pollTimer = null;
-}
-
-async function sendDesktopPresenceHeartbeat() {
-  try {
-    await fetch(`${state.apiBase}/presence/heartbeat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ visitorId: `desktop-${navigator.userAgent}-${window.location.hostname}` })
-    });
-  } catch {
-    // Presence heartbeat should not break the app.
-  }
-}
-
-function startDesktopPresence() {
-  if (state.presenceTimer) {
-    window.clearInterval(state.presenceTimer);
-  }
-  sendDesktopPresenceHeartbeat();
-  state.presenceTimer = window.setInterval(sendDesktopPresenceHeartbeat, 45000);
-}
-
-function stopDesktopPresence() {
-  if (!state.presenceTimer) return;
-  window.clearInterval(state.presenceTimer);
-  state.presenceTimer = null;
 }
 
 async function saveInventoryDraft() {
