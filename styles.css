@@ -402,6 +402,8 @@ body {
     to { opacity: 1; }
 }
 
+
+
 @keyframes cookieOverlayOut {
     from { opacity: 1; }
     to { opacity: 0; }
@@ -1245,6 +1247,26 @@ body.has-announcement .hero {
     border-radius: var(--radius-lg);
     box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
     padding: 30px;
+}
+
+body.auth-screen-active .navbar,
+body.auth-screen-active .announcement-banner,
+body.auth-screen-active .footer,
+body.auth-screen-active #cookieConsent,
+body.auth-screen-active #appLoader {
+    display: none !important;
+}
+
+body.auth-screen-active .page-header-dark {
+    display: none !important;
+}
+
+body.auth-screen-active .auth-container {
+    padding: 100px 0 120px;
+}
+
+body.auth-screen-active .page {
+    min-height: 100vh;
 }
 
 .auth-toggle {
@@ -3880,6 +3902,10 @@ body.has-announcement .hero {
     font-weight: 700;
 }
 
+.admin-chat-badge-escalated {
+    background: #ff6b3d;
+}
+
 .admin-chat-session-last {
     color: var(--text-light);
     font-size: 0.88rem;
@@ -3895,6 +3921,16 @@ body.has-announcement .hero {
     margin-top: 8px;
     display: flex;
     justify-content: flex-end;
+}
+
+.admin-chat-escalated-note {
+    border: 1px solid rgba(255, 107, 61, 0.18);
+    background: rgba(255, 230, 220, 0.95);
+    color: #4e2b1f;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    font-size: 0.95rem;
 }
 
 .admin-chat-assign-btn {
@@ -4021,6 +4057,38 @@ body.has-announcement .hero {
     flex-direction: column;
     gap: 10px;
     background: #fbfaff;
+}
+
+.admin-chat-new-placeholder {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 320px;
+    padding: 18px;
+    text-align: center;
+    background: transparent;
+}
+
+.admin-chat-new-placeholder .admin-chat-new-field {
+    width: 100%;
+    max-width: 640px;
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(122, 44, 255, 0.12);
+    color: #2f2b6e;
+    text-align: left;
+}
+
+.admin-chat-new-placeholder .admin-chat-new-detail {
+    color: #4b3f83;
+}
+
+.admin-chat-new-take-btn {
+    min-width: 180px;
 }
 
 .admin-chat-msg {

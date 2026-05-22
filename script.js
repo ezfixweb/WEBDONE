@@ -1909,8 +1909,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const closeBtn = document.getElementById('announcementCloseBtn');
         if (!banner || !textEl) return;
 
-        const dismissalKey = 'announcementDismissedText';
-
         const syncAnnouncementOffset = () => {
             const visible = !banner.classList.contains('hidden');
             const height = visible ? Math.ceil(banner.getBoundingClientRect().height || 0) : 0;
@@ -1918,12 +1916,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         const closeAnnouncementBanner = () => {
-            const currentText = String(textEl.textContent || '').trim();
-            try {
-                if (currentText) localStorage.setItem(dismissalKey, currentText);
-            } catch {
-                // Ignore storage errors and still hide visually.
-            }
             banner.classList.add('hidden');
             document.body.classList.remove('has-announcement');
             syncAnnouncementOffset();
@@ -1933,23 +1925,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isActive) {
             const messageText = String(announcement.text || '').trim();
             textEl.textContent = messageText;
-
-            let dismissedText = '';
-            try {
-                dismissedText = localStorage.getItem(dismissalKey) || '';
-            } catch {
-                dismissedText = '';
-            }
-
-            const isDismissed = dismissedText && dismissedText === messageText;
-            if (isDismissed) {
-                banner.classList.add('hidden');
-                document.body.classList.remove('has-announcement');
-            } else {
-                banner.classList.remove('hidden');
-                document.body.classList.add('has-announcement');
-            }
-
+            banner.classList.remove('hidden');
+            document.body.classList.add('has-announcement');
             requestAnimationFrame(syncAnnouncementOffset);
 
             if (closeBtn && !closeBtn.dataset.bound) {
@@ -4383,6 +4360,9 @@ document.addEventListener('DOMContentLoaded', function() {
             targetPage = document.getElementById('home');
             if (!targetPage) return;
         }
+
+        const authScreen = pageId === 'auth' || pageId === 'reset-password';
+        document.body.classList.toggle('auth-screen-active', authScreen);
 
         // Hide all pages, show selected one
         DOM.pages.forEach(page => page.classList.remove('active'));
@@ -7467,14 +7447,16 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {string} password - Password
      * @returns {Promise} Result with success flag and message
      */
-    async function addAdminUser(username, password, email, role) {
+    async function addAdminUser(username, password, email, role, permissions, firstName, lastName) {
         try {
             const result = await apiCall('POST', '/admin/users', {
                 username,
                 password,
                 email,
+                first_name: firstName,
+                last_name: lastName,
                 role,
-                permissions: getPermissionSelection('new')
+                permissions
             });
 
             return { success: true, message: `User "${username}" added successfully`, data: result };
@@ -7643,6 +7625,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="user-item" data-user-id="${user.id}">
                         <div class="user-info">
                             <span class="user-name">${user.username}</span>
+                            ${user.first_name || user.last_name ? `<span class="user-email">${escapeHtml([user.first_name, user.last_name].filter(Boolean).join(' ').trim())}</span>` : ''}
                             ${user.email ? `<span class="user-email">${user.email}</span>` : ''}
                             <span class="user-role">${t(user.role || 'customer')}</span>
                             ${(Array.isArray(user.permissions) && user.permissions.length > 0)
@@ -7971,18 +7954,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const editUserId = document.getElementById('editUserId');
-        const editUsername = document.getElementById('editUsername');
-        const editEmail = document.getElementById('editEmail');
-        const editPassword = document.getElementById('editPassword');
-        const editRole = document.getElementById('editRole');
+        const adminUserId = document.getElementById('adminUserId');
+        const adminFirstName = document.getElementById('adminFirstName');
+        const adminLastName = document.getElementById('adminLastName');
+        const adminUsername = document.getElementById('adminUsername');
+        const adminEmail = document.getElementById('adminEmail');
+        const adminPassword = document.getElementById('adminPassword');
+        const adminRole = document.getElementById('adminRole');
 
-        if (editUserId) editUserId.value = String(user.id);
-        if (editUsername) editUsername.value = user.username || '';
-        if (editEmail) editEmail.value = user.email || '';
-        if (editPassword) editPassword.value = '';
-        if (editRole) editRole.value = user.role || 'manager';
-        applyPermissionSelection('edit', user.permissions || [], user.role || 'manager');
+        if (adminUserId) adminUserId.value = String(user.id);
+        if (adminFirstName) adminFirstName.value = user.first_name || '';
+        if (adminLastName) adminLastName.value = user.last_name || '';
+        if (adminUsername) adminUsername.value = user.username || '';
+        if (adminEmail) adminEmail.value = user.email || '';
+        if (adminPassword) adminPassword.value = '';
+        if (adminRole) adminRole.value = user.role || 'manager';
+        applyPermissionSelection('admin', user.permissions || [], user.role || 'manager');
     }
     async function handleDeleteUserUI(username) {
         if (confirm(`${t('Are you sure you want to delete the user')} "${username}"?`)) {
@@ -10651,65 +10638,53 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Add user form
-        document.getElementById('addUserForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const username = document.getElementById('newUsername').value.trim();
-        const email = document.getElementById('newEmail')?.value.trim();
-        const password = document.getElementById('newPassword').value;
-        const role = document.getElementById('newRole')?.value || 'manager';
-        const permissions = getPermissionSelection('new');
+        // Admin user form
+        document.getElementById('adminUserForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userId = document.getElementById('adminUserId')?.value;
+            const firstName = document.getElementById('adminFirstName')?.value.trim();
+            const lastName = document.getElementById('adminLastName')?.value.trim();
+            const username = document.getElementById('adminUsername')?.value.trim();
+            const email = document.getElementById('adminEmail')?.value.trim();
+            const password = document.getElementById('adminPassword')?.value;
+            const role = document.getElementById('adminRole')?.value || 'manager';
+            const permissions = getPermissionSelection('admin');
 
-        if (!username && !email) {
-            showCredentialsMessage('addUserMessage', 'Enter a username or email', false);
-            return;
-        }
+            if (!userId && !username && !email) {
+                showCredentialsMessage('adminUserMessage', 'Enter a username or email', false);
+                return;
+            }
 
-        const result = await addAdminUser(username, password, email, role, permissions);
-        showCredentialsMessage('addUserMessage', result.message, result.success);
+            if (userId && !username) {
+                showCredentialsMessage('adminUserMessage', 'Username is required', false);
+                return;
+            }
 
-        if (result.success) {
-            this.reset();
-            renderCredentialsUI();
-        }
-        });
+            const payload = {
+                first_name: firstName || undefined,
+                last_name: lastName || undefined,
+                username,
+                email,
+                role,
+                permissions
+            };
 
-        // Edit user form
-        document.getElementById('editUserForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const userId = document.getElementById('editUserId')?.value;
-        const username = document.getElementById('editUsername')?.value.trim();
-        const email = document.getElementById('editEmail')?.value.trim();
-        const password = document.getElementById('editPassword')?.value;
-        const role = document.getElementById('editRole')?.value;
-        const permissions = getPermissionSelection('edit');
+            if (password) {
+                payload.password = password;
+            }
 
-        if (!userId) {
-            showCredentialsMessage('editUserMessage', 'Select a user to edit', false);
-            return;
-        }
+            let result;
+            if (userId) {
+                result = await updateAdminUserDetails(userId, payload);
+            } else {
+                result = await addAdminUser(username, password, email, role, permissions, firstName, lastName);
+            }
 
-        if (!username) {
-            showCredentialsMessage('editUserMessage', 'Username is required', false);
-            return;
-        }
+            showCredentialsMessage('adminUserMessage', result.message, result.success);
 
-        const payload = { username, email, role, permissions };
-        if (password) payload.password = password;
-
-        const result = await updateAdminUserDetails(userId, payload);
-        showCredentialsMessage('editUserMessage', result.message, result.success);
-
-        if (result.success) {
-            document.getElementById('editPassword').value = '';
-            renderCredentialsUI();
-        }
-        });
-
-        // Reset credentials button
-        document.getElementById('resetCredentialsBtn')?.addEventListener('click', function() {
-            if (confirm(t('This will reset your admin credentials. Are you sure?'))) {
-                showCredentialsMessage('resetMessage', 'Note: This feature requires server configuration. Contact an administrator.', false);
+            if (result.success) {
+                this.reset();
+                renderCredentialsUI();
             }
         });
     }
@@ -11409,6 +11384,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const assigned = String(session.assigned_admin_name || '').trim();
         const myName = String(Storage.getUser()?.username || '').trim();
+        const sessionStatus = String(session?.status || '').toLowerCase();
+
+        if (sessionStatus === 'closed' || sessionStatus === 'escalated') {
+            takeBtn.style.display = 'none';
+            if (closeBtn) {
+                if (sessionStatus === 'closed') {
+                    closeBtn.style.display = 'inline-flex';
+                    closeBtn.dataset.sessionId = session.id;
+                    closeBtn.dataset.chatAction = 'delete';
+                    closeBtn.textContent = 'Smazat chat';
+                    closeBtn.classList.add('btn-danger');
+                    closeBtn.classList.remove('admin-chat-close-btn');
+                } else {
+                    closeBtn.style.display = 'none';
+                    closeBtn.dataset.sessionId = '';
+                }
+            }
+            return;
+        }
 
         if (!assigned) {
             takeBtn.style.display = 'inline-flex';
@@ -11423,21 +11417,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         takeBtn.style.display = 'inline-flex';
-        const sessionStatus = String(session?.status || '').toLowerCase();
-        if (sessionStatus === 'closed') {
-            takeBtn.style.display = 'none';
-            if (closeBtn) {
-                closeBtn.style.display = 'inline-flex';
-                closeBtn.dataset.sessionId = session.id;
-                closeBtn.dataset.chatAction = 'delete';
-                closeBtn.textContent = 'Smazat chat';
-                closeBtn.classList.add('btn-danger');
-                closeBtn.classList.remove('admin-chat-close-btn');
-            }
-            return;
+        if (closeBtn) {
+            closeBtn.dataset.chatAction = 'close';
+            closeBtn.classList.remove('btn-danger');
+            closeBtn.classList.add('admin-chat-close-btn');
         }
 
-        if (closeBtn) {
+        if (assigned === myName) {
             closeBtn.dataset.chatAction = 'close';
             closeBtn.classList.remove('btn-danger');
             closeBtn.classList.add('admin-chat-close-btn');
@@ -11597,6 +11583,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasAssignedAdmin = Boolean(String(session?.assigned_admin_name || '').trim());
 
         if (rawStatus === 'closed') return 'closed';
+        if (rawStatus === 'escalated') return 'escalated';
         if (hasAssignedAdmin) return 'taken_active';
         return 'open_unassigned';
     }
@@ -11745,6 +11732,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const assigned = escapeHtml(rawAssigned);
             const currentAdminName = String(Storage.getUser()?.username || '').trim();
             const activeClass = session.id === adminChatState.activeSessionId ? 'active' : '';
+            const rawStatus = String(session.status || '').trim().toLowerCase();
+            const statusBadge = rawStatus === 'escalated' ? '<span class="admin-chat-badge admin-chat-badge-escalated">Escalated</span>' : '';
 
             let assignAction = `<button type="button" class="btn btn-sm btn-secondary admin-chat-assign-btn" data-chat-assign="${escapeHtml(session.id)}">Převzít chat</button>`;
             if (rawAssigned) {
@@ -11760,6 +11749,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="admin-chat-session-top">
                         <strong>${title}</strong>
                         ${unread > 0 ? `<span class="admin-chat-badge">${unread}</span>` : ''}
+                        ${statusBadge}
                     </div>
                     ${assigned ? `<div class="admin-chat-session-meta">Assigned: ${assigned}</div>` : ''}
                     ${(email || helpTopic) ? `<div class="admin-chat-session-meta">${email}${email && helpTopic ? ' • ' : ''}${helpTopic}</div>` : ''}
@@ -11773,16 +11763,72 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderAdminChatThread(messages, session) {
         const headerEl = document.getElementById('adminChatThreadHeader');
         const messagesEl = document.getElementById('adminChatMessages');
+        const replyForm = document.getElementById('adminChatReplyForm');
         if (!headerEl || !messagesEl) return;
 
         const customerName = String(session?.customer_name || '').trim();
         const customerEmail = String(session?.customer_email || '').trim();
         const label = customerName || customerEmail || session?.id || 'Chat session';
         const topic = getHelpTopicLabel(session?.help_topic || '');
-        const assigned = session?.assigned_admin_name ? ` • Assigned: ${session.assigned_admin_name}` : '';
+        const assignedAdmin = String(session?.assigned_admin_name || '').trim();
+        const assigned = assignedAdmin ? ` • Assigned: ${assignedAdmin}` : '';
+        const statusLabel = String(session?.status || '').trim().toLowerCase() === 'escalated' ? ' • Escalated' : '';
         const identity = customerName && customerEmail ? `${customerName} <${customerEmail}>` : label;
-        headerEl.textContent = topic ? `Chat: ${identity} (${topic})${assigned}` : `Chat: ${identity}${assigned}`;
+        headerEl.textContent = topic ? `Chat: ${identity} (${topic})${assigned}${statusLabel}` : `Chat: ${identity}${assigned}${statusLabel}`;
         refreshTakeChatButton(session || null);
+
+        const sessionStatus = String(session?.status || '').trim().toLowerCase();
+        const isEscalated = sessionStatus === 'escalated';
+        const isUnassignedOpen = !assignedAdmin && getAdminChatStatusKind(session) === 'open_unassigned';
+        if (replyForm) {
+            replyForm.style.display = (isUnassignedOpen || isEscalated) ? 'none' : 'flex';
+        }
+
+        if (isEscalated) {
+            const chatId = escapeHtml(session?.id || '');
+            messagesEl.innerHTML = `
+                <div class="admin-chat-escalated-note">
+                    <strong>Chat přesměrován na e-mail.</strong>
+                    Konverzace bude pokračovat na e-mail klienta. Najdete zde ID chatu: ${chatId}.
+                </div>
+            ` + (messages || []).map((msg) => {
+                const sender = msg.sender_type === 'admin' ? 'admin' : (msg.sender_type === 'bot' ? 'bot' : 'user');
+                const senderLabel = msg.sender_name ? escapeHtml(msg.sender_name) : escapeHtml(msg.sender_type || 'message');
+                const text = escapeHtml(msg.message || '');
+                const when = formatChatTime(msg.created_at);
+                return `
+                    <div class="admin-chat-msg ${sender}">
+                        <div>${text}</div>
+                        <div class="admin-chat-msg-meta">${senderLabel}${when ? ` • ${when}` : ''}</div>
+                    </div>
+                `;
+            }).join('');
+            if (session?.typing?.userActive) {
+                const typingName = escapeHtml(session.typing.userName || customerName || 'Uživatel');
+                messagesEl.insertAdjacentHTML('beforeend', `
+                    <div class="admin-chat-msg user typing">
+                        <div>${typingName} typing...</div>
+                    </div>
+                `);
+            }
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return;
+        }
+
+        if (isUnassignedOpen) {
+            const helpTopic = topic || 'Není určeno';
+            const lastMessage = String(session?.last_message || '').trim();
+            messagesEl.innerHTML = `
+                <div class="admin-chat-new-placeholder">
+                    <div class="admin-chat-new-field"><strong>Jméno:</strong> ${escapeHtml(customerName || 'Neznámý návštěvník')}</div>
+                    <div class="admin-chat-new-field"><strong>E-mail:</strong> ${escapeHtml(customerEmail || '-')}</div>
+                    <div class="admin-chat-new-field"><strong>Požadavek:</strong> ${escapeHtml(helpTopic)}</div>
+                    ${lastMessage ? `<div class="admin-chat-new-field admin-chat-new-detail"><strong>Co potřebuji:</strong> ${escapeHtml(lastMessage)}</div>` : ''}
+                    <button type="button" class="btn btn-primary admin-chat-new-take-btn" data-chat-take="${escapeHtml(session.id)}">Převzít chat</button>
+                </div>
+            `;
+            return;
+        }
 
         messagesEl.innerHTML = (messages || []).map((msg) => {
             const sender = msg.sender_type === 'admin' ? 'admin' : (msg.sender_type === 'bot' ? 'bot' : 'user');
@@ -12108,6 +12154,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function initAdminChatInbox() {
         const sessionsEl = document.getElementById('adminChatSessions');
+        const messagesEl = document.getElementById('adminChatMessages');
         const replyForm = document.getElementById('adminChatReplyForm');
         const replyInput = document.getElementById('adminChatReplyInput');
         const takeChatBtn = document.getElementById('adminTakeChatBtn');
@@ -12341,6 +12388,14 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (err) {
                 console.error('Open admin chat session failed:', err);
             }
+        });
+
+        messagesEl?.addEventListener('click', (event) => {
+            const takeBtnInThread = event.target.closest('[data-chat-take]');
+            if (!takeBtnInThread) return;
+            const sessionId = takeBtnInThread.getAttribute('data-chat-take');
+            if (!sessionId) return;
+            showTakeModal(sessionId);
         });
 
         replyForm?.addEventListener('submit', async (e) => {

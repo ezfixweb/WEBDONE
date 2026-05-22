@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.EzFixMobileApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#282D7A</item>
+        <item name="colorPrimaryVariant">#1F234F</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="android:statusBarColor">#1F234F</item>
+        <item name="android:navigationBarColor">#282D7A</item>
+    </style>
+</resources>

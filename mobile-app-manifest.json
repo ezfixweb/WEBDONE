@@ -1,0 +1,21 @@
+{
+  "name": "EzFix Mobilní sklad",
+  "short_name": "EzFix sklad",
+  "description": "Mobilní aplikace skladu propojená s PC aplikací EzFix.",
+  "start_url": "/mobile-inventory.html",
+  "display": "standalone",
+  "background_color": "#0f0e2b",
+  "theme_color": "#0f0e2b",
+  "icons": [
+    {
+      "src": "assets/logos/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/logos/ezfix-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

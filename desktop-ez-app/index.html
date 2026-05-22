@@ -28,10 +28,6 @@
     <main class="main">
       <header class="topbar">
         <div>
-          <h1>EzFix Provozní Panel</h1>
-          <p>Objednávky, filtry, 3D tisk a přehled skladu.</p>
-        </div>
-        <div class="actions">
           <button id="sidebarToggleBtn" class="secondary icon-btn" type="button" aria-label="Menu" title="Menu">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -39,6 +35,10 @@
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
           </button>
+          <h1>EzFix Provozní Panel</h1>
+          <p>Objednávky, filtry, 3D tisk a přehled skladu.</p>
+        </div>
+        <div class="actions">
           <button id="refreshBtn">Obnovit</button>
           <button id="exportCsvBtn">Export CSV</button>
           <button id="exportExcelBtn">Export XLSX</button>
@@ -251,8 +251,8 @@
           <p class="small">Upravte JSON katalogu, který používá webová aplikace.</p>
 
           <div class="catalog-mode-switch">
-            <button id="catalogAdvancedBtn" type="button" class="secondary">Advanced JSON</button>
             <button id="catalogEasyBtn" type="button">Easy editor</button>
+            <button id="catalogAdvancedBtn" type="button" class="secondary">Advanced JSON</button>
           </div>
 
           <div id="catalogAdvancedPanel">
@@ -308,7 +308,7 @@
 
         <section id="chatsTab" class="panel tab-content hidden">
           <div class="users-head">
-            <h2>Chat manager</h2>
+            <h2>Chat manager <span id="chatOpenCountBadge" class="count-badge">0</span></h2>
             <button id="chatsRefreshBtn" type="button" class="secondary">Obnovit chaty</button>
           </div>
           <p class="small">Správa zákaznických chatů stejně jako v admin webu.</p>
@@ -365,7 +365,7 @@
           </div>
         </section>
 
-        <section id="usersTab" class="panel tab-content hidden">
+          <section id="usersTab" class="panel tab-content hidden">
           <div class="users-head">
             <h2>Správa přihlášení</h2>
             <button id="usersRefreshBtn">Obnovit uživatele</button>
@@ -420,6 +420,39 @@
             </div>
           </div>
         </section>
+
+        <!-- Email Modal -->
+        <div id="emailModal" class="overlay hidden">
+          <div class="overlay-panel small-panel order-form-modal-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <h3>Odeslat e-mail zákazníkovi</h3>
+              <button id="closeEmailModalBtn" class="secondary" type="button">Zavřít</button>
+            </div>
+            <form id="emailForm" class="order-form-modal-form">
+              <label>
+                E-mail zákazníka
+                <input id="emailTo" type="email" readonly />
+              </label>
+              <label>
+                Jméno zákazníka
+                <input id="emailCustomerName" type="text" readonly />
+              </label>
+              <label class="full-row">
+                Předmět
+                <input id="emailSubject" type="text" required />
+              </label>
+              <label class="full-row">
+                Zpráva
+                <textarea id="emailMessage" rows="6" required></textarea>
+              </label>
+              <div id="emailFormMessage" class="form-message"></div>
+              <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+                <button type="button" class="secondary" id="emailCancelBtn">Zrušit</button>
+                <button type="submit">Odeslat e-mail</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </section>
     </main>
   </div>

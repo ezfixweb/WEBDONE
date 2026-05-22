@@ -1997,8 +1997,8 @@
         <section id="admin" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>Order Management</h1>
-                    <p>View and manage all repair orders</p>
+                    <h1>Správa objednávek</h1>
+                    <p>Zobrazit a spravovat všechny objednávky</p>
                 </div>
             </div>
             <div class="container">
@@ -2010,7 +2010,7 @@
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
                                 <path d="M12 6v6l4 2"></path>
                             </svg>
-                            Repairs
+                            Opravy
                         </button>
                         <button class="admin-tab-btn" data-tab="custom-pc">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2018,7 +2018,7 @@
                                 <line x1="8" y1="21" x2="16" y2="21"></line>
                                 <line x1="12" y1="17" x2="12" y2="21"></line>
                             </svg>
-                            Custom PC Builds
+                            Vlastní sestavy
                         </button>
                         <button class="admin-tab-btn" data-tab="printing">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2026,14 +2026,14 @@
                                 <rect x="6" y="11" width="12" height="7" rx="2"></rect>
                                 <path d="M8 21h8"></path>
                             </svg>
-                            3D Printing
+                            3D tisk
                         </button>
                         <button class="admin-tab-btn" data-tab="other-items">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M20 7h-4V3H8v4H4v14h16V7z"></path>
                                 <path d="M8 7h8"></path>
                             </svg>
-                            Other Items
+                            Jiné položky
                         </button>
                         <button class="admin-tab-btn" data-tab="used-shop">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2049,13 +2049,13 @@
                                 <path d="M8 4v16"></path>
                                 <path d="M16 4v16"></path>
                             </svg>
-                            Manage Catalog
+                            Správa katalogu
                         </button>
                         <button class="admin-tab-btn" data-tab="chats">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                             </svg>
-                            <span>Chats</span>
+                            <span>Chaty</span>
                             <span class="admin-tab-badge" id="chatTabBadge" style="display:none;">0</span>
                         </button>
                         <button class="admin-tab-btn" data-tab="credentials">
@@ -2065,7 +2065,7 @@
                                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
-                            Admin Menu
+                            Administrace
                         </button>
                     </div>
 
@@ -2074,15 +2074,15 @@
                         <div class="admin-stats">
                             <div class="admin-stat">
                                 <span class="admin-stat-number" id="totalOrders">0</span>
-                                <span class="admin-stat-label">Total Orders</span>
+                                <span class="admin-stat-label">Celkem objednávek</span>
                             </div>
                             <div class="admin-stat">
                                 <span class="admin-stat-number" id="pendingOrders">0</span>
-                                <span class="admin-stat-label">Pending</span>
+                                <span class="admin-stat-label">Čekající</span>
                             </div>
                             <div class="admin-stat">
                                 <span class="admin-stat-number" id="inProgressOrders">0</span>
-                                <span class="admin-stat-label">In Progress</span>
+                                <span class="admin-stat-label">V řešení</span>
                             </div>
                             <div class="admin-stat">
                                 <span class="admin-stat-number" id="completedOrders">0</span>
@@ -2094,31 +2094,31 @@
                             </div>
                             <div class="admin-stat">
                                 <span class="admin-stat-number" id="activeVisitors">0</span>
-                                <span class="admin-stat-label">Active Visitors</span>
+                                <span class="admin-stat-label">Aktivní návštěvníci</span>
                             </div>
                         </div>
                         <div class="admin-filters">
                             <select id="statusFilter" class="admin-filter">
-                                <option value="all">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="waiting">Waiting</option>
-                                <option value="in-progress">In Progress</option>
-                                <option value="delivering">Delivering</option>
-                                <option value="completed">Completed</option>
-                                <option value="delivered">Delivered</option>
-                                <option value="cancelled">Cancelled</option>
+                                <option value="all">Všechny stavy</option>
+                                <option value="pending">Čekající</option>
+                                <option value="waiting">Čeká</option>
+                                <option value="in-progress">V řešení</option>
+                                <option value="delivering">Doručuje se</option>
+                                <option value="completed">Dokončeno</option>
+                                <option value="delivered">Doručeno</option>
+                                <option value="cancelled">Zrušeno</option>
                             </select>
                             <select id="orderTypeFilter" class="admin-filter">
-                                <option value="all">All Types</option>
-                                <option value="repairs">Repairs</option>
-                                <option value="custom-pc">Custom PC</option>
-                                <option value="printing">3D Printing</option>
-                                <option value="other-items">Other Items</option>
+                                <option value="all">Všechny typy</option>
+                                <option value="repairs">Opravy</option>
+                                <option value="custom-pc">Vlastní PC</option>
+                                <option value="printing">3D tisk</option>
+                                <option value="other-items">Jiné položky</option>
                                 <option value="used-shop">Bazar</option>
                             </select>
                             <button class="btn btn-primary" id="createManualOrderBtn">Vytvořit objednávku</button>
                             <button class="btn btn-secondary" id="createCustomInvoiceBtn">Vytvořit fakturu</button>
-                            <button class="btn btn-secondary" id="clearOrdersBtn">Clear All Orders</button>
+                            <button class="btn btn-secondary" id="clearOrdersBtn">Vymazat všechny objednávky</button>
                         </div>
                     </div>
 
@@ -2127,22 +2127,22 @@
                         <!-- Device Type Tabs for Repairs -->
                         <div class="device-tabs">
                             <button class="device-tab-btn active" data-device="all">
-                                <span>All Devices</span>
+                                <span>Všechna zařízení</span>
                             </button>
                             <button class="device-tab-btn" data-device="phone">
-                                <span>Phones</span>
+                                <span>Telefony</span>
                             </button>
                             <button class="device-tab-btn" data-device="tablet">
-                                <span>Tablets</span>
+                                <span>Tablety</span>
                             </button>
                             <button class="device-tab-btn" data-device="notebook">
-                                <span>Notebooks</span>
+                                <span>Notebooky</span>
                             </button>
                             <button class="device-tab-btn" data-device="desktop">
-                                <span>Desktops</span>
+                                <span>Stolní PC</span>
                             </button>
                             <button class="device-tab-btn" data-device="3d-printer">
-                                <span>3D Printers</span>
+                                <span>3D tiskárny</span>
                             </button>
                         </div>
                         <div class="orders-list" id="ordersList">
@@ -2153,8 +2153,8 @@
                                     <line x1="16" y1="13" x2="8" y2="13"></line>
                                     <line x1="16" y1="17" x2="8" y2="17"></line>
                                 </svg>
-                                <h3>No orders yet</h3>
-                                <p>Orders will appear here when customers place them</p>
+                                <h3>Žádné objednávky zatím</h3>
+                                <p>Objednávky se zde zobrazí po zadání zákazníkem</p>
                             </div>
                         </div>
                     </div>
@@ -2179,8 +2179,8 @@
                                     <line x1="8" y1="21" x2="16" y2="21"></line>
                                     <line x1="12" y1="17" x2="12" y2="21"></line>
                                 </svg>
-                                <h3>No custom PC orders yet</h3>
-                                <p>Custom PC build orders will appear here</p>
+                                <h3>Žádné objednávky vlastních sestav zatím</h3>
+                                <p>Objednávky vlastních sestav se zde zobrazí</p>
                             </div>
                         </div>
                     </div>
@@ -2194,8 +2194,8 @@
                                     <rect x="6" y="13" width="12" height="6" rx="2"></rect>
                                     <line x1="8" y1="21" x2="16" y2="21"></line>
                                 </svg>
-                                <h3>No 3D printing orders yet</h3>
-                                <p>3D printing requests will appear here</p>
+                                <h3>Žádné objednávky 3D tisku zatím</h3>
+                                <p>Požadavky na 3D tisk se zde zobrazí</p>
                             </div>
                         </div>
                     </div>
@@ -2208,8 +2208,8 @@
                                     <path d="M20 7h-4V3H8v4H4v14h16V7z"></path>
                                     <path d="M8 7h8"></path>
                                 </svg>
-                                <h3>No other item orders yet</h3>
-                                <p>Other item orders will appear here</p>
+                                <h3>Žádné objednávky jiných položek zatím</h3>
+                                <p>Objednávky jiných položek se zde zobrazí</p>
                             </div>
                         </div>
                     </div>
@@ -2234,19 +2234,19 @@
                         <div class="catalog-editor">
                             <div class="catalog-section">
                                 <div class="catalog-header">
-                                    <h3>Announcement Banner</h3>
-                                    <p>Show a global message across every page.</p>
+                                    <h3>Oznámení</h3>
+                                    <p>Zobraz globální zprávu na všech stránkách.</p>
                                 </div>
                                 <div class="catalog-row">
-                                    <label>Active</label>
+                                    <label>Aktivní</label>
                                     <div class="toggle">
                                         <input type="checkbox" id="catalogAnnouncementToggle" />
-                                        <span>Show banner</span>
+                                        <span>Zobrazit banner</span>
                                     </div>
                                 </div>
-                                <textarea id="catalogAnnouncementText" class="catalog-textarea" rows="3" placeholder="Enter announcement text..."></textarea>
+                                <textarea id="catalogAnnouncementText" class="catalog-textarea" rows="3" placeholder="Zadejte text oznámení..."></textarea>
                                 <div class="catalog-actions catalog-actions-top">
-                                    <button class="btn btn-primary" id="catalogSaveBtnTop">Save Catalog</button>
+                                    <button class="btn btn-primary" id="catalogSaveBtnTop">Uložit katalog</button>
                                 </div>
                             </div>
                             <div class="catalog-tabs">
@@ -2254,21 +2254,21 @@
                                 <button class="catalog-tab-btn" data-catalog-tab="builds">Vlastní sestavy</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="printing">3D tisk</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="other-items">Jiné položky</button>
-                                <button class="catalog-tab-btn" data-catalog-tab="used-shop">Used Shop</button>
+                                <button class="catalog-tab-btn" data-catalog-tab="used-shop">Bazar</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="checkout">Pokladna</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="email">E-mailové šablony</button>
-                                <button class="catalog-tab-btn" data-catalog-tab="news">News and Updates</button>
+                                <button class="catalog-tab-btn" data-catalog-tab="news">Novinky a aktuality</button>
                                 <button class="catalog-tab-btn" data-catalog-tab="advanced">Pokročilé JSON</button>
                             </div>
 
                             <div class="catalog-panel active" id="catalog-repairs">
                                 <div class="catalog-section">
                                     <div class="catalog-header">
-                                        <h3>Repairs Catalog</h3>
-                                        <p>Edit brands, models, and repair prices. Toggle Active to hide items.</p>
+                                        <h3>Katalog oprav</h3>
+                                        <p>Upravte značky, modely a ceny oprav. Přepínačem Aktivní skryjete položky.</p>
                                     </div>
                                     <div class="catalog-row">
-                                        <label>Device</label>
+                                        <label>Zařízení</label>
                                         <select id="catalogDeviceSelect" class="catalog-select"></select>
                                     </div>
                                     <div class="catalog-grid">
@@ -2281,7 +2281,7 @@
                                         </div>
                                         <div>
                                             <div class="catalog-subheader">
-                                                <h4>Models</h4>
+                                                <h4>Modely</h4>
                                                 <button class="btn btn-sm" id="catalogAddModel">Přidat model</button>
                                             </div>
                                             <div class="catalog-row">
@@ -2302,17 +2302,17 @@
                             <div class="catalog-panel" id="catalog-builds">
                                 <div class="catalog-section">
                                     <div class="catalog-header">
-                                        <h3>Custom Builds</h3>
-                                        <p>Edit parts, prices, and photo URLs.</p>
+                                        <h3>Vlastní sestavy</h3>
+                                        <p>Upravte díly, ceny a odkazy na obrázky.</p>
                                     </div>
                                     <div class="catalog-row">
-                                        <label>Category</label>
+                                        <label>Kategorie</label>
                                         <select id="catalogBuildCategorySelect" class="catalog-select"></select>
-                                        <button class="btn btn-sm" id="catalogAddBuildItem">Add Part</button>
+                                        <button class="btn btn-sm" id="catalogAddBuildItem">Přidat díl</button>
                                     </div>
                                     <div class="catalog-row catalog-row-stack">
-                                        <label for="catalogBuildOsDescription">OS Description (shown in Custom PC builder)</label>
-                                        <textarea id="catalogBuildOsDescription" class="catalog-textarea" rows="2" placeholder="Example: Choose if you want a licensed operating system pre-installed."></textarea>
+                                        <label for="catalogBuildOsDescription">Popis OS (zobrazeno v konfigurátoru sestav)</label>
+                                        <textarea id="catalogBuildOsDescription" class="catalog-textarea" rows="2" placeholder="Příklad: Vyberte, pokud chcete předinstalovaný licencovaný operační systém."></textarea>
                                     </div>
                                     <div id="catalogBuildList" class="catalog-list"></div>
                                 </div>
@@ -2321,22 +2321,22 @@
                             <div class="catalog-panel" id="catalog-printing">
                                 <div class="catalog-section">
                                     <div class="catalog-header">
-                                        <h3>3D Printing</h3>
-                                        <p>Manage printers, filament types, and colors.</p>
+                                        <h3>3D tisk</h3>
+                                        <p>Spravujte tiskárny, filamenty a barvy.</p>
                                     </div>
                                     <div class="catalog-subheader">
-                                        <h4>Printers</h4>
-                                        <button class="btn btn-sm" id="catalogAddPrinter">Add Printer</button>
+                                        <h4>Tiskárny</h4>
+                                        <button class="btn btn-sm" id="catalogAddPrinter">Přidat tiskárnu</button>
                                     </div>
                                     <div id="catalogPrintersList" class="catalog-list"></div>
                                     <div class="catalog-subheader">
-                                        <h4>Filaments</h4>
-                                        <button class="btn btn-sm" id="catalogAddFilament">Add Filament</button>
+                                        <h4>Filamenty</h4>
+                                        <button class="btn btn-sm" id="catalogAddFilament">Přidat filament</button>
                                     </div>
                                     <div id="catalogFilamentsList" class="catalog-list"></div>
                                     <div class="catalog-subheader">
-                                        <h4>Colors</h4>
-                                        <button class="btn btn-sm" id="catalogAddColor">Add Color</button>
+                                        <h4>Barvy</h4>
+                                        <button class="btn btn-sm" id="catalogAddColor">Přidat barvu</button>
                                     </div>
                                     <div id="catalogColorsList" class="catalog-list"></div>
                                 </div>
@@ -2345,12 +2345,12 @@
                             <div class="catalog-panel" id="catalog-other-items">
                                 <div class="catalog-section">
                                     <div class="catalog-header">
-                                        <h3>Other Items</h3>
-                                        <p>Manage shop items and details shown on the Other page.</p>
+                                        <h3>Jiné položky</h3>
+                                        <p>Spravujte položky obchodu zobrazené na stránce Jiné položky.</p>
                                     </div>
                                     <div class="catalog-subheader">
-                                        <h4>Items</h4>
-                                        <button class="btn btn-sm" id="catalogAddOtherItem">Add Item</button>
+                                        <h4>Položky</h4>
+                                        <button class="btn btn-sm" id="catalogAddOtherItem">Přidat položku</button>
                                     </div>
                                     <div id="catalogOtherItemsList" class="catalog-list"></div>
                                 </div>
@@ -2359,12 +2359,12 @@
                             <div class="catalog-panel" id="catalog-used-shop">
                                 <div class="catalog-section">
                                     <div class="catalog-header">
-                                        <h3>Used Shop</h3>
-                                        <p>Manage refurbished notebooks and PCs shown on the Used Shop page.</p>
+                                        <h3>Bazar</h3>
+                                        <p>Spravujte repasované notebooky a PC zobrazené na stránce bazaru.</p>
                                     </div>
                                     <div class="catalog-subheader">
-                                        <h4>Items</h4>
-                                        <button class="btn btn-sm" id="catalogAddUsedShopItem">Add Item</button>
+                                        <h4>Položky</h4>
+                                        <button class="btn btn-sm" id="catalogAddUsedShopItem">Přidat položku</button>
                                     </div>
                                     <div id="catalogUsedShopList" class="catalog-list"></div>
                                 </div>
@@ -2373,11 +2373,11 @@
                             <div class="catalog-panel" id="catalog-checkout">
                                 <div class="catalog-section">
                                     <div class="catalog-header">
-                                        <h3>Checkout</h3>
-                                        <p>Configure checkout fees and labels.</p>
+                                        <h3>Pokladna</h3>
+                                        <p>Nakonfigurujte poplatky a popisky v pokladně.</p>
                                     </div>
                                     <div class="catalog-row">
-                                        <label>Pickup Fee (Kc)</label>
+                                        <label>Poplatek za vyzvednutí (Kč)</label>
                                         <input class="catalog-input" id="catalogPickupFee" type="number" min="0" step="1" />
                                     </div>
                                     <div class="catalog-row">
@@ -2401,36 +2401,36 @@
                                         <input class="catalog-input" id="catalogGLSFee" type="number" min="0" step="1" />
                                     </div>
                                     <div class="catalog-row">
-                                        <label>Enable GoPay</label>
+                                        <label>Povolit GoPay</label>
                                         <input id="catalogEnableGopay" type="checkbox" class="catalog-toggle-input" />
                                     </div>
                                     <div class="catalog-row">
-                                        <label>GoPay Fee (Kc)</label>
+                                        <label>Poplatek GoPay (Kč)</label>
                                         <input class="catalog-input" id="catalogGopayFee" type="number" min="0" step="1" />
                                     </div>
                                     <div class="catalog-row">
-                                        <label>Enable Bank Transfer</label>
+                                        <label>Povolit bankovní převod</label>
                                         <input id="catalogEnableBankTransfer" type="checkbox" class="catalog-toggle-input" />
                                     </div>
                                     <div class="catalog-row">
-                                        <label>Bank Transfer Fee (Kc)</label>
+                                        <label>Poplatek bankovního převodu (Kč)</label>
                                         <input class="catalog-input" id="catalogBankTransferFee" type="number" min="0" step="1" />
                                     </div>
                                     <div class="catalog-row">
-                                        <label>Bank Account</label>
+                                        <label>Bankovní účet</label>
                                         <input class="catalog-input" id="catalogBankTransferAccount" type="text" placeholder="123456789/0800" />
                                     </div>
                                     <div class="catalog-row">
-                                        <label>Bank IBAN</label>
+                                        <label>IBAN</label>
                                         <input class="catalog-input" id="catalogBankTransferIban" type="text" placeholder="CZ6508000000192000145399" />
                                     </div>
                                     <div class="catalog-row">
-                                        <label>Packeta API Key</label>
+                                        <label>Klíč API Packeta</label>
                                         <input class="catalog-input" id="catalogPacketaApiKey" type="text" />
                                     </div>
                                     <div class="catalog-row">
-                                        <label>Additional Terms Text</label>
-                                        <textarea class="catalog-textarea" id="catalogTermsAdditionalText" rows="4" placeholder="Each new line will be shown as a separate paragraph in Terms &amp; Conditions"></textarea>
+                                        <label>Další text podmínek</label>
+                                        <textarea class="catalog-textarea" id="catalogTermsAdditionalText" rows="4" placeholder="Každý nový řádek bude zobrazen jako samostatný odstavec v obchodních podmínkách"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -2508,8 +2508,8 @@
                             </div>
 
                             <div class="catalog-actions">
-                                <button class="btn btn-secondary" id="catalogLoadBtn">Load Current Data</button>
-                                <button class="btn btn-primary" id="catalogSaveBtn">Save Catalog</button>
+                                <button class="btn btn-secondary" id="catalogLoadBtn">Načíst aktuální data</button>
+                                <button class="btn btn-primary" id="catalogSaveBtn">Uložit katalog</button>
                             </div>
                         </div>
                     </div>
@@ -2525,6 +2525,7 @@
                                 <option value="all">Všechny chaty</option>
                                 <option value="open_unassigned">Otevřené nepřevzaté</option>
                                 <option value="taken_active">Převzaté aktivní</option>
+                                <option value="escalated">Přepojeno na e-mail</option>
                                 <option value="closed">Uzavřené</option>
                             </select>
                             <label class="admin-chat-filter-label" for="adminChatAdminFilter">Admin</label>
@@ -2534,11 +2535,11 @@
                         </div>
                         <div class="admin-chat-layout">
                             <aside class="admin-chat-sessions" id="adminChatSessions">
-                                <div class="admin-chat-empty">No chat sessions yet.</div>
+                                <div class="admin-chat-empty">Zatím žádné chaty.</div>
                             </aside>
                             <section class="admin-chat-thread">
                                 <div class="admin-chat-thread-header">
-                                    <div id="adminChatThreadHeader">Select a chat session</div>
+                                    <div id="adminChatThreadHeader">Vyberte chat</div>
                                     <div class="admin-chat-thread-actions">
                                         <button type="button" class="btn btn-sm btn-secondary" id="adminTakeChatBtn" style="display:none;">Převzít chat</button>
                                         <button type="button" class="btn btn-sm btn-secondary admin-chat-close-btn" id="adminCloseChatBtn" style="display:none;">Ukončit chat</button>
@@ -2546,133 +2547,127 @@
                                 </div>
                                 <div class="admin-chat-messages" id="adminChatMessages"></div>
                                 <form class="admin-chat-reply" id="adminChatReplyForm">
-                                    <input id="adminChatReplyInput" type="text" placeholder="Write a reply..." maxlength="300" autocomplete="off">
-                                    <button type="submit" class="btn btn-primary">Reply</button>
+                                    <input id="adminChatReplyInput" type="text" placeholder="Napište odpověď..." maxlength="300" autocomplete="off">
+                                    <button type="submit" class="btn btn-primary">Odpovědět</button>
                                 </form>
                             </section>
                         </div>
 
                         <section class="admin-chat-ai-config" id="adminChatAiConfig">
                             <div class="admin-chat-ai-config-header">
-                                <h3>AI Bot Answers</h3>
-                                <button type="button" class="btn btn-sm btn-secondary" id="adminChatAiReloadBtn">Reload</button>
+                                <h3>AI odpovědi bota</h3>
+                                <button type="button" class="btn btn-sm btn-secondary" id="adminChatAiReloadBtn">Načíst znovu</button>
                             </div>
-                            <p class="admin-chat-ai-config-note">Customize automatic AI replies for common chat topics.</p>
+                            <p class="admin-chat-ai-config-note">Přizpůsobte automatické AI odpovědi pro běžná témata chatu.</p>
 
                             <div class="admin-chat-ai-grid">
                                 <div class="admin-chat-ai-field">
-                                    <label for="adminChatAiKeywordsEmail">Email keywords</label>
+                                    <label for="adminChatAiKeywordsEmail">Klíčová slova e-mail</label>
                                     <input id="adminChatAiKeywordsEmail" type="text" placeholder="email, mail, kontakt" maxlength="300">
                                 </div>
                                 <div class="admin-chat-ai-field">
-                                    <label for="adminChatAiKeywordsPhone">Phone keywords</label>
+                                    <label for="adminChatAiKeywordsPhone">Klíčová slova telefon</label>
                                     <input id="adminChatAiKeywordsPhone" type="text" placeholder="telefon, phone, call" maxlength="300">
                                 </div>
                                 <div class="admin-chat-ai-field">
-                                    <label for="adminChatAiKeywordsPrice">Price keywords</label>
+                                    <label for="adminChatAiKeywordsPrice">Klíčová slova cena</label>
                                     <input id="adminChatAiKeywordsPrice" type="text" placeholder="cena, price, kolik" maxlength="300">
                                 </div>
                                 <div class="admin-chat-ai-field">
-                                    <label for="adminChatAiKeywordsRepair">Repair keywords</label>
+                                    <label for="adminChatAiKeywordsRepair">Klíčová slova oprava</label>
                                     <input id="adminChatAiKeywordsRepair" type="text" placeholder="oprava, servis, repair" maxlength="300">
                                 </div>
                             </div>
 
                             <div class="admin-chat-ai-field">
-                                <label for="adminChatAiReplyEmail">Reply for email</label>
+                                <label for="adminChatAiReplyEmail">Odpověď na e-mail</label>
                                 <textarea id="adminChatAiReplyEmail" rows="3" maxlength="1200"></textarea>
                             </div>
                             <div class="admin-chat-ai-field">
-                                <label for="adminChatAiReplyPhone">Reply for phone</label>
+                                <label for="adminChatAiReplyPhone">Odpověď na telefon</label>
                                 <textarea id="adminChatAiReplyPhone" rows="3" maxlength="1200"></textarea>
                             </div>
                             <div class="admin-chat-ai-field">
-                                <label for="adminChatAiReplyPrice">Reply for price</label>
+                                <label for="adminChatAiReplyPrice">Odpověď na cenu</label>
                                 <textarea id="adminChatAiReplyPrice" rows="3" maxlength="1200"></textarea>
                             </div>
                             <div class="admin-chat-ai-field">
-                                <label for="adminChatAiReplyRepair">Reply for repair/service</label>
+                                <label for="adminChatAiReplyRepair">Odpověď na opravu/servis</label>
                                 <textarea id="adminChatAiReplyRepair" rows="3" maxlength="1200"></textarea>
                             </div>
                             <div class="admin-chat-ai-field">
-                                <label for="adminChatAiReplyFallback">Fallback reply (when no keyword matches)</label>
+                                <label for="adminChatAiReplyFallback">Náhradní odpověď (když žádné klíčové slovo nesedí)</label>
                                 <textarea id="adminChatAiReplyFallback" rows="3" maxlength="1200"></textarea>
                             </div>
 
                             <div class="admin-chat-ai-actions">
-                                <button type="button" class="btn btn-primary" id="adminChatAiSaveBtn">Save AI Answers</button>
+                                <button type="button" class="btn btn-primary" id="adminChatAiSaveBtn">Uložit AI odpovědi</button>
                             </div>
                         </section>
                     </div>
 
                     <!-- Admin Credentials Tab Content -->
                     <div id="credentials-content" class="admin-tab-content">
-                        <div class="credentials-section social-links-admin-section">
-                            <div class="credentials-header">
-                                <h3>Social Media</h3>
-                            </div>
-                            <div class="social-links-form">
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="adminInstagramUrl">Instagram URL</label>
-                                        <input type="url" id="adminInstagramUrl" placeholder="https://instagram.com/yourpage" maxlength="300">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="adminFacebookUrl">Facebook URL</label>
-                                        <input type="url" id="adminFacebookUrl" placeholder="https://facebook.com/yourpage" maxlength="300">
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-primary btn-sm" id="saveSocialLinksBtn">Uložit</button>
-                                <span id="socialLinksSaveMsg" style="margin-left:12px;font-size:0.85rem;color:#22c55e;"></span>
-                            </div>
-                        </div>
-
                         <div class="credentials-section" id="credentialsSection">
                             <div class="credentials-header">
-                                <h3>Admin Credentials</h3>
-                                <button class="btn btn-sm" id="toggleCredentials" style="cursor: pointer;">Show</button>
+                                <h3>Uživatelské údaje adminů</h3>
+                                <button class="btn btn-sm" id="toggleCredentials" style="cursor: pointer;">Zobrazit</button>
                             </div>
                             <div class="credentials-content" id="credentialsContent" style="display: none;">
                                 <!-- Current Users List -->
                                 <div class="credentials-users">
-                                    <h4>Current Admin Users</h4>
+                                    <h4>Aktuální admini</h4>
                                     <div class="users-list" id="usersList"></div>
                                 </div>
 
                                 <div class="credentials-users" id="credentialsCustomerUsersSection">
                                     <div class="credentials-users-header">
-                                        <h4>Current Users</h4>
-                                        <button type="button" class="btn btn-sm btn-secondary" id="toggleCustomerUsersBtn">Hide</button>
+                                        <h4>Aktuální uživatelé</h4>
+                                        <button type="button" class="btn btn-sm btn-secondary" id="toggleCustomerUsersBtn">Skrýt</button>
                                     </div>
                                     <div class="users-list" id="usersListCustomers"></div>
                                 </div>
 
-                                <!-- Add New User -->
+                                <!-- Admin User Management -->
                                 <div class="credentials-form">
-                                    <h4>Add New Admin User</h4>
-                                    <form id="addUserForm">
+                                    <h4>Správa administrátorů</h4>
+                                    <p class="credentials-note">Vyplňte údaje pro nového admina nebo klikněte na Upravit u existujícího účtu.</p>
+                                    <form id="adminUserForm">
+                                        <input type="hidden" id="adminUserId" />
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="newUsername">Username</label>
-                                                <input type="text" id="newUsername" placeholder="Existing username or new username">
+                                                <label for="adminFirstName">Křestní jméno</label>
+                                                <input type="text" id="adminFirstName" placeholder="Jméno admina">
                                             </div>
                                             <div class="form-group">
-                                                <label for="newEmail">Email</label>
-                                                <input type="email" id="newEmail" placeholder="Existing user email or new email">
+                                                <label for="adminLastName">Příjmení</label>
+                                                <input type="text" id="adminLastName" placeholder="Příjmení admina">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="adminUsername">Uživatelské jméno</label>
+                                                <input type="text" id="adminUsername" placeholder="Existující nebo nové uživatelské jméno">
                                             </div>
                                             <div class="form-group">
-                                                <label for="newRole">Role</label>
-                                                <select id="newRole">
-                                                    <option value="worker">Worker</option>
-                                                    <option value="manager" selected>Manager</option>
-                                                    <option value="owner">Owner</option>
+                                                <label for="adminEmail">E-mail</label>
+                                                <input type="email" id="adminEmail" placeholder="Existující nebo nový e-mail">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="adminRole">Role</label>
+                                                <select id="adminRole">
+                                                    <option value="worker">Pracovník</option>
+                                                    <option value="manager" selected>Manažer</option>
+                                                    <option value="owner">Vlastník</option>
                                                 </select>
                                             </div>
                                             <div class="form-group">
-                                                <label for="newPassword">Password</label>
+                                                <label for="adminPassword">Heslo</label>
                                                 <div class="password-field">
-                                                    <input type="password" id="newPassword" placeholder="Required only for new user">
-                                                    <button type="button" class="password-toggle" data-target="newPassword" aria-label="Show password">
+                                                    <input type="password" id="adminPassword" placeholder="Povinné pro nového uživatele, jinak nechte prázdné">
+                                                    <button type="button" class="password-toggle" data-target="adminPassword" aria-label="Zobrazit heslo">
                                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                                             <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
                                                             <circle cx="12" cy="12" r="3"></circle>
@@ -2681,126 +2676,63 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="form-group permissions-group" id="newPermissionsGroup">
-                                            <label>Manager Access</label>
+                                        <div class="form-group permissions-group" id="adminPermissionsGroup">
+                                            <label>Přístup admina</label>
                                             <p class="permissions-help">Vyberte, které části administrace může tento účet používat.</p>
                                             <div class="permissions-grid">
                                                 <label class="permission-option permission-card">
-                                                    <input type="checkbox" id="newPermOrders" checked>
+                                                    <input type="checkbox" id="adminPermOrders" checked>
                                                     <span class="permission-copy">
                                                         <span class="permission-title">Objednávky</span>
                                                         <span class="permission-desc">Správa objednávek a jejich stavů.</span>
                                                     </span>
                                                 </label>
                                                 <label class="permission-option permission-card">
-                                                    <input type="checkbox" id="newPermCatalog" checked>
+                                                    <input type="checkbox" id="adminPermCatalog" checked>
                                                     <span class="permission-copy">
                                                         <span class="permission-title">Katalog</span>
                                                         <span class="permission-desc">Úprava položek, značek a cen.</span>
                                                     </span>
                                                 </label>
                                                 <label class="permission-option permission-card">
-                                                    <input type="checkbox" id="newPermChats" checked>
+                                                    <input type="checkbox" id="adminPermChats" checked>
                                                     <span class="permission-copy">
                                                         <span class="permission-title">Chaty</span>
                                                         <span class="permission-desc">Komunikace se zákazníky.</span>
                                                     </span>
                                                 </label>
                                                 <label class="permission-option permission-card">
-                                                    <input type="checkbox" id="newPermCredentials">
+                                                    <input type="checkbox" id="adminPermCredentials">
                                                     <span class="permission-copy">
-                                                        <span class="permission-title">Admin Credentials</span>
+                                                        <span class="permission-title">Správa uživatelů</span>
                                                         <span class="permission-desc">Přístup do sekce uživatelů a oprávnění.</span>
                                                     </span>
                                                 </label>
                                             </div>
                                         </div>
-                                        <button type="submit" class="btn btn-primary">Add User</button>
-                                        <div class="form-message" id="addUserMessage"></div>
+                                        <button type="submit" class="btn btn-primary">Uložit admina</button>
+                                        <div class="form-message" id="adminUserMessage"></div>
                                     </form>
                                 </div>
-
-                                <!-- Edit Admin User -->
-                                <div class="credentials-form">
-                                    <h4>Edit Admin User</h4>
-                                    <form id="editUserForm">
-                                        <input type="hidden" id="editUserId" />
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="editUsername">Username</label>
-                                                <input type="text" id="editUsername" placeholder="Click Edit on a user" required>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="editEmail">Email</label>
-                                                <input type="email" id="editEmail" placeholder="user@gmail.com">
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="editRole">Role</label>
-                                                <select id="editRole">
-                                                    <option value="worker">Worker</option>
-                                                    <option value="manager">Manager</option>
-                                                    <option value="owner">Owner</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="editPassword">New Password</label>
-                                                <div class="password-field">
-                                                    <input type="password" id="editPassword" placeholder="Leave blank to keep current">
-                                                    <button type="button" class="password-toggle" data-target="editPassword" aria-label="Show password">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
-                                                            <circle cx="12" cy="12" r="3"></circle>
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group permissions-group" id="editPermissionsGroup">
-                                            <label>Manager Access</label>
-                                            <p class="permissions-help">Vyberte, které části administrace může tento účet používat.</p>
-                                            <div class="permissions-grid">
-                                                <label class="permission-option permission-card">
-                                                    <input type="checkbox" id="editPermOrders" checked>
-                                                    <span class="permission-copy">
-                                                        <span class="permission-title">Objednávky</span>
-                                                        <span class="permission-desc">Správa objednávek a jejich stavů.</span>
-                                                    </span>
-                                                </label>
-                                                <label class="permission-option permission-card">
-                                                    <input type="checkbox" id="editPermCatalog" checked>
-                                                    <span class="permission-copy">
-                                                        <span class="permission-title">Katalog</span>
-                                                        <span class="permission-desc">Úprava položek, značek a cen.</span>
-                                                    </span>
-                                                </label>
-                                                <label class="permission-option permission-card">
-                                                    <input type="checkbox" id="editPermChats" checked>
-                                                    <span class="permission-copy">
-                                                        <span class="permission-title">Chaty</span>
-                                                        <span class="permission-desc">Komunikace se zákazníky.</span>
-                                                    </span>
-                                                </label>
-                                                <label class="permission-option permission-card">
-                                                    <input type="checkbox" id="editPermCredentials">
-                                                    <span class="permission-copy">
-                                                        <span class="permission-title">Admin Credentials</span>
-                                                        <span class="permission-desc">Přístup do sekce uživatelů a oprávnění.</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                                        <div class="form-message" id="editUserMessage"></div>
-                                    </form>
+                            </div>
+                        </div>
+                        <div class="credentials-section social-links-admin-section">
+                            <div class="credentials-header">
+                                <h3>Sociální sítě</h3>
+                            </div>
+                            <div class="social-links-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="adminInstagramUrl">URL Instagramu</label>
+                                        <input type="url" id="adminInstagramUrl" placeholder="https://instagram.com/yourpage" maxlength="300">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="adminFacebookUrl">URL Facebooku</label>
+                                        <input type="url" id="adminFacebookUrl" placeholder="https://facebook.com/yourpage" maxlength="300">
+                                    </div>
                                 </div>
-
-                                <!-- Reset Credentials -->
-                                <div class="credentials-reset">
-                                    <h4>Reset to Default</h4>
-                                    <p>Reset all credentials to the default (admin / admin123)</p>
-                                    <button class="btn btn-secondary" id="resetCredentialsBtn">Reset Credentials</button>
-                                    <div class="form-message" id="resetMessage"></div>
-                                </div>
+                                <button type="button" class="btn btn-primary btn-sm" id="saveSocialLinksBtn">Uložit</button>
+                                <span id="socialLinksSaveMsg" style="margin-left:12px;font-size:0.85rem;color:#22c55e;"></span>
                             </div>
                         </div>
                     </div>

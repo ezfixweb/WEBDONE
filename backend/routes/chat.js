@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const router = express.Router();
 const { db } = require('../config/database');
 const { verifyToken, verifyOrderManager } = require('../middleware/auth');
+const { sendCustomEmail } = require('../services/email');
 
 const CHAT_AI_CONFIG_KEY = 'chat_ai_config_v1';
 const DEFAULT_CHAT_AI_CONFIG = {
@@ -76,6 +77,82 @@ function normalizeForMatch(value) {
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
 }
+
+function buildEmailChatSummary(session = {}, messages = []) {
+    const topic = String(session.help_topic || '').trim() || 'Unknown topic';
+    const customerName = String(session.customer_name || '').trim() || 'Customer';
+    const customerEmail = String(session.customer_email || '').trim();
+    const latestMessages = (Array.isArray(messages) ? messages : [])
+        .filter((msg) => msg.sender_type === 'user' || msg.sender_type === 'bot')
+        .slice(-10)
+        .map((msg) => {
+            const sender = msg.sender_type === 'bot' ? 'EzFix AI' : (msg.sender_name || 'Customer');
+            return `${sender}: ${String(msg.message || '').trim()}`;
+        }).join('\n\n');
+
+    return {
+        subject: `EzFix chat ${session.id} - continuing by email`,
+        message: `Hello ${customerName},\n\nYour chat with ID ${session.id} has been forwarded to email support because a response could not be provided within 5 minutes.\n\nWe will continue via email at ${customerEmail}.\n\nSummary of your request:\n- Topic: ${topic}\n\n${latestMessages || 'No message history is available.'}\n\nOur team will contact you shortly. You can reply directly to this email.\n\nBest regards,\nEzFix Support Team`
+    };
+}
+
+async function sendChatEscalationEmail(session = {}, messages = []) {
+    const customerEmail = String(session.customer_email || '').trim();
+    if (!customerEmail) return null;
+
+    const emailData = buildEmailChatSummary(session, messages);
+    try {
+        const emailResult = await sendCustomEmail(customerEmail, emailData.subject, emailData.message);
+        return emailResult;
+    } catch (err) {
+        console.error('Chat escalation email send failed:', err);
+        return null;
+    }
+}
+
+async function escalateIdleChatSessions() {
+    try {
+        const sessions = await db.allAsync(
+            `SELECT id, customer_name, customer_email, help_topic, status
+             FROM chat_sessions
+             WHERE status = 'open'
+               AND last_message_at <= datetime('now', '-5 minutes')
+               AND (assigned_admin_name IS NULL OR assigned_admin_name = '')`
+        );
+
+        for (const session of sessions) {
+            const messages = await db.allAsync(
+                `SELECT sender_type, sender_name, message, created_at
+                 FROM chat_messages
+                 WHERE session_id = ?
+                 ORDER BY created_at ASC`,
+                [session.id]
+            );
+
+            const emailResult = await sendChatEscalationEmail(session, messages);
+            if (!emailResult) continue;
+
+            await db.runAsync(
+                `INSERT INTO chat_messages (session_id, sender_type, sender_name, message, is_read_admin, is_read_user)
+                 VALUES (?, 'bot', 'EzFix AI', ?, FALSE, TRUE)`,
+                [session.id, `Tento chat byl přeposlán do e-mailové podpory. Pokračování proběhne přes e-mail. ID chatu: ${session.id}`]
+            );
+
+            await db.runAsync(
+                `UPDATE chat_sessions
+                 SET status = 'escalated',
+                     updated_at = CURRENT_TIMESTAMP,
+                     last_message_at = CURRENT_TIMESTAMP
+                 WHERE id = ?`,
+                [session.id]
+            );
+        }
+    } catch (err) {
+        console.error('Escalate idle chat sessions error:', err);
+    }
+}
+
+setInterval(escalateIdleChatSessions, 60 * 1000);
 
 async function getChatAiConfig(forceRefresh = false) {
     const now = Date.now();

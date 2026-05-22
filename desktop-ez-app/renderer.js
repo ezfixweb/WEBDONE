@@ -54,6 +54,7 @@ const state = {
   pollIntervalMs: Number(localStorage.getItem('ezfixDesktopPollMs') || 30000),
   sidebarCollapsed: localStorage.getItem('ezfixDesktopSidebarCollapsed') === 'true',
   pollTimer: null,
+  presenceTimer: null,
   availablePrinters: [],
   fullPrintPrinter: localStorage.getItem('ezfixDesktopFullPrintPrinter') || '',
   receiptPrinter: localStorage.getItem('ezfixDesktopReceiptPrinter') || '',
@@ -69,6 +70,58 @@ const state = {
   easyCatalogShowAddCategoryForm: false,
   easyCatalogNewCategoryName: ''
 };
+
+// Simple i18n for desktop app (cs/en)
+const I18N = {
+  cs: {
+    emailModalTitle: 'Odeslat e-mail zákazníkovi',
+    close: 'Zavřít',
+    cancel: 'Zrušit',
+    send: 'Odeslat e-mail',
+    sending: 'Odesílám...',
+    defaultSubject: (orderId) => `Aktualizace objednávky ${orderId}`,
+    defaultMessage: (name, orderId) => `Dobrý den ${name || ''},\n\nposíláme informaci k vaší objednávce ${orderId}.\n\nS pozdravem,\nEzFix tým`,
+    missingData: 'Chybějící údaje pro odeslání e-mailu.',
+    emailSent: (email) => `E-mail úspěšně odeslán na ${email}`,
+    sendError: (msg) => `Chyba při odeslání: ${msg}`
+  },
+  en: {
+    emailModalTitle: 'Send Email to Customer',
+    close: 'Close',
+    cancel: 'Cancel',
+    send: 'Send Email',
+    sending: 'Sending...',
+    defaultSubject: (orderId) => `Order update ${orderId}`,
+    defaultMessage: (name, orderId) => `Hi ${name || ''},\n\nwe are sending an update regarding your order ${orderId}.\n\nBest regards,\nEzFix Team`
+  }
+};
+
+function getLocale() {
+  const stored = localStorage.getItem('ezfixDesktopLang');
+  if (stored && (stored === 'cs' || stored === 'en')) return stored;
+  const nav = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'cs';
+  return nav.startsWith('en') ? 'en' : 'cs';
+}
+
+function t(key, ...args) {
+  const loc = getLocale();
+  const dict = I18N[loc] || I18N.cs;
+  const val = dict[key];
+  if (typeof val === 'function') return val(...args);
+  return val || '';
+}
+
+// Apply translations to static modal elements on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  const titleEl = document.querySelector('#emailModal h3');
+  if (titleEl) titleEl.textContent = t('emailModalTitle');
+  const closeBtn = document.getElementById('closeEmailModalBtn');
+  if (closeBtn) closeBtn.textContent = t('close');
+  const cancelBtn = document.getElementById('emailCancelBtn');
+  if (cancelBtn) cancelBtn.textContent = t('cancel');
+  const submitBtn = document.querySelector('#emailForm button[type="submit"]');
+  if (submitBtn) submitBtn.textContent = t('send');
+});
 
 const loginPanel = document.getElementById('loginPanel');
 const dashboard = document.getElementById('dashboard');
@@ -621,10 +674,89 @@ function createOrderActionButtons(orderId) {
       <button type="button" class="secondary" data-order-action="invoice-save" data-order-id="${orderId}">Uložit fakturu</button>
       <button type="button" class="secondary" data-order-action="receipt-print" data-order-id="${orderId}">Tisk účtenky</button>
       <button type="button" class="ghost-btn" data-order-action="label-print" data-order-id="${orderId}">Tisk štítku</button>
+      <button type="button" class="secondary" data-order-action="email" data-order-id="${orderId}">Odeslat e-mail</button>
       ${deleteButton}
     </div>
   `;
 }
+
+/* Email modal functions for desktop app */
+function showEmailModal() {
+  const modal = document.getElementById('emailModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+}
+
+function closeEmailModal() {
+  const modal = document.getElementById('emailModal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+  const form = document.getElementById('emailForm');
+  if (form) form.reset();
+  window.currentEmailOrderId = null;
+  window.currentCustomerEmail = null;
+}
+
+async function emailCustomer(orderId, customerEmail, customerName) {
+  try {
+    // Ensure we have freshest data
+    await ensureOrderData(orderId);
+  } catch (err) {
+    console.warn('Unable to ensure order data before email:', err);
+  }
+
+  window.currentEmailOrderId = orderId;
+  window.currentCustomerEmail = customerEmail || '';
+
+  const subjectInput = document.getElementById('emailSubject');
+  const messageInput = document.getElementById('emailMessage');
+  const toInput = document.getElementById('emailTo');
+  const nameInput = document.getElementById('emailCustomerName');
+
+  if (toInput) toInput.value = customerEmail || '';
+  if (nameInput) nameInput.value = customerName || '';
+  if (subjectInput) subjectInput.value = t('defaultSubject', orderId);
+  if (messageInput) messageInput.value = t('defaultMessage', customerName, orderId);
+
+  const messageDiv = document.getElementById('emailFormMessage');
+  if (messageDiv) messageDiv.textContent = '';
+
+  showEmailModal();
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'closeEmailModalBtn') closeEmailModal();
+  if (e.target && e.target.id === 'emailCancelBtn') closeEmailModal();
+});
+
+document.getElementById('emailForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const orderId = window.currentEmailOrderId;
+  const customerEmail = window.currentCustomerEmail || document.getElementById('emailTo')?.value;
+  const subject = document.getElementById('emailSubject')?.value || '';
+  const message = document.getElementById('emailMessage')?.value || '';
+  const messageDiv = document.getElementById('emailFormMessage');
+  try {
+    if (!orderId || !customerEmail) {
+      if (messageDiv) { messageDiv.textContent = t('missingData'); messageDiv.className = 'form-message error'; }
+      return;
+    }
+    if (messageDiv) { messageDiv.textContent = ''; messageDiv.className = 'form-message'; }
+    await apiFetch('/email/send-custom', {
+      method: 'POST',
+      body: JSON.stringify({ orderId, customerEmail, subject, message })
+    });
+    if (messageDiv) { messageDiv.textContent = t('emailSent', customerEmail); messageDiv.className = 'form-message success'; }
+    setTimeout(() => {
+      closeEmailModal();
+      renderOrders();
+    }, 1200);
+  } catch (err) {
+    if (messageDiv) { messageDiv.textContent = t('sendError', err.message || String(err)); messageDiv.className = 'form-message error'; }
+  }
+});
 
 function buildInvoiceDocumentHtml(order, items) {
   const lineItems = items.length > 0
@@ -880,6 +1012,12 @@ function bindOrderActionButtons(root) {
         if (action === 'invoice-save') await saveOrderInvoicePdf(orderId);
         if (action === 'receipt-print') await printOrderReceipt(orderId);
         if (action === 'label-print') await printOrderLabel(orderId);
+        if (action === 'email') {
+          const order = getOrderById(orderId);
+          const email = order?.customer_email || '';
+          const name = order?.customer_name || '';
+          await emailCustomer(orderId, email, name);
+        }
         if (action === 'delete') await deleteOrder(orderId);
       } catch (error) {
         alert(error.message || 'Akce nad objednávkou selhala');
@@ -1016,6 +1154,11 @@ function renderEasyCatalogEditor() {
   const cancelBtn = document.getElementById('easyCatalogCancelBtn');
   if (cancelBtn) {
     cancelBtn.classList.toggle('hidden', state.easyCatalogEditIndex === null);
+  }
+
+  const saveBtn = document.getElementById('easyCatalogSaveBtn');
+  if (saveBtn) {
+    saveBtn.classList.toggle('active', state.easyCatalogEditIndex !== null);
   }
   
   if (!state.easyCatalogListVisible) return;
@@ -1182,6 +1325,15 @@ function chatStatusLabel(status) {
   return normalized || '-';
 }
 
+function getOpenUnassignedChatCount() {
+  if (!Array.isArray(state.chatSessions)) return 0;
+  return state.chatSessions.filter((session) => {
+    const assigned = String(session.assigned_admin_name || '').trim();
+    const status = String(session.status || '').toLowerCase();
+    return !assigned && status === 'open';
+  }).length;
+}
+
 function getCurrentAdminName() {
   return String(state.currentUser?.username || '').trim();
 }
@@ -1268,6 +1420,11 @@ function syncChatTakeOverlay() {
 
 function renderChatSessions() {
   const listEl = document.getElementById('chatSessionsList');
+  const countBadge = document.getElementById('chatOpenCountBadge');
+  if (countBadge) {
+    const count = getOpenUnassignedChatCount();
+    countBadge.textContent = count > 99 ? '99+' : String(count);
+  }
   if (!listEl) return;
 
   if (!canAccessChats()) {
@@ -2117,6 +2274,14 @@ function ensureInventoryArrays(catalog) {
   if (!Array.isArray(catalog.printing.otherItems)) catalog.printing.otherItems = [];
   if (!Array.isArray(catalog.printing.otherCustomItems)) catalog.printing.otherCustomItems = [];
   if (!Array.isArray(catalog.printing.usedShopItems)) catalog.printing.usedShopItems = [];
+
+  ['printers', 'filaments', 'pcBuildParts', 'otherItems', 'otherCustomItems', 'usedShopItems'].forEach((listName) => {
+    catalog.printing[listName].forEach((item) => {
+      if (!item || typeof item !== 'object') return;
+      item.qty = Number.isFinite(Number(item.qty || 0)) ? Number(item.qty || 0) : 1;
+      item.barcode = typeof item.barcode === 'string' ? item.barcode : '';
+    });
+  });
 }
 
 function createPartsSeedFromComponents(components) {
@@ -2162,6 +2327,9 @@ function normalizeInventoryPrices(catalog) {
       if (!item || typeof item !== 'object') return;
       const parsed = Number(item.price || 0);
       item.price = Number.isFinite(parsed) ? parsed : 0;
+      const parsedQty = Number(item.qty || 1);
+      item.qty = Number.isFinite(parsedQty) ? Math.max(0, parsedQty) : 1;
+      item.barcode = typeof item.barcode === 'string' ? item.barcode : '';
     });
   });
 }
@@ -2169,21 +2337,25 @@ function normalizeInventoryPrices(catalog) {
 function createInventoryItem(kind) {
   const stamp = Date.now();
   if (kind === 'printers') {
-    return { id: `printer-${stamp}`, name: 'Nová tiskarna', price: 0, active: true };
+    return { id: `printer-${stamp}`, name: 'Nová tiskarna', price: 0, qty: 1, barcode: '', active: true };
   }
   if (kind === 'filaments') {
-    return { id: `filament-${stamp}`, name: 'Nový filament', price: 0, active: true };
+    return { id: `filament-${stamp}`, name: 'Nový filament', price: 0, qty: 1, barcode: '', active: true };
   }
   if (kind === 'pcBuildParts') {
-    return { id: `pc-part-${stamp}`, name: 'Nový PC díl', price: 0, active: true };
+    return { id: `pc-part-${stamp}`, name: 'Nový PC díl', price: 0, qty: 1, barcode: '', active: true };
   }
   if (kind === 'usedShopItems') {
-    return { id: `used-${stamp}`, name: 'Nová bazarová polozka', price: 0, active: true };
+    return { id: `used-${stamp}`, name: 'Nová bazarová polozka', price: 0, qty: 1, barcode: '', active: true };
   }
   if (kind === 'otherCustomItems') {
-    return { id: `other-${stamp}`, name: 'Nová položka v Other', price: 0, active: true };
+    return { id: `other-${stamp}`, name: 'Nová položka v Other', price: 0, qty: 1, barcode: '', active: true };
   }
-  return { id: `item-${stamp}`, name: 'Nová polozka', price: 0, active: true };
+  return { id: `item-${stamp}`, name: 'Nová polozka', price: 0, qty: 1, barcode: '', active: true };
+}
+
+function createRandomBarcode() {
+  return Array.from({ length: 12 }, () => String(Math.floor(Math.random() * 10))).join('');
 }
 
 function setTextContent(id, value) {
@@ -2233,18 +2405,39 @@ function buildInventoryList(listId, list, kind) {
       const safePrice = Number.isFinite(price) ? price : 0;
 
       if (!isSectionEditable) {
-        const suffix = ` - ${formatMoney(safePrice)}`;
-        return `<li>${name}${suffix}</li>`;
+        const barcodeInfo = item.barcode ? `<span class="inventory-item-barcode">Barcode: ${escapeHtml(item.barcode)}</span>` : '';
+        return `
+          <li>
+            <div class="inventory-item-main">${name}</div>
+            <div class="inventory-item-meta">
+              <span>Cena: ${formatMoney(safePrice)}</span>
+              <span>Množství: ${item.qty || 0}</span>
+              ${barcodeInfo}
+            </div>
+          </li>
+        `;
       }
 
+      const safeQty = Number.isFinite(Number(item.qty || 0)) ? Number(item.qty || 0) : 1;
       return `
         <li class="inventory-edit-item">
           <div class="inventory-edit-row">
             <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="name" value="${escapeHtml(item.name || '')}" placeholder="Název" />
             <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="price" type="number" step="0.01" value="${safePrice}" placeholder="Cena" />
-            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="active" value="${item.active === false ? 'false' : 'true'}" placeholder="true/false" />
+            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="qty" type="number" step="1" min="0" value="${safeQty}" placeholder="Množství" />
+            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="barcode" value="${escapeHtml(item.barcode || '')}" placeholder="Barcode / SKU" />
           </div>
-          <div class="inventory-item-sub">${escapeHtml(item.id || '')}</div>
+          <div class="inventory-barcode-actions">
+            <button class="secondary" type="button" data-inv-action="generate-barcode" data-inv-kind="${kind}" data-inv-index="${index}">Vytvořit barcode</button>
+            <label class="inventory-barcode-upload-label">
+              Nahrát barcode
+              <input type="file" accept="image/*,text/*" class="inventory-barcode-upload" data-inv-kind="${kind}" data-inv-index="${index}" />
+            </label>
+          </div>
+          <div class="inventory-item-sub">
+            <span>${escapeHtml(item.id || '')}</span>
+            ${item.barcode ? `<span>Barcode: ${escapeHtml(item.barcode)}</span>` : ''}
+          </div>
           <button class="inventory-remove-btn" data-inv-remove="${kind}" data-inv-index="${index}">Smazat</button>
         </li>
       `;
@@ -2350,8 +2543,19 @@ function renderInventory() {
           return;
         }
 
+        if (field === 'qty') {
+          const parsed = Number(input.value);
+          list[index][field] = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+          return;
+        }
+
         if (field === 'active') {
           list[index][field] = String(input.value).trim().toLowerCase() !== 'false';
+          return;
+        }
+
+        if (field === 'barcode') {
+          list[index][field] = input.value;
           return;
         }
 
@@ -2366,6 +2570,30 @@ function renderInventory() {
         const list = state.inventoryDraft?.printing?.[kind || ''];
         if (!Array.isArray(list) || !Number.isFinite(index) || index < 0 || index >= list.length) return;
         list.splice(index, 1);
+        renderInventory();
+      });
+    });
+
+    document.querySelectorAll('[data-inv-action="generate-barcode"]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const kind = button.getAttribute('data-inv-kind');
+        const index = Number(button.getAttribute('data-inv-index'));
+        const list = state.inventoryDraft?.printing?.[kind || ''];
+        if (!Array.isArray(list) || !Number.isFinite(index) || index < 0 || index >= list.length) return;
+        list[index].barcode = createRandomBarcode();
+        renderInventory();
+      });
+    });
+
+    document.querySelectorAll('.inventory-barcode-upload').forEach((input) => {
+      input.addEventListener('change', () => {
+        const kind = input.getAttribute('data-inv-kind');
+        const index = Number(input.getAttribute('data-inv-index'));
+        const list = state.inventoryDraft?.printing?.[kind || ''];
+        if (!Array.isArray(list) || !Number.isFinite(index) || index < 0 || index >= list.length) return;
+        const file = input.files?.[0];
+        if (!file) return;
+        list[index].barcode = file.name || list[index].barcode || '';
         renderInventory();
       });
     });
@@ -2436,6 +2664,8 @@ async function loadDashboardData(options = {}) {
     state.inventoryDraft = cloneCatalog(state.catalog);
   }
   renderInventory();
+
+  startDesktopPresence();
 
   if (!silent) {
     showToast('Panel byl obnoven');
@@ -2651,6 +2881,32 @@ function stopPolling() {
   if (!state.pollTimer) return;
   window.clearInterval(state.pollTimer);
   state.pollTimer = null;
+}
+
+async function sendDesktopPresenceHeartbeat() {
+  try {
+    await fetch(`${state.apiBase}/presence/heartbeat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ visitorId: `desktop-${navigator.userAgent}-${window.location.hostname}` })
+    });
+  } catch {
+    // Presence heartbeat should not break the app.
+  }
+}
+
+function startDesktopPresence() {
+  if (state.presenceTimer) {
+    window.clearInterval(state.presenceTimer);
+  }
+  sendDesktopPresenceHeartbeat();
+  state.presenceTimer = window.setInterval(sendDesktopPresenceHeartbeat, 45000);
+}
+
+function stopDesktopPresence() {
+  if (!state.presenceTimer) return;
+  window.clearInterval(state.presenceTimer);
+  state.presenceTimer = null;
 }
 
 async function saveInventoryDraft() {

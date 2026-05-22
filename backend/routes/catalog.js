@@ -5,11 +5,57 @@
  */
 
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const router = express.Router();
 const { db } = require('../config/database');
 const { verifyToken, verifyManager } = require('../middleware/auth');
 
 const CATALOG_KEY = 'main';
+const localCatalogBackupDir = process.env.LOCAL_CATALOG_BACKUP_DIR
+    ? path.resolve(process.env.LOCAL_CATALOG_BACKUP_DIR)
+    : null;
+const backupToken = process.env.CATALOG_BACKUP_TOKEN ? String(process.env.CATALOG_BACKUP_TOKEN).trim() : null;
+
+function ensureBackupDir() {
+    if (!localCatalogBackupDir) return false;
+    if (!fs.existsSync(localCatalogBackupDir)) {
+        fs.mkdirSync(localCatalogBackupDir, { recursive: true });
+    }
+    return true;
+}
+
+function writeCatalogBackupFiles(catalog, suffix = 'mobile') {
+    if (!ensureBackupDir()) return null;
+
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[:.]/g, '-');
+    const filename = `catalog-backup-${suffix}-${timestamp}.json`;
+    const latestFile = 'catalog-latest.json';
+
+    const content = JSON.stringify(catalog, null, 2);
+    const backupPath = path.join(localCatalogBackupDir, filename);
+    const latestPath = path.join(localCatalogBackupDir, latestFile);
+
+    fs.writeFileSync(backupPath, content, 'utf8');
+    fs.writeFileSync(latestPath, content, 'utf8');
+
+    return { backupPath, latestPath };
+}
+
+function isBackupAuthorized(req) {
+    if (!backupToken) return true;
+    const requestToken = req.header('x-ezfix-backup-token') || req.query.backupToken;
+    return requestToken === backupToken;
+}
+
+function sanitizeBackupCatalog(rawCatalog) {
+    const sanitized = { ...rawCatalog };
+    if (Array.isArray(rawCatalog?.news)) {
+        sanitized.news = sanitizeNewsArray(rawCatalog.news);
+    }
+    return sanitized;
+}
 
 function sanitizeRichHtml(value, maxLength = 12000) {
     const raw = String(value || '').slice(0, maxLength);
@@ -109,10 +155,51 @@ router.put('/', verifyToken, verifyManager, async (req, res) => {
             [CATALOG_KEY, data]
         );
 
+        try {
+            writeCatalogBackupFiles(sanitizedCatalog, 'admin');
+        } catch (backupError) {
+            console.error('Local catalog backup error:', backupError);
+        }
+
         res.json({ success: true, message: 'Catalog updated', catalog: sanitizedCatalog });
     } catch (err) {
         console.error('Update catalog error:', err);
         res.status(500).json({ success: false, message: 'Failed to update catalog' });
+    }
+});
+
+router.post('/backup', async (req, res) => {
+    if (!isBackupAuthorized(req)) {
+        return res.status(401).json({ success: false, message: 'Unauthorized backup request' });
+    }
+
+    const rawCatalog = req.body && typeof req.body.catalog === 'object' ? req.body.catalog : null;
+    if (!rawCatalog) {
+        return res.status(400).json({ success: false, message: 'Catalog payload is required' });
+    }
+
+    try {
+        const sanitizedCatalog = sanitizeBackupCatalog(rawCatalog);
+        const data = JSON.stringify(sanitizedCatalog);
+
+        await db.runAsync(
+            `INSERT INTO catalog (key, data, updated_at)
+             VALUES (?, ?, CURRENT_TIMESTAMP)
+             ON CONFLICT(key) DO UPDATE SET data = excluded.data, updated_at = CURRENT_TIMESTAMP`,
+            [CATALOG_KEY, data]
+        );
+
+        try {
+            const source = String(req.body.source || 'mobile').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+            writeCatalogBackupFiles(sanitizedCatalog, source);
+        } catch (writeError) {
+            console.error('Local catalog backup error:', writeError);
+        }
+
+        res.json({ success: true, message: 'Catalog backup saved' });
+    } catch (err) {
+        console.error('Catalog backup error:', err);
+        res.status(500).json({ success: false, message: 'Failed to save catalog backup' });
     }
 });
 
