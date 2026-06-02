@@ -8,6 +8,12 @@ const refreshBtn = document.getElementById('refreshBtn');
 const backupBtn = document.getElementById('backupBtn');
 const emptyMessage = document.getElementById('emptyMessage');
 const scanHelpBtn = document.getElementById('scanHelpBtn');
+const cameraScanBtn = document.getElementById('cameraScanBtn');
+const scannerOverlay = document.getElementById('scannerOverlay');
+const scannerVideo = document.getElementById('scannerVideo');
+const scannerCanvas = document.getElementById('scannerCanvas');
+const stopScannerBtn = document.getElementById('stopScannerBtn');
+const scannerHint = document.getElementById('scannerHint');
 const desktopLinkBtn = document.getElementById('desktopLinkBtn');
 const syncStatusSpan = document.getElementById('syncStatus');
 const activeDevicesSpan = document.getElementById('activeDevices');
@@ -210,6 +216,111 @@ function registerServiceWorker() {
     }
 }
 
+// --- Camera barcode scanner (BarcodeDetector API with jsQR fallback) ---
+let scanning = false;
+let scanAnimationId = null;
+let localStream = null;
+
+async function loadJsQr() {
+    if (window.jsQR) return;
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Nepodařilo se načíst jsQR'));
+        document.head.appendChild(s);
+    });
+}
+
+function handleDetectedBarcode(code) {
+    if (!code) return;
+    // Put code into search input and trigger search
+    searchInput.value = code;
+    currentQuery = code;
+    filterInventory(currentQuery);
+    setStatus(`Nalezen barcode: ${code}`);
+    stopCameraScanner();
+}
+
+async function startCameraScanner() {
+    if (scanning) return;
+    // Show overlay
+    scannerOverlay.classList.remove('hidden');
+    scanning = true;
+    // Access camera
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        scannerVideo.srcObject = localStream;
+        await scannerVideo.play();
+
+        // Prefer BarcodeDetector if available
+        if (window.BarcodeDetector) {
+            const formats = BarcodeDetector.getSupportedFormats ? await BarcodeDetector.getSupportedFormats() : ['qr_code', 'ean_13', 'code_128'];
+            const detector = new BarcodeDetector({ formats });
+            const detectLoop = async () => {
+                try {
+                    const results = await detector.detect(scannerVideo);
+                    if (results && results.length > 0) {
+                        handleDetectedBarcode(results[0].rawValue || results[0].rawText || results[0].raw_data || results[0].value);
+                        return;
+                    }
+                } catch (e) {
+                    // ignore detection errors
+                }
+                scanAnimationId = requestAnimationFrame(detectLoop);
+            };
+            scanAnimationId = requestAnimationFrame(detectLoop);
+            return;
+        }
+
+        // Fallback: use jsQR scanning on frames
+        await loadJsQr();
+        const canvas = scannerCanvas;
+        const ctx = canvas.getContext('2d');
+
+        const fallbackLoop = () => {
+            if (!scanning) return;
+            try {
+                canvas.width = scannerVideo.videoWidth;
+                canvas.height = scannerVideo.videoHeight;
+                ctx.drawImage(scannerVideo, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const qr = window.jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+                if (qr && qr.data) {
+                    handleDetectedBarcode(qr.data);
+                    return;
+                }
+            } catch (e) {
+                // ignore
+            }
+            scanAnimationId = requestAnimationFrame(fallbackLoop);
+        };
+        scanAnimationId = requestAnimationFrame(fallbackLoop);
+    } catch (error) {
+        setStatus('Nepodařilo se spustit kameru: ' + (error.message || error), true);
+        scannerOverlay.classList.add('hidden');
+        scanning = false;
+    }
+}
+
+function stopCameraScanner() {
+    if (!scanning) return;
+    scanning = false;
+    if (scanAnimationId) {
+        cancelAnimationFrame(scanAnimationId);
+        scanAnimationId = null;
+    }
+    if (localStream) {
+        localStream.getTracks().forEach((t) => t.stop());
+        localStream = null;
+    }
+    if (scannerVideo) {
+        try { scannerVideo.pause(); scannerVideo.srcObject = null; } catch (e) {}
+    }
+    if (scannerOverlay) scannerOverlay.classList.add('hidden');
+}
+
+
 function bindEvents() {
     searchInput.addEventListener('input', (event) => {
         currentQuery = event.target.value || '';
@@ -243,6 +354,18 @@ function bindEvents() {
         searchInput.focus();
         setStatus('Naskenuj barcode do pole výše a stiskni Enter.');
     });
+
+    if (cameraScanBtn) {
+        cameraScanBtn.addEventListener('click', () => {
+            startCameraScanner();
+        });
+    }
+
+    if (stopScannerBtn) {
+        stopScannerBtn.addEventListener('click', () => {
+            stopCameraScanner();
+        });
+    }
 
     desktopLinkBtn.addEventListener('click', () => {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {

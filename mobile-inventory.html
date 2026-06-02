@@ -47,6 +47,7 @@
 
         <div class="mobile-inventory-actions">
             <button id="scanHelpBtn" class="btn btn-primary btn-sm">Použít skener</button>
+            <button id="cameraScanBtn" class="btn btn-primary btn-sm">Skenovat pomocí kamery</button>
             <button id="backupBtn" class="btn btn-warning btn-sm">Zálohovat na PC</button>
             <button id="desktopLinkBtn" class="btn btn-secondary btn-sm">Otevřít PC app</button>
         </div>
@@ -75,6 +76,16 @@
         <ul id="inventoryList" class="mobile-inventory-list"></ul>
         <div id="emptyMessage" class="small mobile-inventory-warning hidden">Žádné položky pro tento dotaz. Zkus použít barcode nebo zkontroluj připojení k serveru.</div>
     </div>
+
+        <!-- Camera scanner overlay -->
+        <div id="scannerOverlay" class="hidden" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);z-index:9999;">
+            <div style="width:100%;max-width:720px;margin:16px;position:relative;">
+                <video id="scannerVideo" autoplay muted playsinline style="width:100%;height:auto;border-radius:12px;background:#000"></video>
+                <canvas id="scannerCanvas" class="hidden"></canvas>
+                <button id="stopScannerBtn" class="btn btn-secondary" style="position:absolute;top:12px;right:12px;">Zavřít</button>
+                <div id="scannerHint" style="position:absolute;left:12px;bottom:12px;color:#fff;background:rgba(0,0,0,0.4);padding:8px 10px;border-radius:8px">Nasměruj kameru na barcode</div>
+            </div>
+        </div>
 
     <script src="mobile-inventory.js" defer></script>
 </body>

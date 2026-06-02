@@ -12,6 +12,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import org.json.JSONObject;
+import android.content.Intent;
+import androidx.annotation.Nullable;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -52,6 +55,14 @@ public class MainActivity extends AppCompatActivity {
             prefs.edit().putString(KEY_SERVER_URL, serverUrl).apply();
             serverUrlInput.setText(serverUrl);
             loadInventoryPage(serverUrl);
+        });
+
+        // Start scanner button integration: long-press server url input to open native scanner
+        serverUrlInput.setOnLongClickListener(v -> {
+            // launch scanner activity
+            Intent intent = new Intent(this, ScannerActivity.class);
+            startActivityForResult(intent, 1234);
+            return true;
         });
     }
 
@@ -100,6 +111,19 @@ public class MainActivity extends AppCompatActivity {
             webView.goBack();
         } else {
             super.onBackPressed();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1234 && resultCode == RESULT_OK && data != null) {
+            String barcode = data.getStringExtra("barcode");
+            if (barcode != null) {
+                final String esc = JSONObject.quote(barcode);
+                final String js = "(function(){try{const code=" + esc + ";const input=document.getElementById('searchInput'); if(input){input.value=code; input.dispatchEvent(new Event('input')); const ev=new KeyboardEvent('keydown',{key:'Enter'}); input.dispatchEvent(ev);} if(window.filterInventory){window.filterInventory(code);} }catch(e){} })();";
+                runOnUiThread(() -> webView.evaluateJavascript(js, null));
+            }
         }
     }
 }
