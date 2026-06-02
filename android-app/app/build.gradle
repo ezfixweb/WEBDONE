@@ -41,6 +41,6 @@ dependencies {
     implementation 'androidx.camera:camera-lifecycle:1.2.3'
     implementation 'androidx.camera:camera-view:1.2.3'
     implementation 'com.google.mlkit:barcode-scanning:17.1.1'
-    // Honeywell AIDC SDK AAR (if placed in repo root as aidc.aar)
-    implementation files('../../aidc.aar')
+    // Honeywell AIDC SDK AAR (place aidc.aar into app/libs/)
+    implementation files('libs/aidc.aar')
 }
