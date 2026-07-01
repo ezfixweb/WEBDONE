@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Admin elements
         statusFilter: document.getElementById('statusFilter'),
         orderTypeFilter: document.getElementById('orderTypeFilter'),
+        allOrdersSearchInput: document.getElementById('allOrdersSearchInput'),
         ordersList: document.getElementById('ordersList'),
         clearOrdersBtn: document.getElementById('clearOrdersBtn'),
         
@@ -153,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'Expert Tech Solutions': 'Profesionální technologická řešení',
             'We Fix Your': 'Opravíme vaše',
             'Tech Devices': 'zařízení',
-            'Professional repair services for smartphones, tablets, notebooks, and desktop PCs. Plus, shop quality parts and accessories.': 'Profesionální opravy smartphonů, tabletů, notebooků a stolních PC. Navíc kvalitní díly a příslušenství.',
+            'Fast, friendly repairs for smartphones, tablets, notebooks, and desktop PCs. Shop quality parts and accessories.': 'Rychlé a přátelské opravy telefonů, tabletů, notebooků a stolních PC. K dispozici kvalitní díly a příslušenství.',
             'Service': 'Služby',
             'Devices Repaired': 'Opravených zařízení',
             'Satisfaction Rate': 'Spokojenost',
@@ -253,8 +254,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'Zasilkovna Tracking Number': 'Cislo sledovani Zasilkovny',
             'Track on Zasilkovna': 'Sledovat na Zasilkovne',
             'Select Build Type': 'Vyberte typ sestavy',
-            'Choose Custom PC or Server': 'Vyberte vlastni PC nebo server',
-            'Back': 'Zpet',
+            'Choose Custom PC or Server': 'Vyberte vlastní PC, nebo server',
+            'Back': 'Zpět',
             'Select Server Type': 'Vyberte typ serveru',
             'Choose Server or Home Assistant Server': 'Vyberte server nebo Home Assistant',
             'Select Brand': 'Vyberte značku',
@@ -274,9 +275,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'Select Switch': 'Vyberte switch',
             'Choose network switch option': 'Zvolte variantu sitoveho switche',
             'Other Details': 'Dalsi detaily',
-            'Install options and cluster size': 'Moznosti instalace a velikost clusteru',
+            'Install options and cluster size': 'Možnosti instalace a velikost clusteru',
             'Install OS': 'Instalovat OS',
-            'Cluster': 'Cluster',
+            'Cluster': 'Klastr',
             'Select Rack': 'Vyberte rack',
             'Choose your rack size': 'Zvolte velikost racku',
             'Select build status and installation needs': 'Zvolte stav sestavy a instalaci',
@@ -373,7 +374,22 @@ document.addEventListener('DOMContentLoaded', function() {
             'City': 'Mesto',
             'ZIP Code': 'PSC',
             'ZIP code': 'PSC',
+            'ZIP code is required': 'PSČ je povinné',
+            'Please enter a valid ZIP code': 'Zadejte platné PSČ',
             'Country': 'Zeme',
+            'Country is required': 'Zadejte zemi',
+            'First name is required': 'Jméno je povinné',
+            'First name must be at least 2 characters': 'Jméno musí mít alespoň 2 znaky',
+            'Last name is required': 'Příjmení je povinné',
+            'Last name must be at least 2 characters': 'Příjmení musí mít alespoň 2 znaky',
+            'Email address is required': 'E-mail je povinný',
+            'Please enter a valid email address': 'Zadejte platnou e-mailovou adresu',
+            'Phone number is required': 'Telefonní číslo je povinné',
+            'Please enter a valid phone number': 'Zadejte platné telefonní číslo',
+            'Street address is required': 'Ulice a číslo jsou povinné',
+            'City is required': 'Město je povinné',
+            'Payment method is required': 'Vyberte způsob platby',
+            'You must agree to the terms and conditions': 'Musíte souhlasit s podmínkami',
             'Notes (Optional)': 'Poznamka (volitelne)',
             'Special instructions or notes...': 'Specialni pokyny nebo poznamky...',
             'I agree with the': 'Souhlasím s',
@@ -487,8 +503,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'Failed to load AI answers': 'Nepodařilo se načíst AI odpovědi',
             'Failed to save AI answers': 'Nepodařilo se uložit AI odpovědi',
             'Order Shipped': 'Objednávka odeslána',
-            'Screen Fixed': 'Displej opraven',
-            'Battery Kit': 'Bateriová sada',
+            'Screen Fixed': 'Oprava displejů',
+            'Battery Kit': 'Server',
             // Toasts / dialogs
             'Session expired. Please login again.': 'Relace vyprsela. Prihlaste se znovu.',
             'Cannot reach API — is the backend server running?': 'Nelze se spojit s API — bezi backend server?',
@@ -920,7 +936,9 @@ document.addEventListener('DOMContentLoaded', function() {
         colorSlotIndex: 0,
         strength: null,
         parts: 1,
-        fileName: ''
+        fileName: '',
+        selectedFile: null,
+        uploadedFilePath: ''
     };
 
     const defaultPrintingStrengths = [
@@ -1054,16 +1072,16 @@ document.addEventListener('DOMContentLoaded', function() {
             { id: 'tpu', name: 'TPU', active: true }
         ],
         colors: [
-            { id: 'black', name: 'Black', hex: '#0f172a', active: true },
-            { id: 'white', name: 'White', hex: '#f8fafc', active: true },
-            { id: 'red', name: 'Red', hex: '#ef4444', active: true },
-            { id: 'blue', name: 'Blue', hex: '#3b82f6', active: true },
-            { id: 'green', name: 'Green', hex: '#22c55e', active: true },
-            { id: 'gray', name: 'Gray', hex: '#94a3b8', active: true },
-            { id: 'orange', name: 'Orange', hex: '#f97316', active: true },
-            { id: 'yellow', name: 'Yellow', hex: '#facc15', active: true },
-            { id: 'pink', name: 'Pink', hex: '#fb7185', active: true },
-            { id: 'silver', name: 'Silver', hex: '#cbd5e1', active: true }
+            { id: 'black', name: 'Černá', hex: '#0f172a', active: true },
+            { id: 'white', name: 'Bílá', hex: '#f8fafc', active: true },
+            { id: 'red', name: 'Červená', hex: '#ef4444', active: true },
+            { id: 'blue', name: 'Modrá', hex: '#3b82f6', active: true },
+            { id: 'green', name: 'Zelená', hex: '#22c55e', active: true },
+            { id: 'gray', name: 'Šedá', hex: '#94a3b8', active: true },
+            { id: 'orange', name: 'Oranžová', hex: '#f97316', active: true },
+            { id: 'yellow', name: 'Žlutá', hex: '#facc15', active: true },
+            { id: 'pink', name: 'Růžová', hex: '#fb7185', active: true },
+            { id: 'silver', name: 'Stříbrná', hex: '#cbd5e1', active: true }
         ],
         strengths: defaultPrintingStrengths,
         otherItems: defaultOtherItems,
@@ -1335,6 +1353,52 @@ document.addEventListener('DOMContentLoaded', function() {
         return `/assets/uploads/${fileName}`;
     }
 
+    function extractFileDisplayName(fileValue) {
+        const raw = String(fileValue || '').trim();
+        if (!raw) return '';
+        const normalized = raw.split('?')[0];
+        const parts = normalized.split('/').filter(Boolean);
+        return parts.length ? parts[parts.length - 1] : raw;
+    }
+
+    async function uploadPrintingFile(file) {
+        if (!file) {
+            throw new Error(t('No file selected'));
+        }
+
+        const fileExt = (file.name.split('.').pop() || '').toLowerCase();
+        const allowedExt = ['stl', 'obj', '3mf'];
+        if (!allowedExt.includes(fileExt)) {
+            throw new Error('Povolené formáty jsou STL, OBJ a 3MF.');
+        }
+
+        const isLocalFile = (location.protocol === 'file:' || location.origin === 'null');
+        if (isLocalFile) {
+            return {
+                filePath: file.name,
+                originalName: file.name
+            };
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${API_BASE_URL}/orders/upload-print-file`, {
+            method: 'POST',
+            headers: {
+                ...getAuthHeader()
+            },
+            body: formData
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Nahrání souboru se nezdařilo');
+        }
+
+        return result;
+    }
+
     /**
      * Extract custom PC build details from cart/order item
      */
@@ -1378,13 +1442,17 @@ document.addEventListener('DOMContentLoaded', function() {
             colorDisplay = item.color;
         }
 
+        const rawFileValue = item.filePath || item.file_path || item.file_url || item.fileUrl || item.fileName || item.file_name || item.file || '';
+        const looksLikePath = typeof rawFileValue === 'string' && rawFileValue.includes('/');
+
         return {
             printer: item.printerName || item.printer || '',
             filament: item.filamentName || item.filament || '',
             color: colorDisplay,
             strength: item.strengthName || item.strength || '',
             parts: item.parts || item.quantity || 1,
-            fileName: item.fileName || item.file_name || item.file || ''
+            fileName: item.originalName || item.original_name || (looksLikePath ? extractFileDisplayName(rawFileValue) : rawFileValue),
+            filePath: looksLikePath ? rawFileValue : ''
         };
     }
 
@@ -3425,7 +3493,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (tabName === 'credentials') return canAccessCredentials(user);
         if (tabName === 'catalog') return canManageCatalog(user);
         if (tabName === 'chats') return canAccessChats(user);
-        if (['repairs', 'custom-pc', 'printing', 'other-items', 'used-shop'].includes(tabName)) return canManageOrders(user);
+        if (['all-orders', 'repairs', 'custom-pc', 'printing', 'other-items', 'used-shop'].includes(tabName)) return canManageOrders(user);
         return false;
     }
 
@@ -3684,17 +3752,17 @@ document.addEventListener('DOMContentLoaded', function() {
             { id: 'server-home-assistant', name: 'Home Assistant Server' }
         ],
         buildStatus: [
-            { id: 'built', name: 'Already Built' },
-            { id: 'need-build', name: 'Need Build' }
+            { id: 'built', name: 'Již sestaveno' },
+            { id: 'need-build', name: 'Potřebuje sestavit' }
         ],
         osOption: [
-            { id: 'os-installed', name: 'Install with OS' },
-            { id: 'os-clean', name: 'Clean (No OS)' }
+            { id: 'os-installed', name: 'Dodat s OS' },
+            { id: 'os-clean', name: 'Bez OS' }
         ],
-        osOptionDescription: 'Choose whether you want the system delivered with an operating system.',
+        osOptionDescription: 'Vyberte, zda chcete sestavu dodat s nainstalovaným operačním systémem.',
         installOption: [
-            { id: 'install-yes', name: 'Installation (We will install the server)' },
-            { id: 'install-no', name: 'No Installation' }
+            { id: 'install-yes', name: 'Instalace (server nainstalujeme)' },
+            { id: 'install-no', name: 'Bez instalace' }
         ],
         rack: [
             { id: 'rack-6u', name: '6U Small Rack', price: 199 },
@@ -4457,12 +4525,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!ordersListEl || !chatsListEl || !usernameEl || !emailEl || !roleEl || !createdEl) return;
 
         if (!Storage.getToken()) {
-            if (messageEl) messageEl.textContent = 'Please login to view your profile.';
+            if (messageEl) messageEl.textContent = 'Pro zobrazení profilu se přihlaste.';
             return;
         }
 
-        ordersListEl.innerHTML = '<div class="profile-empty">Loading your orders...</div>';
-        chatsListEl.innerHTML = '<div class="profile-empty">Loading your chats...</div>';
+        ordersListEl.innerHTML = '<div class="profile-empty">Načítám vaše objednávky...</div>';
+        chatsListEl.innerHTML = '<div class="profile-empty">Načítám vaše chaty...</div>';
         if (messageEl) messageEl.textContent = '';
 
         try {
@@ -4483,7 +4551,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (ordersResult.status === 'fulfilled') {
                 const orders = Array.isArray(ordersResult.value?.orders) ? ordersResult.value.orders : [];
                 if (!orders.length) {
-                    ordersListEl.innerHTML = '<div class="profile-empty">No orders yet.</div>';
+                    ordersListEl.innerHTML = '<div class="profile-empty">Zatím nemáte žádné objednávky.</div>';
                 } else {
                     const detailsByOrderId = new Map();
                     await Promise.all(orders.map(async (order) => {
@@ -4528,10 +4596,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="profile-order-header">
                                     <div>
                                         <div class="title">#${escapeHtml(order.order_number || String(order.id || ''))}</div>
-                                        <div class="meta">Status: ${escapeHtml(formatStatusLabel(order.status || ''))} • ${escapeHtml(formatDateTimeSafe(order.created_at))}</div>
-                                        <div class="preview">Total: ${escapeHtml(formatCurrency(order.total || 0))} • Items: ${escapeHtml(String(order.item_count || 0))}</div>
+                                        <div class="meta">Stav: ${escapeHtml(formatStatusLabel(order.status || ''))} • ${escapeHtml(formatDateTimeSafe(order.created_at))}</div>
+                                        <div class="preview">Celkem: ${escapeHtml(formatCurrency(order.total || 0))} • Položky: ${escapeHtml(String(order.item_count || 0))}</div>
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-secondary profile-order-toggle" data-order-toggle="${escapeHtml(orderIdKey)}" aria-expanded="false">Show details</button>
+                                    <button type="button" class="btn btn-sm btn-secondary profile-order-toggle" data-order-toggle="${escapeHtml(orderIdKey)}" aria-expanded="false">Zobrazit detaily</button>
                                 </div>
                                 <div class="profile-order-details" data-order-details="${escapeHtml(orderIdKey)}" style="display:none;">
                                     ${detailsHtml}
@@ -4549,26 +4617,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
                             const isVisible = detailsEl.style.display !== 'none';
                             detailsEl.style.display = isVisible ? 'none' : 'block';
-                            btn.textContent = isVisible ? 'Show details' : 'Hide details';
+                            btn.textContent = isVisible ? 'Zobrazit detaily' : 'Skrýt detaily';
                             btn.setAttribute('aria-expanded', isVisible ? 'false' : 'true');
                         });
                     });
                 }
             } else {
-                ordersListEl.innerHTML = '<div class="profile-empty">Failed to load order history.</div>';
+                ordersListEl.innerHTML = '<div class="profile-empty">Nepodařilo se načíst historii objednávek.</div>';
             }
 
             if (chatsResult.status === 'fulfilled') {
                 const sessions = Array.isArray(chatsResult.value?.sessions) ? chatsResult.value.sessions : [];
                 if (!sessions.length) {
-                    chatsListEl.innerHTML = '<div class="profile-empty">No chats yet.</div>';
+                    chatsListEl.innerHTML = '<div class="profile-empty">Zatím nemáte žádné chaty.</div>';
                 } else {
                     const previewSessions = sessions.slice(0, 8);
                     chatsListEl.innerHTML = previewSessions.map((session) => {
                         const sessionId = String(session.id || '');
                         const status = escapeHtml(formatStatusLabel(session.status || 'open'));
                         const when = escapeHtml(formatDateTimeSafe(session.last_message_at || session.created_at));
-                        const preview = escapeHtml(String(session.last_message || 'No messages yet'));
+                        const preview = escapeHtml(String(session.last_message || 'Zatím žádné zprávy'));
 
                         return `
                             <div class="profile-history-item">
@@ -4578,7 +4646,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <div class="meta">${status} • ${when}</div>
                                         <div class="preview">${preview}</div>
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-secondary profile-chat-toggle" data-chat-toggle="${escapeHtml(sessionId)}" aria-expanded="false">Show chat</button>
+                                    <button type="button" class="btn btn-sm btn-secondary profile-chat-toggle" data-chat-toggle="${escapeHtml(sessionId)}" aria-expanded="false">Zobrazit chat</button>
                                 </div>
                                 <div class="profile-chat-transcript" data-chat-transcript="${escapeHtml(sessionId)}" data-chat-loaded="false" style="display:none;"></div>
                             </div>
@@ -4595,25 +4663,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             const isVisible = transcriptEl.style.display !== 'none';
                             if (isVisible) {
                                 transcriptEl.style.display = 'none';
-                                btn.textContent = 'Show chat';
+                                btn.textContent = 'Zobrazit chat';
                                 btn.setAttribute('aria-expanded', 'false');
                                 return;
                             }
 
                             transcriptEl.style.display = 'block';
-                            btn.textContent = 'Hide chat';
+                            btn.textContent = 'Skrýt chat';
                             btn.setAttribute('aria-expanded', 'true');
 
                             if (transcriptEl.dataset.chatLoaded === 'true') {
                                 return;
                             }
 
-                            transcriptEl.innerHTML = '<div class="profile-empty">Loading chat transcript...</div>';
+                            transcriptEl.innerHTML = '<div class="profile-empty">Načítám přepis chatu...</div>';
                             try {
                                 const result = await apiCall('GET', `/chat/my/sessions/${sessionId}/messages`);
                                 const messages = Array.isArray(result?.messages) ? result.messages : [];
                                 if (!messages.length) {
-                                    transcriptEl.innerHTML = '<div class="profile-empty">No messages in this chat.</div>';
+                                    transcriptEl.innerHTML = '<div class="profile-empty">V tomto chatu nejsou žádné zprávy.</div>';
                                     transcriptEl.dataset.chatLoaded = 'true';
                                     return;
                                 }
@@ -4634,20 +4702,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
                                 transcriptEl.dataset.chatLoaded = 'true';
                             } catch {
-                                transcriptEl.innerHTML = '<div class="profile-empty">Failed to load chat transcript.</div>';
+                                transcriptEl.innerHTML = '<div class="profile-empty">Nepodařilo se načíst přepis chatu.</div>';
                             }
                         });
                     });
                 }
             } else {
-                chatsListEl.innerHTML = '<div class="profile-empty">Failed to load chat history.</div>';
+                chatsListEl.innerHTML = '<div class="profile-empty">Nepodařilo se načíst historii chatů.</div>';
             }
 
             if (messageEl) messageEl.textContent = '';
         } catch (error) {
-            if (messageEl) messageEl.textContent = 'Failed to load profile data. Please try again.';
-            ordersListEl.innerHTML = '<div class="profile-empty">Failed to load order history.</div>';
-            chatsListEl.innerHTML = '<div class="profile-empty">Failed to load chat history.</div>';
+            if (messageEl) messageEl.textContent = 'Nepodařilo se načíst data profilu. Zkuste to znovu.';
+            ordersListEl.innerHTML = '<div class="profile-empty">Nepodařilo se načíst historii objednávek.</div>';
+            chatsListEl.innerHTML = '<div class="profile-empty">Nepodařilo se načíst historii chatů.</div>';
         }
     }
 
@@ -4853,24 +4921,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (fileInput && fileName) {
-            fileName.textContent = printingState.fileName || 'No file selected';
+            fileName.textContent = printingState.fileName || 'Žádný soubor nevybrán';
             fileInput.addEventListener('change', () => {
                 const file = fileInput.files && fileInput.files[0];
+                printingState.selectedFile = file || null;
                 printingState.fileName = file ? file.name : '';
-                fileName.textContent = printingState.fileName || 'No file selected';
+                printingState.uploadedFilePath = '';
+                fileName.textContent = printingState.fileName || 'Žádný soubor nevybrán';
             });
         }
 
         if (addToCartBtn) {
             addToCartBtn.onclick = async () => {
-                if (!printingState.printer || !printingState.filament || !printingState.colors || printingState.colors.length === 0 || !printingState.strength || !printingState.fileName) {
-                    showToast('Select printer, filament, color, strength, and upload a file');
+                if (!printingState.printer || !printingState.filament || !printingState.colors || printingState.colors.length === 0 || !printingState.strength || !printingState.fileName || !printingState.selectedFile) {
+                    showToast(t('Select printer, filament, color, strength, and upload a file'));
                     return;
                 }
 
                 // Build color data
                 const colorIds = (printingState.colors || []).filter(c => c); // Remove empty slots
                 const colorNames = colorIds.map(colorId => getLabel(printingOptions.colors, colorId)).join(', ');
+
+                let uploadedFilePath = printingState.uploadedFilePath;
+                if (!uploadedFilePath) {
+                    try {
+                        const uploadResult = await uploadPrintingFile(printingState.selectedFile);
+                        uploadedFilePath = uploadResult.filePath || uploadResult.url || '';
+                        printingState.uploadedFilePath = uploadedFilePath;
+                    } catch (uploadError) {
+                        console.error('3D file upload failed:', uploadError);
+                        showToast(uploadError.message || 'Nahrání souboru se nezdařilo');
+                        return;
+                    }
+                }
 
                 const printingItem = {
                     id: Date.now(),
@@ -4889,7 +4972,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     strength: printingState.strength,
                     strengthName: getLabel(printingOptions.strengths || defaultPrintingStrengths, printingState.strength),
                     parts: printingState.parts || 1,
-                    fileName: printingState.fileName
+                    fileName: printingState.fileName,
+                    originalName: printingState.fileName,
+                    filePath: uploadedFilePath,
+                    file_url: uploadedFilePath
                 };
 
                 try {
@@ -4901,10 +4987,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         await Storage.loadCart();
                     }
                     await updateCartCount();
-                    showToast('3D printing added to cart');
+                    showToast(t('3D printing added to cart'));
                 } catch (error) {
                     console.error('Error adding 3D printing to cart:', error);
-                    showToast('Failed to add 3D printing to cart');
+                    showToast(t('Failed to add 3D printing to cart'));
                 }
             };
         }
@@ -5710,11 +5796,13 @@ document.addEventListener('DOMContentLoaded', function() {
     async function renderCart() {
         const cartItemsEl = document.getElementById('cartItems');
         const cartSummaryEl = document.getElementById('cartSummary');
+        const cartWrapperEl = document.querySelector('#cart .cart-wrapper');
 
         try {
             await Storage.loadCart();
 
             if (Storage.cart.length === 0) {
+                cartWrapperEl?.classList.add('cart-wrapper-empty');
                 cartItemsEl.innerHTML = `
                     <div class="cart-empty">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -5736,6 +5824,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            cartWrapperEl?.classList.remove('cart-wrapper-empty');
             cartSummaryEl.style.display = 'block';
 
             let html = '';
@@ -6133,10 +6222,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Validate First Name
         if (!firstName) {
-            setFieldError('checkoutFirstName', 'firstNameError', 'First name is required');
+            setFieldError('checkoutFirstName', 'firstNameError', t('First name is required'));
             isValid = false;
         } else if (firstName.length < 2) {
-            setFieldError('checkoutFirstName', 'firstNameError', 'First name must be at least 2 characters');
+            setFieldError('checkoutFirstName', 'firstNameError', t('First name must be at least 2 characters'));
             isValid = false;
         } else {
             clearFieldError('checkoutFirstName', 'firstNameError');
@@ -6144,10 +6233,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Validate Last Name
         if (!lastName) {
-            setFieldError('checkoutLastName', 'lastNameError', 'Last name is required');
+            setFieldError('checkoutLastName', 'lastNameError', t('Last name is required'));
             isValid = false;
         } else if (lastName.length < 2) {
-            setFieldError('checkoutLastName', 'lastNameError', 'Last name must be at least 2 characters');
+            setFieldError('checkoutLastName', 'lastNameError', t('Last name must be at least 2 characters'));
             isValid = false;
         } else {
             clearFieldError('checkoutLastName', 'lastNameError');
@@ -6155,10 +6244,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Validate Email
         if (!email) {
-            setFieldError('checkoutEmail', 'emailError', 'Email address is required');
+            setFieldError('checkoutEmail', 'emailError', t('Email address is required'));
             isValid = false;
         } else if (!validateEmail(email)) {
-            setFieldError('checkoutEmail', 'emailError', 'Please enter a valid email address');
+            setFieldError('checkoutEmail', 'emailError', t('Please enter a valid email address'));
             isValid = false;
         } else {
             clearFieldError('checkoutEmail', 'emailError');
@@ -6166,10 +6255,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Validate Phone
         if (!phone) {
-            setFieldError('checkoutPhone', 'phoneError', 'Phone number is required');
+            setFieldError('checkoutPhone', 'phoneError', t('Phone number is required'));
             isValid = false;
         } else if (!validatePhone(phone)) {
-            setFieldError('checkoutPhone', 'phoneError', 'Please enter a valid phone number');
+            setFieldError('checkoutPhone', 'phoneError', t('Please enter a valid phone number'));
             isValid = false;
         } else {
             clearFieldError('checkoutPhone', 'phoneError');
@@ -6182,24 +6271,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const zip = document.getElementById('checkoutZip').value.trim();
 
             if (!address) {
-                setFieldError('checkoutAddress', 'addressError', 'Street address is required');
+                setFieldError('checkoutAddress', 'addressError', t('Street address is required'));
                 isValid = false;
             } else {
                 clearFieldError('checkoutAddress', 'addressError');
             }
 
             if (!city) {
-                setFieldError('checkoutCity', 'cityError', 'City is required');
+                setFieldError('checkoutCity', 'cityError', t('City is required'));
                 isValid = false;
             } else {
                 clearFieldError('checkoutCity', 'cityError');
             }
 
             if (!zip) {
-                setFieldError('checkoutZip', 'zipError', 'ZIP code is required');
+                setFieldError('checkoutZip', 'zipError', t('ZIP code is required'));
                 isValid = false;
             } else if (!/^\d{5}(-\d{4})?$/.test(zip)) {
-                setFieldError('checkoutZip', 'zipError', 'Please enter a valid ZIP code');
+                setFieldError('checkoutZip', 'zipError', t('Please enter a valid ZIP code'));
                 isValid = false;
             } else {
                 clearFieldError('checkoutZip', 'zipError');
@@ -6211,24 +6300,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const zip = document.getElementById('checkoutZip').value.trim();
 
             if (!address) {
-                setFieldError('checkoutAddress', 'addressError', 'Street address is required');
+                setFieldError('checkoutAddress', 'addressError', t('Street address is required'));
                 isValid = false;
             } else {
                 clearFieldError('checkoutAddress', 'addressError');
             }
 
             if (!city) {
-                setFieldError('checkoutCity', 'cityError', 'City is required');
+                setFieldError('checkoutCity', 'cityError', t('City is required'));
                 isValid = false;
             } else {
                 clearFieldError('checkoutCity', 'cityError');
             }
 
             if (!zip) {
-                setFieldError('checkoutZip', 'zipError', 'ZIP code is required');
+                setFieldError('checkoutZip', 'zipError', t('ZIP code is required'));
                 isValid = false;
             } else if (!/^\d{5}(-\d{4})?$/.test(zip)) {
-                setFieldError('checkoutZip', 'zipError', 'Please enter a valid ZIP code');
+                setFieldError('checkoutZip', 'zipError', t('Please enter a valid ZIP code'));
                 isValid = false;
             } else {
                 clearFieldError('checkoutZip', 'zipError');
@@ -6254,7 +6343,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
         const paymentMethodError = document.getElementById('paymentMethodError');
         if (!paymentMethod) {
-            if (paymentMethodError) paymentMethodError.textContent = 'Payment method is required';
+            if (paymentMethodError) paymentMethodError.textContent = t('Payment method is required');
             isValid = false;
         } else if (paymentMethodError) {
             paymentMethodError.textContent = '';
@@ -6262,15 +6351,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Validate Country
         if (!country) {
-            setFieldError('checkoutCountry', 'countryError', 'Country is required');
-            isValid = false;
+                setFieldError('checkoutCountry', 'countryError', t('Country is required'));
         } else {
             clearFieldError('checkoutCountry', 'countryError');
         }
 
         // Validate Terms and Conditions
         if (!termsCheckbox) {
-            setFieldError('termsCheckbox', 'termsError', 'You must agree to the terms and conditions');
+            setFieldError('termsCheckbox', 'termsError', t('You must agree to the terms and conditions'));
             isValid = false;
         } else {
             clearFieldError('termsCheckbox', 'termsError');
@@ -6294,12 +6382,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const statusFilter = DOM.statusFilter?.value || 'all';
             const orderTypeFilter = DOM.orderTypeFilter?.value || 'all';
+            const allOrdersSearchQuery = String(DOM.allOrdersSearchInput?.value || '').trim().toLowerCase();
             const deviceFilter = window.currentDeviceFilter || 'all';
             const customBuildFilter = window.currentCustomPcFilter || 'all';
             const customOrdersList = document.getElementById('customPcOrdersList');
             const printingOrdersList = document.getElementById('printingOrdersList');
             const otherItemsOrdersList = document.getElementById('otherItemsOrdersList');
             const usedShopOrdersList = document.getElementById('usedShopOrdersList');
+            const allOrdersList = document.getElementById('allOrdersList');
+
+            let invoices = [];
+            try {
+                const invoicesResult = await apiCall('GET', '/orders/admin/invoices');
+                invoices = Array.isArray(invoicesResult?.invoices) ? invoicesResult.invoices : [];
+            } catch (error) {
+                console.warn('Could not fetch invoices for all-orders search:', error);
+            }
+
+            const invoicesByOrderId = new Map();
+            invoices.forEach((invoice) => {
+                const orderId = String(invoice?.order_id || '').trim();
+                if (!orderId) return;
+                const invoiceNumber = String(invoice?.invoice_number || '').trim();
+                if (!invoiceNumber) return;
+                if (!invoicesByOrderId.has(orderId)) {
+                    invoicesByOrderId.set(orderId, []);
+                }
+                invoicesByOrderId.get(orderId).push(invoiceNumber);
+            });
 
             // Update stats
             const totalCount = orders.length;
@@ -6329,6 +6439,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 filteredOrders = filteredOrders.filter(o =>
                     (o.customer_email || '').toLowerCase().includes(window.adminEmailFilter)
                 );
+            }
+
+            if (allOrdersSearchQuery) {
+                filteredOrders = filteredOrders.filter((order) => {
+                    const orderNumber = String(order?.order_number || '').toLowerCase();
+                    if (orderNumber.includes(allOrdersSearchQuery)) return true;
+
+                    const invoiceNumbers = invoicesByOrderId.get(String(order?.id || '')) || [];
+                    return invoiceNumbers.some((invoiceNumber) => String(invoiceNumber || '').toLowerCase().includes(allOrdersSearchQuery));
+                });
             }
 
             // Sort by date (newest first)
@@ -6384,6 +6504,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             const typeFilteredOrderDetails = orderDetails.filter(passesTypeFilter);
+            const allEntries = orderDetails;
 
             const repairsEntries = typeFilteredOrderDetails.filter(entry => {
                 const repairItems = entry.items.filter(item => isGeneralRepairItem(item));
@@ -6432,7 +6553,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const customDetails = getCustomBuildDetails(item);
                     const printingDetails = getPrintingDetails(item);
                     const otherDetails = getOtherItemDetails(item);
-                    const fileUrl = resolveFileUrl(printingDetails?.fileName || item.file_name || item.fileName);
+                    const fileUrl = resolveFileUrl(printingDetails?.filePath || item.file_path || item.file_url || item.file_name || item.fileName);
                     const detailsLine = customDetails
                         ? `<p><strong>${t('Build Type')}:</strong> ${escapeHtml(customDetails.buildType)}${customDetails.partsSummary ? ' | <strong>' + t('Parts') + ':</strong> ' + escapeHtml(customDetails.partsSummary) : ''}</p>`
                         : printingDetails
@@ -6512,7 +6633,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="order-actions">
                                 <button class="order-action-btn primary" data-order-action="edit-status" data-order-id="${order.id}">${t('Edit Status')}</button>
                                 <button class="order-action-btn info" data-order-action="email" data-order-id="${order.id}" data-order-email="${escapeHtml(order.customer_email || '')}" data-order-name="${escapeHtml(order.customer_name || '')}">${t('Email')}</button>
-                                <button class="order-action-btn" data-order-action="invoice" data-order-id="${order.id}">Invoice</button>
+                                <button class="order-action-btn" data-order-action="invoice" data-order-id="${order.id}">Faktura</button>
+                                <button class="order-action-btn" data-order-action="receipt" data-order-id="${order.id}">Účtenka</button>
+                                <button class="order-action-btn" data-order-action="label" data-order-id="${order.id}">Štítek</button>
                                 <button class="order-action-btn danger" data-order-action="delete" data-order-id="${order.id}">${t('Delete')}</button>
                             </div>
                         </div>
@@ -6539,6 +6662,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                 } else {
                     ordersList.innerHTML = buildOrdersHtml(mapEntries(repairsEntries, item => isGeneralRepairItem(item)));
+                }
+            }
+
+            if (allOrdersList) {
+                if (allEntries.length === 0) {
+                    allOrdersList.innerHTML = `
+                        <div class="no-orders">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            <h3>${t('No orders')}</h3>
+                            <p>${statusFilter === 'all' ? t('No orders yet') : `${t('No')} ${formatStatusLabel(statusFilter)} ${t('orders')}`}</p>
+                        </div>
+                    `;
+                } else {
+                    allOrdersList.innerHTML = buildOrdersHtml(mapEntries(allEntries));
                 }
             }
 
@@ -6631,7 +6773,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const customDetails = getCustomBuildDetails(item);
                         const printingDetails = getPrintingDetails(item);
                         const otherDetails = getOtherItemDetails(item);
-                        const fileUrl = resolveFileUrl(printingDetails?.fileName || item.file_name || item.fileName);
+                        const fileUrl = resolveFileUrl(printingDetails?.filePath || item.file_path || item.file_url || item.file_name || item.fileName);
                         const line = customDetails
                             ? `${t('Build Type')}: ${escapeHtml(customDetails.buildType)}${customDetails.partsSummary ? ' | ' + t('Parts') + ': ' + escapeHtml(customDetails.partsSummary) : ''}`
                             : printingDetails
@@ -6705,7 +6847,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                 <button class="btn btn-primary" onclick="editOrderStatus(${orderId})">${t('Edit Status')}</button>
                                 <button class="btn btn-secondary" onclick="emailCustomer(${orderId}, '${o.customer_email || ''}', '${(o.customer_name || '').replace(/'/g, "\\'") }')">${t('Email')}</button>
-                                <button class="btn btn-secondary" onclick="printInvoiceForOrder(${orderId})">Invoice</button>
+                                <button class="btn btn-secondary" onclick="printInvoiceForOrder(${orderId})">Faktura</button>
+                                <button class="btn btn-secondary" onclick="printOrderReceiptForOrder(${orderId})">Účtenka</button>
+                                <button class="btn btn-secondary" onclick="printOrderLabelForOrder(${orderId})">Štítek</button>
                                 <button class="btn btn-info" onclick="printOrderDetails(${orderId})">${t('Print')}</button>
                                 <button class="btn btn-danger" onclick="deleteOrder(${orderId})">${t('Delete')}</button>
                             </div>
@@ -6765,10 +6909,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Functions moved outside DOMContentLoaded for onclick attribute access
 
-    function formatInvoiceAmount(value) {
+    function formatCzkAmount(value, decimals = 2) {
         const amount = Number(value || 0);
         const safeAmount = Number.isFinite(amount) ? amount : 0;
-        return `${safeAmount.toFixed(2)} Kč`;
+        const normalizedDecimals = Number.isInteger(decimals) && decimals >= 0 ? decimals : 2;
+        const formatted = new Intl.NumberFormat('cs-CZ', {
+            minimumFractionDigits: normalizedDecimals,
+            maximumFractionDigits: normalizedDecimals
+        }).format(safeAmount).replace(/\u00A0|\u202F/g, ' ');
+        return `${formatted} Kč`;
+    }
+
+    function formatInvoiceAmount(value) {
+        return formatCzkAmount(value, 2);
     }
 
     function getNextInvoiceNumber(prefix = 'INV') {
@@ -6831,6 +6984,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <meta charset="UTF-8">
                 <title>Faktura ${escapeHtml(invoice.invoiceNumber || '')}</title>
                 <style>
+                    @page { size: auto; margin: 0; }
+                    html, body { margin: 0; padding: 0; }
                     body { font-family: Arial, sans-serif; margin: 22px; color: #111827; }
                     .top { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
                     .box { flex: 1; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; }
@@ -6846,7 +7001,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     .summary-row { display: flex; justify-content: space-between; margin: 6px 0; }
                     .total { font-weight: 700; font-size: 1.08rem; }
                     .notes { margin-top: 18px; white-space: pre-wrap; }
-                    @media print { body { margin: 0; } }
+                    @media print {
+                        html, body { margin: 0 !important; padding: 0 !important; }
+                        body { margin: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    }
                 </style>
             </head>
             <body>
@@ -6955,7 +7113,124 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         } catch (error) {
             console.error('Invoice generation failed:', error);
-            showToast('Failed to create invoice from order');
+            showToast('Nepodařilo se vytvořit fakturu z objednávky');
+        }
+    }
+
+    function buildReceiptDocumentHtml(order, items = []) {
+        const lineItems = items.length > 0
+            ? items.map((item) => {
+                const label = item.repair_name || item.repair_type || 'Položka';
+                return `<div class="row"><span>${escapeHtml(label)}</span><strong>${formatCurrency(item.price || 0)}</strong></div>`;
+            }).join('')
+            : '<div class="row"><span>Bez položek</span><strong>0,00 Kč</strong></div>';
+
+        return `<!DOCTYPE html>
+            <html lang="cs">
+            <head>
+                <meta charset="UTF-8" />
+                <title>Účtenka ${escapeHtml(order.order_number || order.id || '')}</title>
+                <style>
+                    @page { size: auto; margin: 0; }
+                    html, body { margin: 0; padding: 0; }
+                    body { font-family: Arial, sans-serif; width: 72mm; margin: 0 auto; color: #111; }
+                    .wrap { padding: 10px 8px; }
+                    h1 { font-size: 18px; margin: 0 0 8px; text-align: center; }
+                    .muted { font-size: 11px; color: #555; text-align: center; margin-bottom: 10px; }
+                    .row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; margin: 6px 0; }
+                    .divider { border-top: 1px dashed #888; margin: 10px 0; }
+                    .total { font-size: 16px; font-weight: 700; }
+                    @media print {
+                        html, body { margin: 0 !important; padding: 0 !important; }
+                        body { margin: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="wrap">
+                    <h1>EzFix</h1>
+                    <div class="muted">Objednávka ${escapeHtml(order.order_number || order.id || '')}</div>
+                    <div class="row"><span>Zákazník</span><strong>${escapeHtml(order.customer_name || '-')}</strong></div>
+                    <div class="row"><span>Datum</span><strong>${escapeHtml(order.created_at ? new Date(order.created_at).toLocaleString('cs-CZ') : '-')}</strong></div>
+                    <div class="divider"></div>
+                    ${lineItems}
+                    <div class="divider"></div>
+                    <div class="row total"><span>Celkem</span><strong>${formatCurrency(order.total || 0)}</strong></div>
+                </div>
+            </body>
+            </html>`;
+    }
+
+    function buildLabelDocumentHtml(order) {
+        const orderNumber = escapeHtml(order.order_number || order.id || '-');
+        const customer = escapeHtml(order.customer_name || '-');
+        const phone = escapeHtml(normalizePhoneForDisplay(order.customer_phone || '-') || '-');
+        const created = escapeHtml(order.created_at ? new Date(order.created_at).toLocaleString('cs-CZ') : '-');
+
+        return `<!DOCTYPE html>
+            <html lang="cs">
+            <head>
+                <meta charset="UTF-8" />
+                <title>Štítek ${orderNumber}</title>
+                <style>
+                    @page { size: 58mm 38mm; margin: 1.2mm; }
+                    html, body { margin: 0; padding: 0; }
+                    body { width: 58mm; height: 38mm; font-family: Arial, sans-serif; font-size: 11px; color: #111; }
+                    .label { box-sizing: border-box; width: 100%; height: 100%; border: 1px solid #333; border-radius: 2mm; padding: 2mm; display: grid; gap: 1mm; align-content: start; }
+                    .head { font-weight: 700; text-align: center; border-bottom: 1px dashed #555; padding-bottom: 1mm; }
+                    .line { display: flex; justify-content: space-between; gap: 2mm; }
+                    .footer { margin-top: 1mm; text-align: center; font-size: 10px; color: #444; }
+                </style>
+            </head>
+            <body>
+                <div class="label">
+                    <div class="head">EZFix</div>
+                    <div class="line"><span>Objednávka</span><strong>${orderNumber}</strong></div>
+                    <div class="line"><span>Zákazník</span><strong>${customer}</strong></div>
+                    <div class="line"><span>Telefon</span><strong>${phone}</strong></div>
+                    <div class="line"><span>Datum</span><strong>${created}</strong></div>
+                    <div class="footer">Děkujeme za objednávku</div>
+                </div>
+            </body>
+            </html>`;
+    }
+
+    async function printOrderReceiptForOrder(orderId) {
+        try {
+            const result = await apiCall('GET', `/orders/${orderId}`);
+            const order = result.order || {};
+            const items = Array.isArray(order.items) ? order.items : [];
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                showToast('Pop-up blocked. Please allow pop-ups for printing receipts.');
+                return;
+            }
+            printWindow.document.write(buildReceiptDocumentHtml(order, items));
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+        } catch (error) {
+            console.error('Receipt printing failed:', error);
+            showToast('Nepodařilo se vytisknout účtenku');
+        }
+    }
+
+    async function printOrderLabelForOrder(orderId) {
+        try {
+            const result = await apiCall('GET', `/orders/${orderId}`);
+            const order = result.order || {};
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                showToast('Pop-up blocked. Please allow pop-ups for printing labels.');
+                return;
+            }
+            printWindow.document.write(buildLabelDocumentHtml(order));
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+        } catch (error) {
+            console.error('Label printing failed:', error);
+            showToast('Nepodařilo se vytisknout štítek');
         }
     }
 
@@ -6966,7 +7241,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function openCustomInvoiceModal() {
         if (!Storage.getToken() || !canManageOrders(Storage.getUser())) {
-            showToast('Order manager access required');
+            showToast('Vyžadován přístup správce objednávek');
             return;
         }
 
@@ -6974,9 +7249,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const modalHtml = `
             <div class="modal-overlay" id="customInvoiceModal">
-                <div class="modal manual-order-modal" role="dialog" aria-modal="true" aria-label="Create custom invoice">
+                <div class="modal manual-order-modal" role="dialog" aria-modal="true" aria-label="Vytvořit vlastní fakturu">
                     <div class="modal-header">
-                        <h3>Create Custom Invoice</h3>
+                        <h3>Vytvořit vlastní fakturu</h3>
                         <button class="modal-close" type="button" id="customInvoiceCloseBtn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -6987,44 +7262,44 @@ document.addEventListener('DOMContentLoaded', function() {
                     <form class="modal-body manual-order-form" id="customInvoiceForm">
                         <div class="manual-order-grid">
                             <div class="form-group">
-                                <label for="invoiceCustomerName">Customer Name</label>
+                                <label for="invoiceCustomerName">Jméno zákazníka</label>
                                 <input type="text" id="invoiceCustomerName" required>
                             </div>
                             <div class="form-group">
-                                <label for="invoiceCustomerEmail">Customer Email</label>
+                                <label for="invoiceCustomerEmail">E-mail zákazníka</label>
                                 <input type="email" id="invoiceCustomerEmail">
                             </div>
                             <div class="form-group">
-                                <label for="invoiceCustomerPhone">Customer Phone</label>
+                                <label for="invoiceCustomerPhone">Telefon zákazníka</label>
                                 <input type="text" id="invoiceCustomerPhone">
                             </div>
                             <div class="form-group">
-                                <label for="invoiceCustomerAddress">Address</label>
+                                <label for="invoiceCustomerAddress">Adresa</label>
                                 <input type="text" id="invoiceCustomerAddress">
                             </div>
                             <div class="form-group">
-                                <label for="invoiceItemDescription">Item / Service</label>
+                                <label for="invoiceItemDescription">Položka / služba</label>
                                 <input type="text" id="invoiceItemDescription" required>
                             </div>
                             <div class="form-group">
-                                <label for="invoiceItemQuantity">Quantity</label>
+                                <label for="invoiceItemQuantity">Množství</label>
                                 <input type="number" id="invoiceItemQuantity" min="1" step="1" value="1" required>
                             </div>
                             <div class="form-group">
-                                <label for="invoiceItemPrice">Unit Price</label>
+                                <label for="invoiceItemPrice">Cena za kus</label>
                                 <input type="number" id="invoiceItemPrice" min="0" step="0.01" required>
                             </div>
                             <div class="form-group">
-                                <label for="invoiceDueDays">Due in days</label>
+                                <label for="invoiceDueDays">Splatnost ve dnech</label>
                                 <input type="number" id="invoiceDueDays" min="1" step="1" value="14" required>
                             </div>
                         </div>
                         <div class="form-group" style="margin-top:8px;">
-                            <label for="invoiceNotes">Notes</label>
+                            <label for="invoiceNotes">Poznámka</label>
                             <textarea id="invoiceNotes" rows="3"></textarea>
                         </div>
                         <div class="modal-actions" style="margin-top: 16px;">
-                            <button class="btn btn-secondary" type="button" id="customInvoiceCancelBtn">Cancel</button>
+                            <button class="btn btn-secondary" type="button" id="customInvoiceCancelBtn">Zrušit</button>
                             <button class="btn btn-primary" type="submit" id="customInvoiceSubmitBtn">Vytvořit fakturu</button>
                         </div>
                     </form>
@@ -7055,7 +7330,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const original = submitBtn.textContent;
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Creating...';
+            submitBtn.textContent = 'Vytvářím...';
 
             try {
                 const quantityRaw = Number(document.getElementById('invoiceItemQuantity')?.value || 1);
@@ -7094,7 +7369,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 closeCustomInvoiceModal();
             } catch (error) {
                 console.error('Custom invoice creation failed:', error);
-                showToast('Failed to create custom invoice');
+                showToast('Nepodařilo se vytvořit vlastní fakturu');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = original;
@@ -7131,8 +7406,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Order ${escapeHtml(o.order_number || '')}</title>
+                    <title>Objednávka ${escapeHtml(o.order_number || '')}</title>
                     <style>
+                        @page { size: auto; margin: 0; }
+                        html, body { margin: 0; padding: 0; }
                         body { font-family: Arial, sans-serif; margin: 20px; }
                         .header { text-align: center; margin-bottom: 30px; }
                         .header h1 { margin: 0; }
@@ -7144,7 +7421,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
                         th { background: #f5f5f5; font-weight: bold; }
                         .total { margin-top: 20px; text-align: right; font-weight: bold; }
-                        @media print { body { margin: 0; } }
+                        @media print {
+                            html, body { margin: 0 !important; padding: 0 !important; }
+                            body { margin: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        }
                     </style>
                 </head>
                 <body>
@@ -7190,7 +7470,7 @@ document.addEventListener('DOMContentLoaded', function() {
             printWindow.print();
         } catch (e) {
             console.error('Print error:', e);
-            showToast('Failed to print order details');
+            showToast('Nepodařilo se vytisknout detaily objednávky');
         }
     }
 
@@ -7380,7 +7660,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const catalogContent = document.getElementById('catalog-content');
         const chatsTabBtn = document.querySelector('.admin-tab-btn[data-tab="chats"]');
         const chatsContent = document.getElementById('chats-content');
-        const orderTabs = ['repairs', 'custom-pc', 'printing', 'other-items', 'used-shop'];
+        const orderTabs = ['all-orders', 'repairs', 'custom-pc', 'printing', 'other-items', 'used-shop'];
 
         if (logoutBtn) logoutBtn.style.display = isLoggedIn ? 'inline-flex' : 'none';
         if (logoutBtnMobile) logoutBtnMobile.style.display = isLoggedIn ? 'inline-flex' : 'none';
@@ -8116,7 +8396,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const modalHtml = `
             <div class="modal-overlay" id="manualOrderModal">
-                <div class="modal manual-order-modal" role="dialog" aria-modal="true" aria-label="Create order manually">
+                <div class="modal manual-order-modal" role="dialog" aria-modal="true" aria-label="Ruční vytvoření objednávky">
                     <div class="modal-header">
                         <h3>Vytvořit objednávku</h3>
                         <button class="modal-close" type="button" id="manualOrderCloseBtn">
@@ -8129,74 +8409,74 @@ document.addEventListener('DOMContentLoaded', function() {
                     <form class="modal-body manual-order-form" id="manualOrderForm">
                         <div class="manual-order-grid">
                             <div class="form-group">
-                                <label for="manualCustomerName">Customer Name</label>
+                                <label for="manualCustomerName">Jméno zákazníka</label>
                                 <input type="text" id="manualCustomerName" required>
                             </div>
                             <div class="form-group">
-                                <label for="manualCustomerEmail">Customer Email</label>
+                                <label for="manualCustomerEmail">E-mail zákazníka</label>
                                 <input type="email" id="manualCustomerEmail" required>
                             </div>
                             <div class="form-group">
-                                <label for="manualCustomerPhone">Customer Phone</label>
+                                <label for="manualCustomerPhone">Telefon zákazníka</label>
                                 <input type="text" id="manualCustomerPhone" required>
                             </div>
                             <div class="form-group">
-                                <label for="manualServiceType">Service Type</label>
+                                <label for="manualServiceType">Typ služby</label>
                                 <select id="manualServiceType" required>
-                                    <option value="pickup">Pickup</option>
-                                    <option value="delivery">Delivery</option>
+                                    <option value="pickup">Vyzvednutí</option>
+                                    <option value="delivery">Doručení</option>
                                     <option value="zasilkovna">Zasilkovna</option>
-                                    <option value="ceska-posta">Ceska posta</option>
+                                    <option value="ceska-posta">Česká pošta</option>
                                     <option value="ppl">PPL</option>
                                     <option value="dpd">DPD</option>
                                     <option value="gls">GLS</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="manualOrderStatus">Order Status</label>
+                                <label for="manualOrderStatus">Stav objednávky</label>
                                 <select id="manualOrderStatus" required>
-                                    <option value="pending">Pending</option>
-                                    <option value="waiting">Waiting</option>
-                                    <option value="in-progress">In Progress</option>
-                                    <option value="delivering">Delivering</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="delivered">Delivered</option>
-                                    <option value="cancelled">Cancelled</option>
+                                    <option value="pending">Čeká</option>
+                                    <option value="waiting">Čeká</option>
+                                    <option value="in-progress">V průběhu</option>
+                                    <option value="delivering">Doručuje se</option>
+                                    <option value="completed">Dokončeno</option>
+                                    <option value="delivered">Doručeno</option>
+                                    <option value="cancelled">Zrušeno</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="manualCountry">Country</label>
-                                <input type="text" id="manualCountry" value="Czech Republic">
+                                <label for="manualCountry">Země</label>
+                                <input type="text" id="manualCountry" value="Česká republika">
                             </div>
                             <div class="form-group">
-                                <label for="manualAddress">Address</label>
+                                <label for="manualAddress">Adresa</label>
                                 <input type="text" id="manualAddress">
                             </div>
                             <div class="form-group">
-                                <label for="manualCity">City</label>
+                                <label for="manualCity">Město</label>
                                 <input type="text" id="manualCity">
                             </div>
                             <div class="form-group">
-                                <label for="manualZip">ZIP</label>
+                                <label for="manualZip">PSČ</label>
                                 <input type="text" id="manualZip">
                             </div>
                         </div>
 
                         <div class="manual-order-items">
                             <div class="manual-order-items-header">
-                                <h4>Items</h4>
-                                <button class="btn btn-secondary btn-sm" type="button" id="manualAddItemBtn">Add Item</button>
+                                <h4>Položky</h4>
+                                <button class="btn btn-secondary btn-sm" type="button" id="manualAddItemBtn">Přidat položku</button>
                             </div>
                             <div id="manualOrderItemsList"></div>
-                            <div class="manual-order-total" id="manualOrderTotal">Total: 0.00 Kč</div>
+                            <div class="manual-order-total" id="manualOrderTotal">Celkem: 0.00 Kč</div>
                         </div>
 
                         <div class="form-group" style="margin-top: 8px;">
-                            <label for="manualOrderNotes">Notes</label>
+                            <label for="manualOrderNotes">Poznámka</label>
                             <textarea id="manualOrderNotes" rows="3"></textarea>
                         </div>
                         <div class="modal-actions" style="margin-top: 16px;">
-                            <button class="btn btn-secondary" type="button" id="manualOrderCancelBtn">Cancel</button>
+                            <button class="btn btn-secondary" type="button" id="manualOrderCancelBtn">Zrušit</button>
                             <button class="btn btn-primary" type="submit" id="manualOrderSubmitBtn">Vytvořit objednávku</button>
                         </div>
                     </form>
@@ -8224,7 +8504,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const safe = Number.isFinite(raw) ? Math.max(0, raw) : 0;
                 return sum + safe;
             }, 0);
-            totalEl.textContent = `Total: ${total.toFixed(2)} Kč`;
+            totalEl.textContent = `Celkem: ${total.toFixed(2)} Kč`;
         };
 
         const appendManualItemRow = (defaults = {}) => {
@@ -8234,11 +8514,11 @@ document.addEventListener('DOMContentLoaded', function() {
             row.innerHTML = `
                 <div class="manual-order-item-grid">
                     <div class="form-group">
-                        <label>Device</label>
-                        <input type="text" data-manual-item="device" value="${escapeHtml(String(defaults.device || ''))}" placeholder="phone, tablet, notebook, desktop, other">
+                        <label>Zařízení</label>
+                        <input type="text" data-manual-item="device" value="${escapeHtml(String(defaults.device || ''))}" placeholder="telefon, tablet, notebook, stolní pc, jiné">
                     </div>
                     <div class="form-group">
-                        <label>Brand</label>
+                        <label>Značka</label>
                         <input type="text" data-manual-item="brand" value="${escapeHtml(String(defaults.brand || ''))}">
                     </div>
                     <div class="form-group">
@@ -8246,20 +8526,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="text" data-manual-item="model" value="${escapeHtml(String(defaults.model || ''))}">
                     </div>
                     <div class="form-group">
-                        <label>Repair Type</label>
+                        <label>Typ opravy</label>
                         <input type="text" data-manual-item="repairType" value="${escapeHtml(String(defaults.repairType || 'manual'))}">
                     </div>
                     <div class="form-group">
-                        <label>Repair Name</label>
+                        <label>Název opravy</label>
                         <input type="text" data-manual-item="repairName" value="${escapeHtml(String(defaults.repairName || ''))}" required>
                     </div>
                     <div class="form-group">
-                        <label>Price</label>
+                        <label>Cena</label>
                         <input type="number" data-manual-item="price" value="${escapeHtml(String(defaults.price || '0'))}" step="0.01" min="0" required>
                     </div>
                 </div>
                 <div class="manual-order-item-actions">
-                    <button type="button" class="btn btn-sm btn-danger" data-manual-item-remove>Remove</button>
+                    <button type="button" class="btn btn-sm btn-danger" data-manual-item-remove>Odstranit</button>
                 </div>
             `;
 
@@ -8300,7 +8580,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const originalText = submitBtn.textContent;
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Creating...';
+            submitBtn.textContent = 'Vytvářím...';
 
             try {
                 const items = Array.from(document.querySelectorAll('#manualOrderItemsList .manual-order-item-row'))
@@ -8315,7 +8595,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     .filter((item) => item.repairName && Number.isFinite(item.price));
 
                 if (!items.length) {
-                    throw new Error('At least one valid item with name and price is required');
+                    throw new Error('Je nutné zadat alespoň jednu platnou položku s názvem a cenou');
                 }
 
                 const payload = {
@@ -8333,11 +8613,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
 
                 const result = await apiCall('POST', '/orders/admin/manual', payload);
-                showToast(`Order created: ${result?.order?.orderNumber || 'OK'}`);
+                showToast(`Objednávka vytvořena: ${result?.order?.orderNumber || 'OK'}`);
                 closeManualOrderModal();
                 await renderAdminOrders();
             } catch (error) {
-                showToast('Failed to create manual order: ' + error.message);
+                showToast('Ruční vytvoření objednávky selhalo: ' + error.message);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
@@ -8616,17 +8896,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         const visibleItems = items.filter(item => item.style.display !== 'none');
+        const visibleStepNames = visibleItems.map(item => item.dataset.stepName || item.dataset.step || '');
+
         visibleItems.forEach((item, idx) => {
             const stepNum = idx + 1;
+            const itemStepName = visibleStepNames[idx];
             item.classList.remove('active', 'completed');
-            if (idx < stepIndex) {
+
+            if (steps.indexOf(itemStepName) < stepIndex) {
                 item.classList.add('completed');
-                item.querySelector('.step-circle').textContent = '';
-            } else if (idx === stepIndex) {
+                const circle = item.querySelector('.step-circle');
+                if (circle) circle.textContent = '';
+            } else if (steps.indexOf(itemStepName) === stepIndex) {
                 item.classList.add('active');
-                item.querySelector('.step-circle').textContent = stepNum;
+                const circle = item.querySelector('.step-circle');
+                if (circle) circle.textContent = stepNum;
             } else {
-                item.querySelector('.step-circle').textContent = stepNum;
+                const circle = item.querySelector('.step-circle');
+                if (circle) circle.textContent = stepNum;
             }
         });
 
@@ -9610,6 +9897,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.saveOrderStatus = saveOrderStatus;
     window.deleteOrder = deleteOrder;
     window.printInvoiceForOrder = printInvoiceForOrder;
+    window.printOrderReceiptForOrder = printOrderReceiptForOrder;
+    window.printOrderLabelForOrder = printOrderLabelForOrder;
     window.openCustomInvoiceModal = openCustomInvoiceModal;
     window.closeCustomInvoiceModal = closeCustomInvoiceModal;
     window.openManualOrderModal = openManualOrderModal;
@@ -10262,6 +10551,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         DOM.statusFilter?.addEventListener('change', renderAdminOrders);
         DOM.orderTypeFilter?.addEventListener('change', renderAdminOrders);
+        DOM.allOrdersSearchInput?.addEventListener('input', renderAdminOrders);
 
         document.addEventListener('click', (event) => {
             const actionBtn = event.target.closest('[data-order-action]');
@@ -10288,6 +10578,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (action === 'invoice') {
                 printInvoiceForOrder(orderId);
+                return;
+            }
+            if (action === 'receipt') {
+                printOrderReceiptForOrder(orderId);
+                return;
+            }
+            if (action === 'label') {
+                printOrderLabelForOrder(orderId);
                 return;
             }
             if (action === 'delete') {
@@ -10321,6 +10619,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Reset device filter to 'all' when switching tabs
                 document.querySelectorAll('.device-tab-btn').forEach(d => d.classList.remove('active'));
                 document.querySelector('[data-device="all"]')?.classList.add('active');
+            }
+            if (tabName === 'all-orders') {
+                const orderTypeFilter = document.getElementById('orderTypeFilter');
+                if (orderTypeFilter) orderTypeFilter.value = 'all';
             }
             if (tabName === 'catalog') {
                 renderCatalogEditor();
@@ -12171,6 +12473,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const closeConfirmBackdrop = document.getElementById('adminChatCloseConfirmBackdrop');
         const closeConfirmCancel = document.getElementById('adminChatCloseConfirmCancel');
         const closeConfirmOk = document.getElementById('adminChatCloseConfirmOk');
+        const aiConfigPanel = document.getElementById('adminChatAiConfig');
+        const aiToggleBtn = document.getElementById('adminChatAiToggleBtn');
         const aiReloadBtn = document.getElementById('adminChatAiReloadBtn');
         const aiSaveBtn = document.getElementById('adminChatAiSaveBtn');
 
@@ -12215,6 +12519,18 @@ document.addEventListener('DOMContentLoaded', function() {
             takeModal.setAttribute('aria-hidden', 'true');
             takeModalSessionId = '';
         };
+
+        const setAdminChatAiConfigCollapsed = (collapsed) => {
+            if (!aiConfigPanel) return;
+            aiConfigPanel.classList.toggle('admin-chat-ai-config-collapsed', Boolean(collapsed));
+            if (aiToggleBtn) {
+                aiToggleBtn.textContent = collapsed ? 'Rozbalit' : 'Skrýt';
+                aiToggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            }
+        };
+
+        // Always start minimized after page load.
+        setAdminChatAiConfigCollapsed(true);
 
         const showTakeModal = (sessionId) => {
             if (!takeModal || !sessionId) return;
@@ -12456,6 +12772,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         aiReloadBtn?.addEventListener('click', async () => {
             await loadAdminChatAiConfig(true);
+        });
+
+        aiToggleBtn?.addEventListener('click', () => {
+            const isCollapsed = aiConfigPanel?.classList.contains('admin-chat-ai-config-collapsed');
+            setAdminChatAiConfigCollapsed(!isCollapsed);
         });
 
         aiSaveBtn?.addEventListener('click', async () => {

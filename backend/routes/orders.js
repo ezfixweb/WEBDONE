@@ -8,12 +8,45 @@
  */
 
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 const router = express.Router();
 const { db } = require('../config/database');
 const { verifyToken, verifyOrderManager, isOrderManagerRole } = require('../middleware/auth');
 const { sendOrderStatusEmail, sendOrderConfirmationEmail, sendNewOrderNotificationEmail } = require('../services/email');
 
 const CATALOG_KEY = 'main';
+const PRINTING_UPLOAD_DIR = path.join(__dirname, '..', '..', 'assets', 'uploads', 'printing');
+const ALLOWED_PRINTING_EXTENSIONS = new Set(['.stl', '.obj', '.3mf']);
+
+if (!fs.existsSync(PRINTING_UPLOAD_DIR)) {
+    fs.mkdirSync(PRINTING_UPLOAD_DIR, { recursive: true });
+}
+
+const printingUploadStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, PRINTING_UPLOAD_DIR),
+    filename: (req, file, cb) => {
+        const originalExt = path.extname(file.originalname).toLowerCase();
+        const safeExt = ALLOWED_PRINTING_EXTENSIONS.has(originalExt) ? originalExt : '.stl';
+        const safeBase = path.basename(file.originalname, originalExt)
+            .replace(/[^a-zA-Z0-9-_]/g, '_')
+            .slice(0, 80) || 'model';
+        cb(null, `${safeBase}_${Date.now()}${safeExt}`);
+    }
+});
+
+const printingFileUpload = multer({
+    storage: printingUploadStorage,
+    limits: { fileSize: 30 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname || '').toLowerCase();
+        if (!ALLOWED_PRINTING_EXTENSIONS.has(ext)) {
+            return cb(new Error('Invalid file type. Only STL, OBJ and 3MF are allowed.'));
+        }
+        cb(null, true);
+    }
+});
 
 function withTimeout(promise, timeoutMs, timeoutMessage) {
     let timeoutId;
@@ -455,6 +488,73 @@ router.post('/admin/invoices', verifyToken, verifyOrderManager, async (req, res)
 });
 
 /**
+ * List invoices for admin panel, optionally filtered by order/invoice number
+ * GET /api/orders/admin/invoices
+ */
+router.get('/admin/invoices', verifyToken, verifyOrderManager, async (req, res) => {
+    try {
+        const query = String(req.query?.q || '').trim().toLowerCase();
+
+        const whereClause = query
+            ? `WHERE LOWER(i.invoice_number) LIKE ? OR LOWER(COALESCE(o.order_number, '')) LIKE ?`
+            : '';
+        const params = query ? [`%${query}%`, `%${query}%`] : [];
+
+        const invoices = await db.allAsync(
+            `SELECT
+                i.id,
+                i.invoice_number,
+                i.order_id,
+                i.customer_name,
+                i.customer_email,
+                i.amount,
+                i.currency,
+                i.status,
+                i.due_date,
+                i.created_at,
+                o.order_number
+             FROM invoices i
+             LEFT JOIN orders o ON o.id = i.order_id
+             ${whereClause}
+             ORDER BY i.created_at DESC`,
+            params
+        );
+
+        res.json({
+            success: true,
+            invoices: Array.isArray(invoices) ? invoices : []
+        });
+    } catch (err) {
+        console.error('Get invoices error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get invoices',
+            error: err.message
+        });
+    }
+});
+
+/**
+ * Upload 3D model file for printing orders
+ * POST /api/orders/upload-print-file
+ */
+router.post('/upload-print-file', printingFileUpload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({
+            success: false,
+            message: 'No file uploaded'
+        });
+    }
+
+    const filePath = `/assets/uploads/printing/${req.file.filename}`;
+    res.json({
+        success: true,
+        filePath,
+        originalName: req.file.originalname
+    });
+});
+
+/**
  * Get order details with items
  * GET /api/orders/:orderId
  */
@@ -601,13 +701,20 @@ router.post('/', async (req, res) => {
             const isPrinting = deviceNormalized === 'printing' || deviceNormalized === '3d-printing';
             const resolvedBrand = item.brand || item.brandName || (isPrinting ? (item.printerName || item.printer || '3D Printing') : 'N/A');
             const resolvedModel = item.model || (isPrinting ? (item.filamentName || item.filament || '3D Print') : 'N/A');
+            const fileReference = item.filePath
+                || item.file_path
+                || item.fileUrl
+                || item.file_url
+                || item.fileName
+                || item.file_name
+                || null;
             
             await db.runAsync(
                 `INSERT INTO order_items 
                  (order_id, device, brand, model, repair_type, repair_name, price, printer, filament, color, parts, file_name)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [orderResult.lastID, item.device, resolvedBrand, resolvedModel,
-                 repairType, repairName, item.price, item.printer || null, item.filament || null, item.color || null, item.parts || null, item.fileName || item.file_name || null]
+                 repairType, repairName, item.price, item.printer || null, item.filament || null, item.color || null, item.parts || null, fileReference]
             );
             
             // Normalize item data for email
@@ -764,6 +871,13 @@ router.patch('/:orderId', verifyToken, verifyOrderManager, async (req, res) => {
             });
         }
 
+        const orderItems = await db.allAsync(
+            `SELECT id, device, brand, model, repair_type, repair_name, price, parts
+             FROM order_items
+             WHERE order_id = ?`,
+            [order.id]
+        );
+
         // Send email to customer about status update
         try {
             await sendOrderStatusEmail(
@@ -771,7 +885,7 @@ router.patch('/:orderId', verifyToken, verifyOrderManager, async (req, res) => {
                 order.customer_name,
                 order.order_number,
                 status,
-                order
+                { ...order, items: orderItems }
             );
             console.log(`Email sent to customer for order ${order.order_number} status: ${status}`);
         } catch (emailError) {

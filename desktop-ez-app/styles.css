@@ -143,6 +143,7 @@ body {
 .main {
   padding: 24px;
   min-height: 100vh;
+  position: relative;
 }
 
 .main.login-centered {
@@ -164,6 +165,17 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+}
+
+.topbar > div:first-child {
+  position: relative;
+  padding-left: 62px;
+}
+
+#sidebarToggleBtn {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 .topbar h1 { margin: 0 0 6px; }
 .topbar p { margin: 0; color: #94a3b8; }
@@ -1261,4 +1273,5 @@ th { color: #cbbdf7; font-weight: 600; }
   .actions button { padding: 6px 8px; font-size: 0.85rem; }
   .topbar h1 { font-size: 1.3rem; }
   .topbar p { font-size: 0.85rem; }
+  .topbar > div:first-child { padding-left: 54px; }
 }

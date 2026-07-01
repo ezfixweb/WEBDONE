@@ -39,13 +39,22 @@ router.post('/send-order-status', verifyToken, verifyOrderManager, async (req, r
             });
         }
 
+        const items = await db.allAsync(
+            `SELECT id, device, brand, model, repair_type, repair_name, price, parts
+             FROM order_items
+             WHERE order_id = ?`,
+            [order.id]
+        );
+
+        const orderWithItems = { ...order, items };
+
         // Send email
         const emailResult = await sendOrderStatusEmail(
             order.customer_email,
             order.customer_name,
             order.order_number,
             status,
-            order
+            orderWithItems
         );
 
         res.json({
@@ -84,6 +93,16 @@ router.post('/send-custom', verifyToken, verifyOrderManager, async (req, res) =>
                 'SELECT * FROM orders WHERE id = ?',
                 [orderId]
             ) || {};
+
+            if (order.id) {
+                const items = await db.allAsync(
+                    `SELECT id, device, brand, model, repair_type, repair_name, price, parts
+                     FROM order_items
+                     WHERE order_id = ?`,
+                    [order.id]
+                );
+                order = { ...order, items };
+            }
         }
 
         // Send email

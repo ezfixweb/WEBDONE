@@ -86,18 +86,18 @@
     </div>
     <div id="cookieConsent" class="cookie-consent hidden" role="dialog" aria-modal="false" aria-labelledby="cookieConsentTitle" aria-describedby="cookieConsentText">
         <div class="cookie-consent-card">
-            <h3 id="cookieConsentTitle">Cookie Preferences</h3>
-            <p id="cookieConsentText">We use cookies to improve your experience. Do you accept cookies?</p>
+            <h3 id="cookieConsentTitle">Nastavení cookies</h3>
+            <p id="cookieConsentText">Používáme cookies pro zlepšení vašeho zážitku. Souhlasíte s cookies?</p>
             <div class="cookie-consent-actions">
-                <button type="button" class="btn btn-secondary btn-sm" id="cookieDeclineBtn">Decline</button>
-                <button type="button" class="btn btn-primary btn-sm" id="cookieAcceptBtn">Accept</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="cookieDeclineBtn">Odmítnout</button>
+                <button type="button" class="btn btn-primary btn-sm" id="cookieAcceptBtn">Přijmout</button>
             </div>
         </div>
     </div>
     <div id="announcementBanner" class="announcement-banner hidden">
         <div class="container">
             <span id="announcementText"></span>
-            <button type="button" id="announcementCloseBtn" class="announcement-close-btn" aria-label="Close announcement">×</button>
+            <button type="button" id="announcementCloseBtn" class="announcement-close-btn" aria-label="Zavřít oznámení">×</button>
         </div>
     </div>
     <nav class="navbar">
@@ -108,35 +108,35 @@
                 </div>
             </a>
             <ul class="nav-links" id="primaryNav">
-                <li><a href="#" data-page="home">Home</a></li>
-                <li><a href="#" data-page="services">Services</a></li>
-                <li><a href="#" data-page="custompc">Custom Builds</a></li>
-                <li><a href="#" data-page="printing">3D Printing</a></li>
-                <li><a href="#" data-page="used-shop">Used Shop</a></li>
-                <li><a href="#" data-page="other">Other</a></li>
-                <li><a href="#" data-page="about">About</a></li>
-                <li><a href="#" data-page="contact">Contact Us</a></li>
+                <li><a href="#" data-page="home">Domů</a></li>
+                <li><a href="#" data-page="services">Služby</a></li>
+                <li><a href="#" data-page="custompc">Vlastní sestavy</a></li>
+                <li><a href="#" data-page="printing">3D tisk</a></li>
+                <li><a href="#" data-page="used-shop">Bazar</a></li>
+                <li><a href="#" data-page="other">Ostatní</a></li>
+                <li><a href="#" data-page="about">O nás</a></li>
+                <li><a href="#" data-page="contact">Kontakt</a></li>
                 <li class="mobile-cart-item">
-                    <a href="#" class="mobile-cart-link" data-page="cart" aria-label="View cart">
+                    <a href="#" class="mobile-cart-link" data-page="cart" aria-label="Zobrazit košík">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <circle cx="9" cy="21" r="1"></circle>
                             <circle cx="20" cy="21" r="1"></circle>
                             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                         </svg>
-                        <span>Cart</span>
+                        <span>Košík</span>
                         <span class="cart-count mobile-cart-count" data-role="cart-count" aria-live="polite" aria-atomic="true">0</span>
                     </a>
                 </li>
                 <li class="mobile-quick-actions">
-                    <button class="btn btn-secondary btn-sm" id="langToggleMobile" type="button" aria-label="Switch language">CZ</button>
-                    <a href="#" class="btn btn-primary btn-sm" id="loginNavBtnMobile" data-page="auth">Login</a>
-                    <a href="#" class="btn btn-secondary btn-sm profile-icon-btn" id="profileNavBtnMobile" data-page="profile" aria-label="Profile" title="Profile" style="display:none;">
+                    <button class="btn btn-secondary btn-sm" id="langToggleMobile" type="button" aria-label="Přepnout jazyk">CZ</button>
+                    <a href="#" class="btn btn-primary btn-sm" id="loginNavBtnMobile" data-page="auth">Přihlásit se</a>
+                    <a href="#" class="btn btn-secondary btn-sm profile-icon-btn" id="profileNavBtnMobile" data-page="profile" aria-label="Profil" title="Profil" style="display:none;">
                         <svg class="profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path d="M20 21a8 8 0 0 0-16 0"></path>
                             <circle cx="12" cy="8" r="4"></circle>
                         </svg>
                     </a>
-                    <button class="btn btn-secondary btn-sm" id="logoutBtnMobile" style="display:none;">Logout</button>
+                    <button class="btn btn-secondary btn-sm" id="logoutBtnMobile" style="display:none;">Odhlásit se</button>
                 </li>
                 <li id="adminNavLink" style="display: none;"><a href="#" data-page="admin">Admin</a></li>
             </ul>
@@ -147,7 +147,7 @@
                 <a href="#" class="nav-social-link" id="navFacebook" aria-label="Facebook" target="_blank" rel="noopener noreferrer" style="display:none;">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
                 </a>
-                <button class="cart-btn" id="cartBtn" aria-label="View cart">
+                <button class="cart-btn" id="cartBtn" aria-label="Zobrazit košík">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="9" cy="21" r="1"></circle>
                         <circle cx="20" cy="21" r="1"></circle>
@@ -155,17 +155,17 @@
                     </svg>
                     <span class="cart-count" id="cartCount" data-role="cart-count" aria-live="polite" aria-atomic="true">0</span>
                 </button>
-                <button class="btn btn-secondary btn-sm" id="langToggle" type="button" aria-label="Switch language">CZ</button>
-                <button class="btn btn-secondary btn-sm" id="logoutBtn" style="display: none;">Logout</button>
-                <a href="#" class="btn btn-primary btn-sm" id="loginNavBtn" data-page="auth">Login</a>
-                <a href="#" class="btn btn-secondary btn-sm profile-icon-btn" id="profileNavBtn" data-page="profile" aria-label="Profile" title="Profile" style="display:none;">
+                <button class="btn btn-secondary btn-sm" id="langToggle" type="button" aria-label="Přepnout jazyk">CZ</button>
+                <button class="btn btn-secondary btn-sm" id="logoutBtn" style="display: none;">Odhlásit se</button>
+                <a href="#" class="btn btn-primary btn-sm" id="loginNavBtn" data-page="auth">Přihlásit se</a>
+                <a href="#" class="btn btn-secondary btn-sm profile-icon-btn" id="profileNavBtn" data-page="profile" aria-label="Profil" title="Profil" style="display:none;">
                     <svg class="profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M20 21a8 8 0 0 0-16 0"></path>
                         <circle cx="12" cy="8" r="4"></circle>
                     </svg>
                 </a>
             </div>
-            <button class="mobile-menu-btn" aria-label="Toggle menu" aria-expanded="false" aria-controls="primaryNav">
+            <button class="mobile-menu-btn" aria-label="Přepnout menu" aria-expanded="false" aria-controls="primaryNav">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -180,18 +180,18 @@
         <div class="login-container">
             <div class="login-box" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
                 <div class="login-header">
-                    <h2 id="loginTitle">Admin Support Access</h2>
+                    <h2 id="loginTitle">Administrátorský přístup podpory</h2>
                 </div>
                 <form id="loginForm" class="login-form">
                     <div class="form-group">
-                        <label for="username">Username or Email</label>
-                        <input type="text" id="username" placeholder="Enter username or email" required>
+                        <label for="username">Uživatelské jméno nebo e-mail</label>
+                        <input type="text" id="username" placeholder="Zadejte uživatelské jméno nebo e-mail" required>
                     </div>
                     <div class="form-group">
-                        <label for="password">Password</label>
+                        <label for="password">Heslo</label>
                         <div class="password-field">
-                            <input type="password" id="password" placeholder="Enter password" required>
-                            <button type="button" class="password-toggle" data-target="password" aria-label="Show password">
+                            <input type="password" id="password" placeholder="Zadejte heslo" required>
+                            <button type="button" class="password-toggle" data-target="password" aria-label="Zobrazit heslo">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                     <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
@@ -200,7 +200,7 @@
                         </div>
                     </div>
                     <div id="loginError" class="login-error"></div>
-                    <button type="submit" class="btn btn-primary">Login</button>
+                    <button type="submit" class="btn btn-primary">Přihlásit se</button>
                 </form>
             </div>
         </div>
@@ -208,8 +208,8 @@
 
     <div class="login-progress-modal hidden" id="loginProgressModal" aria-hidden="true">
         <div class="login-progress-box" role="status" aria-live="polite">
-            <h3 id="loginProgressTitle">Signing you in</h3>
-            <p id="loginProgressText">Preparing secure login...</p>
+            <h3 id="loginProgressTitle">Přihlašování</h3>
+            <p id="loginProgressText">Připravuji zabezpečené přihlášení...</p>
             <div class="login-progress-steps" id="loginProgressSteps">
                 <div class="login-progress-step" data-step="1">1</div>
                 <div class="login-progress-step" data-step="2">2</div>
@@ -226,31 +226,31 @@
         <div class="email-modal-overlay"></div>
         <div class="email-modal-container" role="dialog" aria-modal="true" aria-labelledby="emailModalTitle">
             <div class="email-modal-header">
-                <h2 id="emailModalTitle">Send Email to Customer</h2>
-                <button class="email-modal-close" aria-label="Close">×</button>
+                <h2 id="emailModalTitle">Odeslat e-mail zákazníkovi</h2>
+                <button class="email-modal-close" aria-label="Zavřít">×</button>
             </div>
             <div class="email-modal-content">
                 <form id="emailForm" class="email-form">
                     <div class="form-group">
-                        <label for="emailTo">Customer Email</label>
+                        <label for="emailTo">E-mail zákazníka</label>
                         <input type="email" id="emailTo" readonly class="form-input-readonly">
                     </div>
                     <div class="form-group">
-                        <label for="emailCustomerName">Customer Name</label>
+                        <label for="emailCustomerName">Jméno zákazníka</label>
                         <input type="text" id="emailCustomerName" readonly class="form-input-readonly">
                     </div>
                     <div class="form-group">
-                        <label for="emailSubject">Subject</label>
-                        <input type="text" id="emailSubject" placeholder="Enter email subject" required>
+                        <label for="emailSubject">Předmět</label>
+                        <input type="text" id="emailSubject" placeholder="Zadejte předmět e-mailu" required>
                     </div>
                     <div class="form-group">
-                        <label for="emailMessage">Message</label>
-                        <textarea id="emailMessage" placeholder="Enter email message" rows="6" required></textarea>
+                        <label for="emailMessage">Zpráva</label>
+                        <textarea id="emailMessage" placeholder="Zadejte text e-mailu" rows="6" required></textarea>
                     </div>
                     <div id="emailFormMessage" class="form-message"></div>
                     <div class="email-modal-actions">
-                        <button type="button" class="btn btn-secondary">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Send Email</button>
+                        <button type="button" class="btn btn-secondary">Zrušit</button>
+                        <button type="submit" class="btn btn-primary">Odeslat e-mail</button>
                     </div>
                 </form>
             </div>
@@ -262,21 +262,21 @@
         <div class="email-modal-overlay"></div>
         <div class="email-modal-container" role="dialog" aria-modal="true" aria-labelledby="termsModalTitle">
             <div class="email-modal-header">
-                <h2 id="termsModalTitle">Terms & Conditions</h2>
-                <button class="email-modal-close" aria-label="Close">×</button>
+                <h2 id="termsModalTitle">Obchodní podmínky</h2>
+                <button class="email-modal-close" aria-label="Zavřít">×</button>
             </div>
             <div class="email-modal-content">
                 <div style="display:flex;flex-direction:column;gap:12px;color:#374151;font-size:0.95rem;">
-                    <p>By placing an order, you agree to the following terms:</p>
+                    <p>Odesláním objednávky souhlasíte s následujícími podmínkami:</p>
                     <ul style="padding-left:18px;display:flex;flex-direction:column;gap:8px;">
-                        <li>Diagnostics are free unless otherwise stated.</li>
-                        <li>Repair timelines are estimates and may change.</li>
-                        <li>Data loss is possible; please back up your device.</li>
-                        <li>Quoted prices may change after inspection.</li>
-                        <li>Unclaimed devices may be disposed of after 60 days.</li>
+                        <li>Diagnostika je zdarma, pokud není uvedeno jinak.</li>
+                        <li>Termíny oprav jsou orientační a mohou se změnit.</li>
+                        <li>Může dojít ke ztrátě dat; předem si zařízení zálohujte.</li>
+                        <li>Uvedené ceny se po kontrole mohou změnit.</li>
+                        <li>Nevyzvednutá zařízení mohou být po 60 dnech zlikvidována.</li>
                     </ul>
                     <div id="termsCustomText" style="display:flex;flex-direction:column;gap:8px;"></div>
-                    <p>If you have questions, contact support before submitting your order.</p>
+                    <p>Máte-li dotazy, kontaktujte podporu ještě před odesláním objednávky.</p>
                 </div>
             </div>
         </div>
@@ -287,8 +287,8 @@
         <div class="order-details-overlay"></div>
         <div class="order-details-container" role="dialog" aria-modal="true" aria-labelledby="orderDetailsTitle">
             <div class="order-details-header">
-                <h2 id="orderDetailsTitle">Order Details</h2>
-                <button class="order-details-close" aria-label="Close">×</button>
+                <h2 id="orderDetailsTitle">Detail objednávky</h2>
+                <button class="order-details-close" aria-label="Zavřít">×</button>
             </div>
             <div class="order-details-content" id="orderDetailsContent">
                 <div class="loader">Načítání...</div>
@@ -302,10 +302,10 @@
         <div class="part-details-container" role="dialog" aria-modal="true" aria-labelledby="partDetailsTitle">
             <div class="part-details-header">
                 <div>
-                    <h2 id="partDetailsTitle">Part Details</h2>
+                    <h2 id="partDetailsTitle">Detaily dílu</h2>
                     <p id="partDetailsPrice" class="part-details-price"></p>
                 </div>
-                <button class="part-details-close" aria-label="Close">×</button>
+                <button class="part-details-close" aria-label="Zavřít">×</button>
             </div>
             <div class="part-details-content">
                 <div class="part-details-gallery">
@@ -317,7 +317,7 @@
                     </div>
                 </div>
                 <div class="part-details-specs">
-                    <h3>Specifications</h3>
+                    <h3>Specifikace</h3>
                     <ul id="partDetailsSpecs"></ul>
                 </div>
             </div>
@@ -333,7 +333,7 @@
                     <h2 id="otherDetailsTitle">Item Details</h2>
                     <p id="otherDetailsPrice" class="part-details-price"></p>
                 </div>
-                <button class="part-details-close" id="otherDetailsClose" aria-label="Close">×</button>
+                <button class="part-details-close" id="otherDetailsClose" aria-label="Zavřít">×</button>
             </div>
             <div class="other-details-content">
                 <div class="other-details-media">
@@ -352,29 +352,29 @@
         <div class="part-details-container" role="dialog" aria-modal="true" aria-labelledby="usedDetailsTitle">
             <div class="part-details-header">
                 <div>
-                    <h2 id="usedDetailsTitle">Used Device Details</h2>
+                    <h2 id="usedDetailsTitle">Detaily použitého zařízení</h2>
                     <p id="usedDetailsPrice" class="part-details-price"></p>
                 </div>
-                <button class="part-details-close" id="usedDetailsClose" aria-label="Close">×</button>
+                <button class="part-details-close" id="usedDetailsClose" aria-label="Zavřít">×</button>
             </div>
             <div class="part-details-content used-details-content">
                 <div class="part-details-gallery">
-                    <img id="usedDetailsMainImage" src="" alt="Used device image" loading="lazy" decoding="async">
+                    <img id="usedDetailsMainImage" src="" alt="Obrázek použitého zařízení" loading="lazy" decoding="async">
                     <div class="part-details-thumbs-wrap">
-                        <button class="thumb-scroll-btn" id="usedThumbsPrev" aria-label="Scroll thumbnails left">‹</button>
+                        <button class="thumb-scroll-btn" id="usedThumbsPrev" aria-label="Posunout náhledy doleva">‹</button>
                         <div id="usedDetailsThumbs" class="part-details-thumbs"></div>
-                        <button class="thumb-scroll-btn" id="usedThumbsNext" aria-label="Scroll thumbnails right">›</button>
+                        <button class="thumb-scroll-btn" id="usedThumbsNext" aria-label="Posunout náhledy doprava">›</button>
                     </div>
                 </div>
                 <div class="used-details-body">
                     <h3 id="usedDetailsName"></h3>
                     <p id="usedDetailsDesc"></p>
                     <div class="used-details-specs">
-                        <h4>Specifications</h4>
+                        <h4>Specifikace</h4>
                         <ul id="usedDetailsSpecs"></ul>
                     </div>
                     <div class="used-details-actions">
-                        <button class="btn btn-primary" id="usedDetailsAddToCart">Add to Cart</button>
+                        <button class="btn btn-primary" id="usedDetailsAddToCart">Přidat do košíku</button>
                     </div>
                 </div>
             </div>
@@ -386,15 +386,15 @@
         <div class="email-modal-overlay"></div>
         <div class="email-modal-container" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
             <div class="email-modal-header">
-                <h2 id="contactModalTitle">Contact</h2>
-                <button class="email-modal-close" aria-label="Close">×</button>
+                <h2 id="contactModalTitle">Kontakt</h2>
+                <button class="email-modal-close" aria-label="Zavřít">×</button>
             </div>
             <div class="email-modal-content contact-modal-content">
                 <div class="contact-modal-title">Kontaktujte nás zde</div>
                 <div class="contact-modal-email">
                     <a href="mailto:podpora@ezfix.cz">podpora@ezfix.cz</a>
                 </div>
-                <div class="contact-modal-or">or</div>
+                <div class="contact-modal-or">nebo</div>
                 <div class="contact-modal-phone">
                     <a href="tel:+420732434201">+420 732 434 201</a>
                 </div>
@@ -411,15 +411,15 @@
                         <div class="hero-text">
                             <div class="hero-badge">
                                 <span class="badge-dot"></span>
-                                Expert Tech Solutions
+                                Odborná technická řešení
                             </div>
-                            <h1>We Fix Your<br><span>Tech Devices</span></h1>
-                            <p>Professional repair services for smartphones, tablets, notebooks, and desktop PCs. Plus, shop quality parts and accessories.</p>
+                            <h1>Opravíme vaše<br><span>zařízení</span></h1>
+                            <p>Rychlé a spolehlivé opravy telefonů, tabletů, notebooků a stolních PC. Nabízíme kvalitní díly a příslušenství.</p>
                             <a href="#" class="btn btn-primary" data-page="services">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
                                     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
                                 </svg>
-                                Service
+                                Služby
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                     <polyline points="12 5 19 12 12 19"></polyline>
@@ -428,15 +428,15 @@
                             <div class="hero-stats">
                                 <div class="hero-stat">
                                     <span class="stat-number">5000+</span>
-                                    <span class="stat-label">Devices Repaired</span>
+                                    <span class="stat-label">Opravená zařízení</span>
                                 </div>
                                 <div class="hero-stat">
                                     <span class="stat-number">98%</span>
-                                    <span class="stat-label">Satisfaction Rate</span>
+                                    <span class="stat-label">Spokojenost</span>
                                 </div>
                                 <div class="hero-stat">
                                     <span class="stat-number">24h</span>
-                                    <span class="stat-label">Fast Turnaround</span>
+                                    <span class="stat-label">Rychlé vyřízení</span>
                                 </div>
                             </div>
                         </div>
@@ -457,7 +457,7 @@
                                         </svg>
                                     </div>
                                     <div class="floating-text">
-                                        <strong>Screen Fixed</strong>
+                                        <strong>Oprava displeje</strong>
                                         <span>iPhone 15 Pro</span>
                                     </div>
                                 </div>
@@ -468,8 +468,8 @@
                                         </svg>
                                     </div>
                                     <div class="floating-text">
-                                        <strong>Order Shipped</strong>
-                                        <span>Battery Kit</span>
+                                        <strong>Objednávka odeslána</strong>
+                                        <span>Server</span>
                                     </div>
                                 </div>
                             </div>
@@ -481,8 +481,8 @@
             <div class="home-highlights">
                 <div class="container">
                     <div class="home-highlights-header">
-                        <h2>Everything You Need, One Place</h2>
-                        <p>Fast repairs, custom builds, and precision 3D prints with transparent pricing.</p>
+                        <h2>Vše, co potřebujete, na jednom místě</h2>
+                        <p>Rychlé opravy, vlastní sestavy a přesný 3D tisk s transparentní cenou.</p>
                     </div>
                     <div class="highlight-grid">
                         <div class="highlight-card">
@@ -492,9 +492,9 @@
                                     <path d="M12 6v6l4 2"></path>
                                 </svg>
                             </div>
-                            <h3>Same-Day Repairs</h3>
-                            <p>Clear diagnostics and rapid turnaround on phones, tablets, and laptops.</p>
-                            <a href="#" class="link-btn" data-page="services">Browse Services</a>
+                            <h3>Opravy ten samý den</h3>
+                            <p>Jasná diagnostika a rychlé vyřízení telefonů, tabletů a notebooků.</p>
+                            <a href="#" class="link-btn" data-page="services">Prohlédnout služby</a>
                         </div>
                         <div class="highlight-card">
                             <div class="highlight-icon green">
@@ -504,9 +504,9 @@
                                     <line x1="12" y1="17" x2="12" y2="21"></line>
                                 </svg>
                             </div>
-                            <h3>Custom Builds</h3>
-                            <p>Design a PC or server with expert guidance and curated parts.</p>
-                            <a href="#" class="link-btn" data-page="custompc">Start a Build</a>
+                            <h3>Vlastní sestavy</h3>
+                            <p>Navrhněte PC nebo server s odborným vedením a pečlivě vybranými díly.</p>
+                            <a href="#" class="link-btn" data-page="custompc">Začít sestavu</a>
                         </div>
                         <div class="highlight-card">
                             <div class="highlight-icon amber">
@@ -516,9 +516,9 @@
                                     <path d="M8 21h8"></path>
                                 </svg>
                             </div>
-                            <h3>3D Printing</h3>
-                            <p>Upload your model, choose materials, and get precise prints fast.</p>
-                            <a href="#" class="link-btn" data-page="printing">Print a Part</a>
+                            <h3>3D tisk</h3>
+                            <p>Nahrajte model, zvolte materiály a získejte přesný tisk rychle.</p>
+                            <a href="#" class="link-btn" data-page="printing">Vytisknout díl</a>
                         </div>
                     </div>
                 </div>
@@ -527,8 +527,8 @@
             <div class="home-news">
                 <div class="container">
                     <div class="home-news-header">
-                        <h2>News and Updates</h2>
-                        <p>Latest updates, tips, and offers from EzFix.</p>
+                        <h2>Novinky a aktualizace</h2>
+                        <p>Nejnovější aktualizace, tipy a nabídky od EzFix.</p>
                     </div>
                     <div class="home-news-grid" id="homeNewsList"></div>
                 </div>
@@ -539,29 +539,29 @@
         <section id="auth" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>Welcome Back</h1>
-                    <p>Login or create an account to manage your orders.</p>
+                    <h1>Vítejte zpět</h1>
+                    <p>Přihlaste se nebo vytvořte účet pro správu objednávek.</p>
                 </div>
             </div>
             <div class="services-content">
                 <div class="container auth-container">
                     <div class="auth-card">
                         <div class="auth-toggle">
-                            <button class="auth-tab active" data-auth="login">Login</button>
-                            <button class="auth-tab" data-auth="register">Register</button>
+                            <button class="auth-tab active" data-auth="login">Přihlásit se</button>
+                            <button class="auth-tab" data-auth="register">Registrovat</button>
                         </div>
 
                         <div class="auth-panel active" id="authLoginPanel">
                             <form id="authLoginForm" class="auth-form">
                                 <div class="form-group">
-                                    <label for="authLoginUsername">Username or Email</label>
+                                    <label for="authLoginUsername">Uživatelské jméno nebo e-mail</label>
                                     <input type="text" id="authLoginUsername" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="authLoginPassword">Password</label>
+                                    <label for="authLoginPassword">Heslo</label>
                                     <div class="password-field">
                                         <input type="password" id="authLoginPassword" required>
-                                        <button type="button" class="password-toggle" data-target="authLoginPassword" aria-label="Show password">
+                                        <button type="button" class="password-toggle" data-target="authLoginPassword" aria-label="Zobrazit heslo">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
                                                 <circle cx="12" cy="12" r="3"></circle>
@@ -570,13 +570,13 @@
                                     </div>
                                 </div>
                                 <div class="form-message" id="authLoginMessage"></div>
-                                <button type="submit" class="btn btn-primary btn-full">Login</button>
+                                <button type="submit" class="btn btn-primary btn-full">Přihlásit se</button>
                             </form>
                             <div class="auth-helper">
-                                <a href="#" id="authForgotLink">Forgot password?</a>
-                            </div>
+                                <a href="#" id="authForgotLink">Zapomněli jste heslo?</a>
+                                </div>
 
-                            <div class="auth-divider"><span>or</span></div>
+                            <div class="auth-divider"><span>nebo</span></div>
                             <div class="auth-oauth">
                                 <button class="btn btn-secondary btn-full google-btn" id="authGoogleBtn" type="button">
                                     <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true">
@@ -585,7 +585,7 @@
                                         <path fill="#4CAF50" d="M24 44c5.186 0 9.9-1.98 13.428-5.197l-6.199-5.238C29.216 35.091 26.715 36 24 36c-5.367 0-9.943-3.326-11.289-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
                                         <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.01 12.01 0 0 1-4.074 5.565l.003-.002 6.199 5.238C36.991 39.205 44 34 44 24c0-1.341-.138-2.651-.389-3.917z"/>
                                     </svg>
-                                    Continue with Google
+                                    Pokračovat s Google
                                 </button>
                             </div>
                         </div>
@@ -593,31 +593,31 @@
                         <div class="auth-panel" id="authRegisterPanel">
                             <form id="authRegisterForm" class="auth-form">
                                 <div class="form-group">
-                                    <label for="authRegisterUsername">Username</label>
+                                    <label for="authRegisterUsername">Uživatelské jméno</label>
                                     <input type="text" id="authRegisterUsername" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="authRegisterEmail">Email</label>
+                                    <label for="authRegisterEmail">E-mail</label>
                                     <input type="email" id="authRegisterEmail" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="authRegisterPassword">Password</label>
+                                    <label for="authRegisterPassword">Heslo</label>
                                     <div class="password-field">
                                         <input type="password" id="authRegisterPassword" required>
-                                        <button type="button" class="password-toggle" data-target="authRegisterPassword" aria-label="Show password">
+                                        <button type="button" class="password-toggle" data-target="authRegisterPassword" aria-label="Zobrazit heslo">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
                                                 <circle cx="12" cy="12" r="3"></circle>
                                             </svg>
                                         </button>
                                     </div>
-                                    <small class="form-hint">Min 8 chars, uppercase, lowercase, number, special character (any symbol).</small>
+                                    <small class="form-hint">Minimálně 8 znaků, velká a malá písmena, číslo, speciální znak.</small>
                                 </div>
                                 <div class="form-group">
-                                    <label for="authRegisterConfirm">Confirm Password</label>
+                                    <label for="authRegisterConfirm">Potvrzení hesla</label>
                                     <div class="password-field">
                                         <input type="password" id="authRegisterConfirm" required>
-                                        <button type="button" class="password-toggle" data-target="authRegisterConfirm" aria-label="Show password">
+                                        <button type="button" class="password-toggle" data-target="authRegisterConfirm" aria-label="Zobrazit heslo">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
                                                 <circle cx="12" cy="12" r="3"></circle>
@@ -626,10 +626,10 @@
                                     </div>
                                 </div>
                                 <div class="form-message" id="authRegisterMessage"></div>
-                                <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+                                <button type="submit" class="btn btn-primary btn-full">Vytvořit účet</button>
                             </form>
 
-                            <div class="auth-divider"><span>or</span></div>
+                            <div class="auth-divider"><span>nebo</span></div>
                             <div class="auth-oauth">
                                 <button class="btn btn-secondary btn-full google-btn" id="authGoogleBtnRegister" type="button">
                                     <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true">
@@ -638,7 +638,7 @@
                                         <path fill="#4CAF50" d="M24 44c5.186 0 9.9-1.98 13.428-5.197l-6.199-5.238C29.216 35.091 26.715 36 24 36c-5.367 0-9.943-3.326-11.289-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
                                         <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.01 12.01 0 0 1-4.074 5.565l.003-.002 6.199 5.238C36.991 39.205 44 34 44 24c0-1.341-.138-2.651-.389-3.917z"/>
                                     </svg>
-                                    Sign up with Google
+                                    Zaregistrovat se pomocí Google
                                 </button>
                             </div>
                         </div>
@@ -650,21 +650,21 @@
         <section id="profile" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>My Profile</h1>
-                    <p>Your account details, order history, and chat history.</p>
+                    <h1>Můj profil</h1>
+                    <p>Údaje o účtu, historie objednávek a chatů.</p>
                 </div>
             </div>
             <div class="services-content">
                 <div class="container profile-page-layout">
                     <div class="profile-summary-card">
-                        <h3>Account Info</h3>
+                        <h3>Informace o účtu</h3>
                         <div class="profile-summary-grid">
                             <div class="profile-summary-item">
-                                <span class="label">Username</span>
+                                <span class="label">Uživatelské jméno</span>
                                 <span class="value" id="profileUsername">-</span>
                             </div>
                             <div class="profile-summary-item">
-                                <span class="label">Email</span>
+                                <span class="label">E-mail</span>
                                 <span class="value" id="profileEmail">-</span>
                             </div>
                             <div class="profile-summary-item">
@@ -672,23 +672,23 @@
                                 <span class="value" id="profileRole">-</span>
                             </div>
                             <div class="profile-summary-item">
-                                <span class="label">Account Created</span>
+                                <span class="label">Účet vytvořen</span>
                                 <span class="value" id="profileCreatedAt">-</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="profile-history-card">
-                        <h3>Order History</h3>
+                        <h3>Historie objednávek</h3>
                         <div class="profile-history-list" id="profileOrdersList">
-                            <div class="profile-empty">No orders found.</div>
+                            <div class="profile-empty">Žádné objednávky nebyly nalezeny.</div>
                         </div>
                     </div>
 
                     <div class="profile-history-card">
-                        <h3>Chat History</h3>
+                        <h3>Historie chatu</h3>
                         <div class="profile-history-list" id="profileChatsList">
-                            <div class="profile-empty">No chat history found.</div>
+                            <div class="profile-empty">Žádná historie chatu nebyla nalezena.</div>
                         </div>
                     </div>
 
@@ -701,8 +701,8 @@
         <section id="reset-password" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>Reset Password</h1>
-                    <p>We will email you a reset link.</p>
+                    <h1>Obnovení hesla</h1>
+                    <p>Zašleme vám e-mail s odkazem pro obnovení.</p>
                 </div>
             </div>
             <div class="services-content">
@@ -711,32 +711,32 @@
                         <div class="auth-panel active" id="resetRequestPanel">
                             <form id="resetRequestForm" class="auth-form">
                                 <div class="form-group">
-                                    <label for="resetEmail">Email</label>
+                                    <label for="resetEmail">E-mail</label>
                                     <input type="email" id="resetEmail" required>
                                 </div>
                                 <div class="form-message" id="resetRequestMessage"></div>
-                                <button type="submit" class="btn btn-primary btn-full">Send reset link</button>
+                                <button type="submit" class="btn btn-primary btn-full">Odeslat odkaz pro obnovení</button>
                             </form>
                             <div class="auth-helper">
-                                <a href="#" id="resetBackToLogin">Back to login</a>
+                                <a href="#" id="resetBackToLogin">Zpět na přihlášení</a>
                             </div>
                         </div>
 
                         <div class="auth-panel" id="resetConfirmPanel">
                             <form id="resetConfirmForm" class="auth-form">
                                 <div class="form-group">
-                                    <label for="resetToken">Reset Token</label>
+                                    <label for="resetToken">Obnovovací token</label>
                                     <input type="text" id="resetToken" readonly>
                                 </div>
                                 <div class="form-group">
-                                    <label for="resetConfirmEmail">Email</label>
+                                    <label for="resetConfirmEmail">E-mail</label>
                                     <input type="email" id="resetConfirmEmail" readonly>
                                 </div>
                                 <div class="form-group">
-                                    <label for="resetNewPassword">New Password</label>
+                                    <label for="resetNewPassword">Nové heslo</label>
                                     <div class="password-field">
                                         <input type="password" id="resetNewPassword" required>
-                                        <button type="button" class="password-toggle" data-target="resetNewPassword" aria-label="Show password">
+                                        <button type="button" class="password-toggle" data-target="resetNewPassword" aria-label="Zobrazit heslo">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
                                                 <circle cx="12" cy="12" r="3"></circle>
@@ -745,10 +745,10 @@
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="resetConfirmPassword">Confirm Password</label>
+                                    <label for="resetConfirmPassword">Potvrdit heslo</label>
                                     <div class="password-field">
                                         <input type="password" id="resetConfirmPassword" required>
-                                        <button type="button" class="password-toggle" data-target="resetConfirmPassword" aria-label="Show password">
+                                        <button type="button" class="password-toggle" data-target="resetConfirmPassword" aria-label="Zobrazit heslo">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
                                                 <circle cx="12" cy="12" r="3"></circle>
@@ -757,7 +757,7 @@
                                     </div>
                                 </div>
                                 <div class="form-message" id="resetConfirmMessage"></div>
-                                <button type="submit" class="btn btn-primary btn-full">Update password</button>
+                                <button type="submit" class="btn btn-primary btn-full">Aktualizovat heslo</button>
                             </form>
                         </div>
                     </div>
@@ -769,32 +769,32 @@
         <section id="printing" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>3D Printing</h1>
-                    <p>Choose a printer, filament, color, strength, and upload your model</p>
+                    <h1>3D tisk</h1>
+                    <p>Vyberte tiskárnu, filament, barvu, pevnost a nahrajte svůj model</p>
                 </div>
             </div>
             <div class="services-content">
                 <div class="container printing-container">
                     <div class="printing-step">
                         <div class="step-header">
-                            <h2>Select Printer</h2>
-                            <p>Pick the printer that matches your needs</p>
+                            <h2>Vyberte tiskárnu</h2>
+                            <p>Zvolte tiskárnu podle potřeb</p>
                         </div>
                         <div class="brand-grid" id="printerGrid"></div>
                     </div>
 
                     <div class="printing-step">
                         <div class="step-header">
-                            <h2>Select Filament</h2>
-                            <p>Choose filament type</p>
+                            <h2>Vyberte filament</h2>
+                            <p>Zvolte typ filamentu</p>
                         </div>
                         <div class="brand-grid" id="filamentGrid"></div>
                     </div>
 
                     <div class="printing-step">
                         <div class="step-header">
-                            <h2>Select Color</h2>
-                            <p>Pick a filament color</p>
+                            <h2>Vyberte barvu</h2>
+                            <p>Zvolte barvu filamentu</p>
                         </div>
                         <div id="multicolorSlotsContainer" class="multicolor-slots" style="display:none;">
                             <div class="color-slot-tabs" id="colorSlotTabs"></div>
@@ -805,16 +805,16 @@
 
                     <div class="printing-step">
                         <div class="step-header">
-                            <h2>Select Strength</h2>
-                            <p>Choose strength level</p>
+                            <h2>Vyberte pevnost</h2>
+                            <p>Zvolte úroveň pevnosti</p>
                         </div>
                         <div class="brand-grid" id="strengthGrid"></div>
                     </div>
 
                     <div class="printing-step">
                         <div class="step-header">
-                            <h2>How many parts?</h2>
-                            <p>Enter the quantity of parts to print</p>
+                            <h2>Kolik kusů?</h2>
+                            <p>Zadejte počet dílů k tisku</p>
                         </div>
                         <div class="printing-quantity">
                             <input type="number" id="partsCount" min="1" value="1" />
@@ -823,20 +823,20 @@
 
                     <div class="printing-step">
                         <div class="step-header">
-                            <h2>Upload Your File</h2>
-                            <p>STL/OBJ/3MF accepted</p>
+                            <h2>Nahrajte soubor</h2>
+                            <p>Akceptujeme STL/OBJ/3MF</p>
                         </div>
                         <div class="printing-upload">
                             <label class="btn btn-secondary">
-                                Upload File
+                                Nahrát soubor
                                 <input type="file" id="printingFile" accept=".stl,.obj,.3mf" style="display:none" />
                             </label>
-                            <span id="printingFileName" class="printing-file-name">No file selected</span>
+                            <span id="printingFileName" class="printing-file-name">Žádný soubor nevybrán</span>
                         </div>
                     </div>
 
                     <div class="printing-actions">
-                        <button id="printingAddToCartBtn" class="btn btn-primary">Add 3D Print to Cart</button>
+                        <button id="printingAddToCartBtn" class="btn btn-primary">Přidat 3D tisk do košíku</button>
                     </div>
                 </div>
             </div>
@@ -846,8 +846,8 @@
         <section id="other" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>Other</h1>
-                    <p>Browse 3D printing accessories and tools</p>
+                    <h1>Ostatní</h1>
+                    <p>Prohlédněte příslušenství a nástroje pro 3D tisk</p>
                 </div>
             </div>
             <div class="services-content">
@@ -860,8 +860,8 @@
         <section id="used-shop" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>Used Refurbished Notebook & PC Shop</h1>
-                    <p>Verified used notebooks and PCs with clear specs and transparent prices.</p>
+                    <h1>Bazar repasovaných notebooků a PC</h1>
+                    <p>Ověřené použité notebooky a PC s jasnou specifikací a transparentní cenou.</p>
                 </div>
             </div>
             <div class="services-content">
@@ -875,8 +875,8 @@
         <section id="custompc" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>Custom Builds</h1>
-                    <p>Build your perfect computer step by step</p>
+                    <h1>Vlastní sestavy</h1>
+                    <p>Sestavte si ideální počítač krok za krokem</p>
                 </div>
             </div>
             <div class="services-content">
@@ -884,42 +884,42 @@
                     <div class="custom-pc-main">
                         <!-- Progress Steps -->
                         <div class="progress-steps hidden" id="customPcProgress">
-                            <div class="step-item active" data-step="1">
+                            <div class="step-item active" data-step="1" data-step-name="buildType">
                                 <div class="step-circle">1</div>
-                                <span>Type</span>
+                                <span>Typ</span>
                             </div>
                             <div class="step-line"></div>
                             <div class="step-item" data-step="2" data-step-name="serverType">
                                 <div class="step-circle">2</div>
-                                <span>Server Type</span>
+                                <span>Typ serveru</span>
                             </div>
                             <div class="step-line server-type-line"></div>
-                            <div class="step-item" data-step="3">
-                                <div class="step-circle">2</div>
-                                <span>Brand</span>
+                            <div class="step-item" data-step="3" data-step-name="cpuBrand">
+                                <div class="step-circle">3</div>
+                                <span>Značka</span>
                             </div>
                             <div class="step-line"></div>
-                            <div class="step-item" data-step="4">
+                            <div class="step-item" data-step="4" data-step-name="cpu">
                                 <div class="step-circle">4</div>
-                                <span>CPU</span>
+                                <span>Procesor</span>
                             </div>
                             <div class="step-line"></div>
-                            <div class="step-item" data-step="5">
+                            <div class="step-item" data-step="5" data-step-name="motherboard">
                                 <div class="step-circle">5</div>
-                                <span>Motherboard</span>
+                                <span>Základní deska</span>
                             </div>
                             <div class="step-line"></div>
-                            <div class="step-item" data-step="6">
+                            <div class="step-item" data-step="6" data-step-name="ram">
                                 <div class="step-circle">6</div>
                                 <span>RAM</span>
                             </div>
                             <div class="step-line"></div>
-                            <div class="step-item" data-step="7">
+                            <div class="step-item" data-step="7" data-step-name="storage">
                                 <div class="step-circle">7</div>
                                 <span>Storage</span>
                             </div>
                             <div class="step-line"></div>
-                            <div class="step-item" data-step="8">
+                            <div class="step-item" data-step="8" data-step-name="psu">
                                 <div class="step-circle">8</div>
                                 <span>PSU</span>
                             </div>
@@ -948,8 +948,8 @@
                         <!-- Step Content -->
                         <div class="service-step active" id="buildTypeStep">
                             <div class="step-header">
-                                <h2>Select Build Type</h2>
-                                <p>Choose Custom PC or Server</p>
+                                <h2>Vyber typ sestavy</h2>
+                                <p>Vyber vlastní PC nebo server</p>
                             </div>
                             <div class="brand-grid" id="buildTypeGrid"></div>
                         </div>
@@ -960,11 +960,11 @@
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
                                 </svg>
-                                Back
+                                Zpět
                             </button>
                             <div class="step-header">
-                                <h2>Select Server Type</h2>
-                                <p>Choose Server or Home Assistant Server</p>
+                                <h2>Vyber typ serveru</h2>
+                                <p>Vyber server nebo Home Assistant server</p>
                             </div>
                             <div class="brand-grid" id="serverTypeGrid"></div>
                         </div>
@@ -974,12 +974,10 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Back
-                            </button>
+                                </svg>Zpět</button>
                             <div class="step-header">
-                                <h2>Select Brand</h2>
-                                <p>Choose Raspberry Pi or Nvidia Jetson</p>
+                                <h2>Vyberte značku</h2>
+                                <p>Vyberte Raspberry Pi nebo Nvidia Jetson</p>
                             </div>
                             <div class="brand-grid" id="haBrandGrid"></div>
                         </div>
@@ -989,12 +987,10 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Back
-                            </button>
+                                </svg>Zpět</button>
                             <div class="step-header">
-                                <h2>Select Type</h2>
-                                <p>Choose Small Rack or Case</p>
+                                <h2>Vyberte typ</h2>
+                                <p>Vyberte malý rack nebo skříň</p>
                             </div>
                             <div class="brand-grid" id="haTypeGrid"></div>
                         </div>
@@ -1004,12 +1000,10 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Back
-                            </button>
+                                </svg>Zpět</button>
                             <div class="step-header">
-                                <h2>Select Model</h2>
-                                <p>Choose your device model</p>
+                                <h2>Vyberte model</h2>
+                                <p>Vyberte model zařízení</p>
                             </div>
                             <div class="brand-grid" id="haModelGrid"></div>
                         </div>
@@ -1019,12 +1013,10 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Back
-                            </button>
+                                </svg>Zpět</button>
                             <div class="step-header">
-                                <h2>Select RAM</h2>
-                                <p>Choose memory size</p>
+                                <h2>Vyberte RAM</h2>
+                                <p>Vyberte velikost paměti</p>
                             </div>
                             <div class="brand-grid" id="haRamGrid"></div>
                         </div>
@@ -1034,12 +1026,10 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Back
-                            </button>
+                                </svg>Zpět</button>
                             <div class="step-header">
-                                <h2>Select Storage Type</h2>
-                                <p>Choose SD card or SSD</p>
+                                <h2>Vyberte typ úložiště</h2>
+                                <p>Vyberte SD kartu nebo SSD</p>
                             </div>
                             <div class="brand-grid" id="haStorageTypeGrid"></div>
                         </div>
@@ -1049,12 +1039,10 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Back
-                            </button>
+                                </svg>Zpět</button>
                             <div class="step-header">
-                                <h2>Select Storage Size</h2>
-                                <p>Choose capacity</p>
+                                <h2>Vyberte velikost úložiště</h2>
+                                <p>Vyberte kapacitu</p>
                             </div>
                             <div class="brand-grid" id="haStorageSizeGrid"></div>
                         </div>
@@ -1064,12 +1052,10 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Back
-                            </button>
+                                </svg>Zpět</button>
                             <div class="step-header">
-                                <h2>Select Case or Rack</h2>
-                                <p>Choose the enclosure</p>
+                                <h2>Vyberte skříň nebo rack</h2>
+                                <p>Vyberte šasi</p>
                             </div>
                             <div class="brand-grid" id="haCaseRackGrid"></div>
                         </div>
@@ -1079,12 +1065,10 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Back
-                            </button>
+                                </svg>Zpět</button>
                             <div class="step-header">
-                                <h2>Select Switch</h2>
-                                <p>Choose network switch option</p>
+                                <h2>Vyberte switch</h2>
+                                <p>Vyberte variantu síťového switche</p>
                             </div>
                             <div class="brand-grid" id="haSwitchGrid"></div>
                         </div>
@@ -1095,18 +1079,18 @@
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
                                 </svg>
-                                Back
+                                Zpět
                             </button>
                             <div class="step-header">
-                                <h2>Other Details</h2>
-                                <p>Install options and cluster size</p>
+                                <h2>Další detaily</h2>
+                                <p>Možnosti instalace a velikost clusteru</p>
                             </div>
                             <div class="step-subheader">
-                                <h3>Install OS</h3>
+                                <h3>Instalovat OS</h3>
                             </div>
                             <div class="brand-grid" id="haInstallOsGrid"></div>
                             <div class="step-subheader" style="margin-top:16px;">
-                                <h3>Cluster</h3>
+                                <h3>Klastr</h3>
                             </div>
                             <div class="brand-grid" id="haClusterGrid"></div>
                         </div>
@@ -1116,12 +1100,10 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Back
-                            </button>
+                                </svg>Zpět</button>
                             <div class="step-header">
-                                <h2>Select Rack</h2>
-                                <p>Choose your rack size</p>
+                                <h2>Vyberte rack</h2>
+                                <p>Vyberte velikost racku</p>
                             </div>
                             <div class="brand-grid" id="rackGrid"></div>
                         </div>
@@ -1131,24 +1113,22 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
-                                </svg>
-                                Back
-                            </button>
+                                </svg>Zpět</button>
                             <div class="step-header">
-                                <h2>Other Details</h2>
-                                <p>Select build status and installation needs</p>
+                                <h2>Další podrobnosti</h2>
+                                <p>Zvolte stav sestavy a požadavky na instalaci</p>
                             </div>
                             <div class="step-subheader">
-                                <h3>Build Status</h3>
+                                <h3>Stav sestavy</h3>
                             </div>
                             <div class="brand-grid" id="buildStatusGrid"></div>
                             <div class="step-subheader" style="margin-top:16px;">
                                 <h3>OS</h3>
                             </div>
-                            <p id="customPCOsOptionDescription" class="custom-pc-os-description">Choose whether you want the system delivered with an operating system.</p>
+                            <p id="customPCOsOptionDescription" class="custom-pc-os-description">Zvolte, zda chcete systém dodat s operačním systémem.</p>
                             <div class="brand-grid" id="osOptionGrid"></div>
                             <div class="step-subheader" style="margin-top:16px;">
-                                <h3>Installation</h3>
+                                <h3>Instalace</h3>
                             </div>
                             <div class="brand-grid" id="installOptionGrid"></div>
                         </div>
@@ -1159,11 +1139,11 @@
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12 19 5 12 12 5"></polyline>
                                 </svg>
-                                Back
+                                Zpět
                             </button>
                             <div class="step-header">
-                                <h2>Choose Your Brand</h2>
-                                <p>Select Intel or AMD for your build</p>
+                                <h2>Vyberte značku</h2>
+                                <p>Zvolte Intel nebo AMD pro svou sestavu</p>
                             </div>
                             <div class="brand-grid" id="cpuBrandGrid"></div>
                         </div>
@@ -1174,11 +1154,11 @@
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg>
-                            Back
+                            Zpět
                         </button>
                         <div class="step-header">
-                            <h2>Select Your <span id="cpuBrandName">CPU</span></h2>
-                            <p>Choose your processor</p>
+                            <h2>Vyberte svůj <span id="cpuBrandName">CPU</span></h2>
+                            <p>Vyberte procesor</p>
                         </div>
                         <div class="brand-grid" id="cpuGrid"></div>
                     </div>
@@ -1188,12 +1168,10 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            Back
-                        </button>
+                            </svg>Zpět</button>
                         <div class="step-header">
-                            <h2>Select Your <span id="motherboardBrandName">Motherboard</span></h2>
-                            <p>Choose compatible motherboard</p>
+                            <h2>Vyberte <span id="motherboardBrandName">Motherboard</span></h2>
+                            <p>Vyberte kompatibilní základní desku</p>
                         </div>
                         <div class="brand-grid" id="motherboardGrid"></div>
                     </div>
@@ -1203,12 +1181,10 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            Back
-                        </button>
+                            </svg>Zpět</button>
                         <div class="step-header">
-                            <h2>Select RAM</h2>
-                            <p>Choose your memory</p>
+                            <h2>Vyberte RAM</h2>
+                            <p>Vyberte paměť</p>
                         </div>
                         <div class="brand-grid" id="ramGrid"></div>
                     </div>
@@ -1218,12 +1194,10 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            Back
-                        </button>
+                            </svg>Zpět</button>
                         <div class="step-header">
-                            <h2>Select Storage</h2>
-                            <p>Choose your SSD</p>
+                            <h2>Vyberte úložiště</h2>
+                            <p>Vyberte SSD</p>
                         </div>
                         <div class="brand-grid" id="storageGrid"></div>
                     </div>
@@ -1233,12 +1207,10 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            Back
-                        </button>
+                            </svg>Zpět</button>
                         <div class="step-header">
-                            <h2>Select Power Supply</h2>
-                            <p>Choose your PSU</p>
+                            <h2>Vyberte zdroj napájení</h2>
+                            <p>Vyberte PSU</p>
                         </div>
                         <div class="brand-grid" id="psuGrid"></div>
                     </div>
@@ -1248,12 +1220,10 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            Back
-                        </button>
+                            </svg>Zpět</button>
                         <div class="step-header">
-                            <h2>Select Case</h2>
-                            <p>Choose your chassis</p>
+                            <h2>Vyberte skříň</h2>
+                            <p>Vyberte skříň</p>
                         </div>
                         <div class="brand-grid" id="caseGrid"></div>
                     </div>
@@ -1263,12 +1233,10 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            Back
-                        </button>
+                            </svg>Zpět</button>
                         <div class="step-header">
-                            <h2>Select Cooler</h2>
-                            <p>Choose your CPU cooler</p>
+                            <h2>Vyberte chladič</h2>
+                            <p>Vyberte chladič CPU</p>
                         </div>
                         <div class="brand-grid" id="coolerGrid"></div>
                     </div>
@@ -1279,31 +1247,31 @@
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg>
-                            <span id="backToCoolerLabel">Back</span>
+                            <span id="backToCoolerLabel">Zpět</span>
                         </button>
                         <div class="step-header">
-                            <h2 id="customOsStepTitle">Select OS</h2>
-                            <p id="customOsStepSubtitle">Choose operating system preference</p>
+                            <h2 id="customOsStepTitle">Vyberte OS</h2>
+                            <p id="customOsStepSubtitle">Zvolte preferenci operačního systému</p>
                         </div>
-                        <p id="customPCOsOptionDescriptionStep" class="custom-pc-os-description">Choose whether you want the system delivered with an operating system.</p>
+                        <p id="customPCOsOptionDescriptionStep" class="custom-pc-os-description">Zvolte, zda chcete systém dodat s operačním systémem.</p>
                         <div class="brand-grid" id="customOsOptionGrid"></div>
                     </div>
 
                     <!-- Build Summary -->
                     <div class="service-step active" id="summaryStep" style="display:none;margin-top:40px;">
-                        <h2>Your Custom Build</h2>
+                        <h2>Vaše vlastní sestava</h2>
                         <div class="build-summary-card">
                             <ul id="buildList" class="build-list"></ul>
-                            <div class="build-total">Total: <span id="buildTotal">0 Kč</span></div>
+                            <div class="build-total">Celkem: <span id="buildTotal">0 Kč</span></div>
                             <div style="display:flex;gap:12px;margin-top:20px;">
-                                <label class="btn btn-secondary">Upload Reference
+                                <label class="btn btn-secondary">Nahrát předlohu
                                     <input id="uploadRef" type="file" accept="image/*" style="display:none">
                                 </label>
-                                <button id="addBuildToCartBtn" class="btn btn-secondary btn-full">Add to Cart</button>
+                                <button id="addBuildToCartBtn" class="btn btn-secondary btn-full">Přidat do košíku</button>
                             </div>
                         </div>
                         <div class="preview-canvas" id="previewCanvas">
-                            <div class="preview-placeholder">Upload a reference image</div>
+                            <div class="preview-placeholder">Nahrajte referenční obrázek</div>
                             <img id="previewImage" src="" alt="Reference" loading="lazy" decoding="async" style="display:none;max-width:100%;height:auto;border-radius:8px;" />
                         </div>
                     </div>
@@ -1312,12 +1280,12 @@
                     <!-- Build Summary Sidebar -->
                     <div class="custom-pc-sidebar">
                         <div class="summary-card">
-                            <h3>Your Build</h3>
+                            <h3>Vaše sestava</h3>
                             <div class="summary-items" id="summarySidebar">
-                                <div class="summary-item empty">No components selected</div>
+                                <div class="summary-item empty">Nejsou vybrané žádné komponenty</div>
                             </div>
                             <div class="summary-total">
-                                <span>Total:</span>
+                                <span>Celkem:</span>
                                 <span id="sidebarTotal">0</span>
                             </div>
                         </div>
@@ -1340,12 +1308,12 @@
                     <div class="progress-steps">
                         <div class="step-item active" data-step="1">
                             <div class="step-circle">1</div>
-                            <span>Device</span>
+                            <span>Zařízení</span>
                         </div>
                         <div class="step-line"></div>
                         <div class="step-item" data-step="2">
                             <div class="step-circle">2</div>
-                            <span>Brand</span>
+                            <span>Značka</span>
                         </div>
                         <div class="step-line"></div>
                         <div class="step-item" data-step="3">
@@ -1355,15 +1323,15 @@
                         <div class="step-line"></div>
                         <div class="step-item" data-step="4">
                             <div class="step-circle">4</div>
-                            <span>Repair</span>
+                            <span>Oprava</span>
                         </div>
                     </div>
 
                     <!-- Step 1: Device Selection -->
                     <div class="service-step active" id="deviceStep">
                         <div class="step-header">
-                            <h2>What device needs repair?</h2>
-                            <p>Select your device type to get started</p>
+                            <h2>Jaké zařízení potřebuje opravu?</h2>
+                            <p>Vyberte typ zařízení pro začátek</p>
                         </div>
                         <div class="device-grid">
                             <div class="device-card" data-device="phone">
@@ -1374,8 +1342,8 @@
                                     </svg>
                                 </div>
                                 <div class="device-info">
-                                    <h3>Phone Repair</h3>
-                                    <p>All brands & models</p>
+                                    <h3>Oprava telefonů</h3>
+                                    <p>Všechny značky a modely</p>
                                 </div>
                                 <div class="device-arrow">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1391,8 +1359,8 @@
                                     </svg>
                                 </div>
                                 <div class="device-info">
-                                    <h3>Tablet Repair</h3>
-                                    <p>All brands & models</p>
+                                    <h3>Oprava tabletů</h3>
+                                    <p>Všechny značky a modely</p>
                                 </div>
                                 <div class="device-arrow">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1409,8 +1377,8 @@
                                     </svg>
                                 </div>
                                 <div class="device-info">
-                                    <h3>Notebook Repair</h3>
-                                    <p>All brands & models</p>
+                                    <h3>Oprava notebooků</h3>
+                                    <p>Všechny značky a modely</p>
                                 </div>
                                 <div class="device-arrow">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1427,8 +1395,8 @@
                                     </svg>
                                 </div>
                                 <div class="device-info">
-                                    <h3>Desktop PC Repair</h3>
-                                    <p>All brands & models</p>
+                                    <h3>Oprava stolních PC</h3>
+                                    <p>Všechny značky a modely</p>
                                 </div>
                                 <div class="device-arrow">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1443,8 +1411,8 @@
                                     </svg>
                                 </div>
                                 <div class="device-info">
-                                    <h3>3D Printer Repair</h3>
-                                    <p>All brands & models</p>
+                                    <h3>Oprava 3D tiskáren</h3>
+                                    <p>Všechny značky a modely</p>
                                 </div>
                                 <div class="device-arrow">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1461,13 +1429,11 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            Back
-                        </button>
+                            </svg>Zpět</button>
                         <div class="step-header">
                             <div class="step-header-icon" id="brandHeaderIcon"></div>
-                            <h2>Select your <span id="deviceTypeName">Phone</span> brand</h2>
-                            <p>Choose the manufacturer</p>
+                            <h2>Vyberte značku pro <span id="deviceTypeName">Telefon</span></h2>
+                            <p>Vyberte výrobce</p>
                         </div>
                         <div class="brand-grid" id="brandGrid"></div>
                     </div>
@@ -1478,13 +1444,11 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            Back
-                        </button>
+                            </svg>Zpět</button>
                         <div class="step-header">
                             <div class="step-header-icon" id="modelHeaderIcon"></div>
-                            <h2>Select your <span id="brandName">Apple</span> model</h2>
-                            <p>Choose your specific model</p>
+                            <h2>Vyberte model <span id="brandName">Apple</span></h2>
+                            <p>Vyberte konkrétní model</p>
                         </div>
                         <div class="model-grid" id="modelGrid"></div>
                     </div>
@@ -1495,12 +1459,10 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            Back
-                        </button>
+                            </svg>Zpět</button>
                         <div class="step-header">
                             <div class="step-header-icon" id="repairHeaderIcon"></div>
-                            <h2>What needs to be repaired?</h2>
+                            <h2>Co je potřeba opravit?</h2>
                             <p id="selectedDeviceInfo">Apple iPhone 15 Pro</p>
                         </div>
                         <div class="repair-grid" id="repairGrid"></div>
@@ -1513,45 +1475,45 @@
         <section id="about" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>About EzFix</h1>
-                    <p>Your trusted partner for device repairs</p>
+                    <h1>O EzFix</h1>
+                    <p>Váš spolehlivý partner pro opravy zařízení</p>
                 </div>
             </div>
             <div class="container">
                 <div class="about-content">
                     <div class="about-text">
-                        <h2>Who We Are</h2>
-                        <p>With years of experience in electronics repair, EzFix has become the trusted choice for device repairs in our community. Our certified technicians use only quality parts and provide warranties on all repairs.</p>
-                        <p>We believe in transparent pricing, honest assessments, and getting your device back to you as quickly as possible without compromising on quality.</p>
+                        <h2>Kdo jsme</h2>
+                        <p>Díky dlouholetým zkušenostem v opravách elektroniky se EzFix stal důvěryhodnou volbou pro opravy zařízení v našem regionu. Naši certifikovaní technici používají pouze kvalitní díly a poskytují záruku na všechny opravy.</p>
+                        <p>Věříme v transparentní ceny, poctivé posouzení a co nejrychlejší vrácení zařízení bez kompromisů v kvalitě.</p>
                         <ul class="about-features">
-                            <li><span class="feature-check">&#10003;</span> Certified technicians</li>
-                            <li><span class="feature-check">&#10003;</span> 90-day warranty on all repairs</li>
-                            <li><span class="feature-check">&#10003;</span> Same-day service available</li>
-                            <li><span class="feature-check">&#10003;</span> Free diagnostics</li>
-                            <li><span class="feature-check">&#10003;</span> Quality replacement parts</li>
+                            <li><span class="feature-check">&#10003;</span> Certifikovaní technici</li>
+                            <li><span class="feature-check">&#10003;</span> 90denní záruka na všechny opravy</li>
+                            <li><span class="feature-check">&#10003;</span> Možnost opravy v tentýž den</li>
+                            <li><span class="feature-check">&#10003;</span> Diagnostika zdarma</li>
+                            <li><span class="feature-check">&#10003;</span> Kvalitní náhradní díly</li>
                         </ul>
                     </div>
                     <div class="about-stats">
                         <div class="stat">
                             <span class="stat-number">5000+</span>
-                            <span class="stat-label">Devices Repaired</span>
+                            <span class="stat-label">Opravených zařízení</span>
                         </div>
                         <div class="stat">
                             <span class="stat-number">98%</span>
-                            <span class="stat-label">Customer Satisfaction</span>
+                            <span class="stat-label">Spokojenost zákazníků</span>
                         </div>
                         <div class="stat">
                             <span class="stat-number">24h</span>
-                            <span class="stat-label">Average Turnaround</span>
+                            <span class="stat-label">Průměrná doba opravy</span>
                         </div>
                         <div class="stat">
                             <span class="stat-number">5+</span>
-                            <span class="stat-label">Years Experience</span>
+                            <span class="stat-label">Let zkušeností</span>
                         </div>
                     </div>
                 </div>
                 <div class="location-section">
-                    <h2>Find Us</h2>
+                    <h2>Kde nás najdete</h2>
                     <div class="location-content">
                         <div class="location-info">
                             <div class="info-item">
@@ -1560,7 +1522,7 @@
                                     <circle cx="12" cy="10" r="3"></circle>
                                 </svg>
                                 <div>
-                                    <strong>Address</strong>
+                                    <strong>Adresa</strong>
                                     <p>U řezné 361<br>Železna Ruda</p>
                                 </div>
                             </div>
@@ -1570,7 +1532,7 @@
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
                                 <div>
-                                    <strong>Hours</strong>
+                                    <strong>Otevírací doba</strong>
                                     <p>Po - Pa: 10:00 - 20:00<br>So-Ne: Zavřeno</p>
                                 </div>
                             </div>
@@ -1579,9 +1541,9 @@
                                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                                 </svg>
                                 <div>
-                                    <strong>Phone</strong>
+                                    <strong>Telefon</strong>
                                     <p>+420 732 434 201</p>
-                                    <strong>Email</strong>
+                                    <strong>E-mail</strong>
                                     <p>podpora@ezfix.cz</p>
                                 </div>
                             </div>
@@ -1628,7 +1590,7 @@
                         </article>
 
                         <article class="contact-card">
-                            <h3>Spolu Majitel</h3>
+                            <h3>Spolumajitel</h3>
                             <p class="contact-person">Dominik Pokorný</p>
                             <a class="contact-email" href="mailto:dpokorny@ezfix.cz">dpokorny@ezfix.cz</a>
                         </article>
@@ -1641,8 +1603,8 @@
         <section id="cart" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>Your Cart</h1>
-                    <p>Review your repair services</p>
+                    <h1>Váš košík</h1>
+                    <p>Zkontrolujte své opravárenské služby</p>
                 </div>
             </div>
             <div class="container">
@@ -1654,28 +1616,28 @@
                                 <circle cx="20" cy="21" r="1"></circle>
                                 <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                             </svg>
-                            <h3>Your cart is empty</h3>
-                            <p>Add repair services to get started</p>
-                            <a href="#" class="btn btn-primary" data-page="services">Browse Services</a>
+                            <h3>Váš košík je prázdný</h3>
+                            <p>Přidejte opravné služby pro začátek</p>
+                            <a href="#" class="btn btn-primary" data-page="services">Prohlédnout služby</a>
                         </div>
                     </div>
                     <div class="cart-summary" id="cartSummary">
-                        <h3>Order Summary</h3>
+                        <h3>Shrnutí objednávky</h3>
                         <div class="summary-row">
-                            <span>Subtotal</span>
+                            <span>Mezisoučet</span>
                             <span id="cartSubtotal">0 Kč</span>
                         </div>
                         <div class="summary-row">
-                            <span>Diagnostic Fee</span>
-                            <span class="free">FREE</span>
+                            <span>Poplatek za diagnostiku</span>
+                            <span class="free">ZDARMA</span>
                         </div>
                         <div class="summary-row total">
-                            <span>Total</span>
+                            <span>Celkem</span>
                             <span id="cartTotal">0 Kč</span>
                         </div>
-                        <p class="summary-note">* Final price may vary based on diagnosis</p>
-                        <button class="btn btn-primary btn-full" id="checkoutBtn">Proceed to Checkout</button>
-                        <a href="#" class="btn btn-secondary btn-full" data-page="services">Add More Services</a>
+                        <p class="summary-note">* Konečná cena se může lišit podle diagnostiky</p>
+                        <button class="btn btn-primary btn-full" id="checkoutBtn">Pokračovat k pokladně</button>
+                        <a href="#" class="btn btn-secondary btn-full" data-page="services">Přidat další služby</a>
                     </div>
                 </div>
             </div>
@@ -1685,8 +1647,8 @@
         <section id="checkout" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>Checkout</h1>
-                    <p>Complete your repair order</p>
+                    <h1>Pokladna</h1>
+                    <p>Dokončete svou objednávku opravy</p>
                 </div>
             </div>
             <div class="container">
@@ -1695,7 +1657,7 @@
                         <!-- Email Section -->
                         <div class="checkout-section">
                             <div class="form-group">
-                                <label for="checkoutEmail">Email Address</label>
+                                <label for="checkoutEmail">E-mailová adresa</label>
                                 <input type="email" id="checkoutEmail" name="email" required>
                                 <span class="form-error" id="emailError"></span>
                             </div>
@@ -1703,85 +1665,85 @@
 
                         <!-- Delivery Option Section -->
                         <div class="checkout-section">
-                            <h3>Delivery Option</h3>
+                            <h3>Možnost doručení</h3>
                             <div class="service-options">
                                 <label class="service-option">
                                     <input type="radio" name="serviceType" value="delivery" checked>
                                     <div class="option-content">
-                                        <strong>Drop-off at Store</strong>
-                                        <span>Bring your device to our location</span>
+                                        <strong>Předání na pobočce</strong>
+                                        <span>Přineste zařízení na naši pobočku</span>
                                     </div>
                                 </label>
                                 <label class="service-option">
                                     <input type="radio" name="serviceType" value="pickup">
                                     <div class="option-content">
-                                        <strong>Pickup Service</strong>
-                                        <span>We'll pick up your device (+ <span id="pickupFeeLabel">15 Kč</span>)</span>
+                                        <strong>Svoz zařízení</strong>
+                                        <span>Zařízení u vás vyzvedneme (+ <span id="pickupFeeLabel">15 Kč</span>)</span>
                                     </div>
                                 </label>
                                 <label class="service-option">
                                     <input type="radio" name="serviceType" value="zasilkovna">
                                     <div class="option-content">
                                         <strong>Zasilkovna</strong>
-                                        <span>Pick-up point delivery (+ <span id="packetaFeeLabel">90 Kč</span>)</span>
+                                        <span>Doručení na výdejní místo (+ <span id="packetaFeeLabel">90 Kč</span>)</span>
                                     </div>
                                 </label>
                                 <label class="service-option">
                                     <input type="radio" name="serviceType" value="ceska-posta">
                                     <div class="option-content">
                                         <strong>Česká pošta</strong>
-                                        <span>Czech Post delivery (+ <span id="ceska-posta-fee-label">0 Kč</span>)</span>
+                                        <span>Doručení Českou poštou (+ <span id="ceska-posta-fee-label">0 Kč</span>)</span>
                                     </div>
                                 </label>
                                 <label class="service-option">
                                     <input type="radio" name="serviceType" value="ppl">
                                     <div class="option-content">
                                         <strong>PPL</strong>
-                                        <span>PPL delivery (+ <span id="ppl-fee-label">0 Kč</span>)</span>
+                                        <span>Doručení PPL (+ <span id="ppl-fee-label">0 Kč</span>)</span>
                                     </div>
                                 </label>
                                 <label class="service-option">
                                     <input type="radio" name="serviceType" value="dpd">
                                     <div class="option-content">
                                         <strong>DPD</strong>
-                                        <span>DPD delivery (+ <span id="dpd-fee-label">0 Kč</span>)</span>
+                                        <span>Doručení DPD (+ <span id="dpd-fee-label">0 Kč</span>)</span>
                                     </div>
                                 </label>
                                 <label class="service-option">
                                     <input type="radio" name="serviceType" value="gls">
                                     <div class="option-content">
                                         <strong>GLS</strong>
-                                        <span>GLS delivery (+ <span id="gls-fee-label">0 Kč</span>)</span>
+                                        <span>Doručení GLS (+ <span id="gls-fee-label">0 Kč</span>)</span>
                                     </div>
                                 </label>
                             </div>
                         </div>
 
                         <div class="checkout-section" id="packetaSection" style="display:none;">
-                            <h3>Zasilkovna Pickup Point</h3>
+                            <h3>Výdejní místo Zásilkovny</h3>
                             <div class="form-group">
-                                <div class="form-helper" id="packetaPointDisplay">No pickup point selected</div>
+                                <div class="form-helper" id="packetaPointDisplay">Není vybrané žádné výdejní místo</div>
                                 <span class="form-error" id="packetaError"></span>
                             </div>
                         </div>
 
                         <!-- Personal Information -->
                         <div class="checkout-section">
-                            <h3>Personal Information</h3>
+                            <h3>Osobní údaje</h3>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="checkoutFirstName">First Name</label>
+                                    <label for="checkoutFirstName">Jméno</label>
                                     <input type="text" id="checkoutFirstName" name="firstName" required>
                                     <span class="form-error" id="firstNameError"></span>
                                 </div>
                                 <div class="form-group">
-                                    <label for="checkoutLastName">Last Name</label>
+                                    <label for="checkoutLastName">Příjmení</label>
                                     <input type="text" id="checkoutLastName" name="lastName" required>
                                     <span class="form-error" id="lastNameError"></span>
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="checkoutPhone">Phone Number</label>
+                                <label for="checkoutPhone">Telefonní číslo</label>
                                 <div style="display: flex; gap: 8px;">
                                     <select id="countryCode" name="countryCode" required style="flex: 0 0 100px; padding: 12px 8px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; font-weight: 600;">
                                         <option value="+420">🇨🇿 +420</option>
@@ -1811,7 +1773,7 @@
                                         <option value="+55">🇧🇷 +55</option>
                                         <option value="+82">🇰🇷 +82</option>
                                     </select>
-                                    <input type="tel" id="checkoutPhone" name="phone" placeholder="Phone number" required style="flex: 1;">
+                                    <input type="tel" id="checkoutPhone" name="phone" placeholder="Telefonní číslo" required style="flex: 1;">
                                 </div>
                                 <span class="form-error" id="phoneError"></span>
                             </div>
@@ -1819,37 +1781,37 @@
 
                         <!-- Delivery Address -->
                         <div class="checkout-section" id="addressSection" style="display:none;">
-                            <h3>Delivery Address</h3>
+                            <h3>Doručovací adresa</h3>
                             <div class="form-group">
-                                <label for="checkoutAddress">Street Address</label>
-                                <input type="text" id="checkoutAddress" name="address" placeholder="Street and number">
+                                <label for="checkoutAddress">Ulice a číslo</label>
+                                <input type="text" id="checkoutAddress" name="address" placeholder="Ulice a číslo">
                                 <span class="form-error" id="addressError"></span>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="checkoutCity">City</label>
-                                    <input type="text" id="checkoutCity" name="city" placeholder="City">
+                                    <label for="checkoutCity">Město</label>
+                                    <input type="text" id="checkoutCity" name="city" placeholder="Město">
                                     <span class="form-error" id="cityError"></span>
                                 </div>
                                 <div class="form-group">
-                                    <label for="checkoutZip">ZIP Code</label>
-                                    <input type="text" id="checkoutZip" name="zip" placeholder="ZIP code">
+<label for="checkoutZip">PSČ</label>
+                                <input type="text" id="checkoutZip" name="zip" placeholder="PSČ">
                                     <span class="form-error" id="zipError"></span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Country Selection -->
+                        <!-- Výběr země -->
                         <div class="checkout-section">
                             <div class="form-group">
-                                <label for="checkoutCountry">Country</label>
+                                <label for="checkoutCountry">Země</label>
                                 <select id="checkoutCountry" name="country" required>
-                                    <option value="Czech Republic" selected>Czech Republic</option>
-                                    <option value="Slovakia">Slovakia</option>
-                                    <option value="Poland">Poland</option>
-                                    <option value="Germany">Germany</option>
-                                    <option value="Austria">Austria</option>
-                                    <option value="Other">Other</option>
+                                    <option value="Czech Republic" selected>Česká republika</option>
+                                    <option value="Slovakia">Slovensko</option>
+                                    <option value="Poland">Polsko</option>
+                                    <option value="Germany">Německo</option>
+                                    <option value="Austria">Rakousko</option>
+                                    <option value="Other">Jiná</option>
                                 </select>
                                 <span class="form-error" id="countryError"></span>
                             </div>
@@ -1857,35 +1819,35 @@
 
                         <!-- Payment Method -->
                         <div class="checkout-section">
-                            <h3>Payment Method</h3>
+                            <h3>Způsob platby</h3>
                             <div class="service-options">
                                 <label class="service-option">
                                     <input type="radio" name="paymentMethod" value="pay_on_delivery" checked>
                                     <div class="option-content">
-                                        <strong>Pay on Delivery</strong>
-                                        <span>Pay when service is completed</span>
+                                        <strong>Platba při převzetí</strong>
+                                        <span>Zaplatíte po dokončení služby</span>
                                     </div>
                                 </label>
                                 <label class="service-option" id="paymentOptionGoPay">
                                     <input type="radio" name="paymentMethod" value="gopay">
                                     <div class="option-content">
                                         <strong>GoPay</strong>
-                                        <span>Online card payment (+ <span id="gopayFeeLabel">0 Kč</span>)</span>
+                                        <span>Online platba kartou (+ <span id="gopayFeeLabel">0 Kč</span>)</span>
                                     </div>
                                 </label>
                                 <label class="service-option" id="paymentOptionBankTransfer" style="display:none;">
                                     <input type="radio" name="paymentMethod" value="bank_transfer">
                                     <div class="option-content">
-                                        <strong>Bank Transfer</strong>
-                                        <span>Pay by bank transfer (+ <span id="bankTransferFeeLabel">0 Kč</span>)</span>
+                                        <strong>Bankovní převod</strong>
+                                        <span>Platba bankovním převodem (+ <span id="bankTransferFeeLabel">0 Kč</span>)</span>
                                     </div>
                                 </label>
                             </div>
                             <div id="gopaySection" class="form-helper" style="display:none; margin-top:12px;">
-                                GoPay redirect is a placeholder until GoPay is connected.
+                                Přesměrování GoPay je dočasné, dokud nebude GoPay plně připojen.
                             </div>
                             <div id="bankTransferSection" class="form-helper" style="display:none; margin-top:12px;">
-                                Bank transfer instructions will be sent after your order is created.
+                                Pokyny k bankovnímu převodu odešleme po vytvoření objednávky.
                             </div>
                             <span class="form-error" id="paymentMethodError"></span>
                         </div>
@@ -1893,8 +1855,8 @@
                         <!-- Notes Section -->
                         <div class="checkout-section">
                             <div class="form-group">
-                                <label for="checkoutNotes">Notes (Optional)</label>
-                                <textarea id="checkoutNotes" name="notes" rows="3" placeholder="Special instructions or notes..."></textarea>
+                                <label for="checkoutNotes">Poznámky (volitelné)</label>
+                                <textarea id="checkoutNotes" name="notes" rows="3" placeholder="Speciální pokyny nebo poznámky..."></textarea>
                             </div>
                         </div>
 
@@ -1903,7 +1865,7 @@
                             <div class="checkbox-group">
                                 <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.9rem;">
                                     <input type="checkbox" id="termsCheckbox" name="terms" required style="margin-top: 4px;">
-                                    <span>I agree with the <a href="#" id="termsLink" style="color: #3b82f6; text-decoration: underline;">terms and conditions</a></span>
+                                    <span>Souhlasím s <a href="#" id="termsLink" style="color: #3b82f6; text-decoration: underline;">obchodními podmínkami</a></span>
                                 </label>
                                 <span class="form-error" id="termsError"></span>
                             </div>
@@ -1911,18 +1873,18 @@
 
                         <!-- Submit Button -->
                         <div class="checkout-section">
-                            <button type="submit" class="btn btn-primary btn-full">Place Order</button>
+                            <button type="submit" class="btn btn-primary btn-full">Odeslat objednávku</button>
                         </div>
                     </form>
                     <div class="checkout-summary">
-                        <h3>Your Order</h3>
+                        <h3>Vaše objednávka</h3>
                         <div class="checkout-items" id="checkoutItems"></div>
                         <div class="summary-row">
-                            <span>Subtotal</span>
+                            <span>Mezisoučet</span>
                             <span id="checkoutSubtotal">0 Kč</span>
                         </div>
                         <div class="summary-row" id="pickupFeeRow" style="display:none;">
-                            <span>Pickup Fee</span>
+                            <span>Poplatek za vyzvednutí</span>
                             <span id="pickupFeeValue">15 Kč</span>
                         </div>
                         <div class="summary-row" id="packetaFeeRow" style="display:none;">
@@ -1930,27 +1892,27 @@
                             <span id="packetaFeeValue">90 Kč</span>
                         </div>
                         <div class="summary-row" id="ceska-posta-fee-row" style="display:none;">
-                            <span>Česká pošta Fee</span>
+                            <span>Poplatek Česká pošta</span>
                             <span id="ceska-posta-fee-value">0 Kč</span>
                         </div>
                         <div class="summary-row" id="ppl-fee-row" style="display:none;">
-                            <span>PPL Fee</span>
+                            <span>Poplatek PPL</span>
                             <span id="ppl-fee-value">0 Kč</span>
                         </div>
                         <div class="summary-row" id="dpd-fee-row" style="display:none;">
-                            <span>DPD Fee</span>
+                            <span>Poplatek DPD</span>
                             <span id="dpd-fee-value">0 Kč</span>
                         </div>
                         <div class="summary-row" id="gls-fee-row" style="display:none;">
-                            <span>GLS Fee</span>
+                            <span>Poplatek GLS</span>
                             <span id="gls-fee-value">0 Kč</span>
                         </div>
                         <div class="summary-row" id="paymentFeeRow" style="display:none;">
-                            <span>Payment Fee</span>
+                            <span>Poplatek za platbu</span>
                             <span id="paymentFeeValue">0 Kč</span>
                         </div>
                         <div class="summary-row total">
-                            <span>Total</span>
+                            <span>Celkem</span>
                             <span id="checkoutTotal">0 Kč</span>
                         </div>
                     </div>
@@ -1962,31 +1924,31 @@
         <section id="track" class="page">
             <div class="page-header-dark">
                 <div class="container">
-                    <h1>Track Your Order</h1>
-                    <p>Check the latest status on your repair</p>
+                    <h1>Sledování objednávky</h1>
+                    <p>Zkontrolujte aktuální stav své opravy</p>
                 </div>
             </div>
             <div class="container">
                 <div class="track-wrapper">
                     <form class="track-form" id="trackForm">
                         <div class="track-form-header">
-                            <h2>Find your order</h2>
-                            <p>Enter your order number and email address.</p>
+                            <h2>Najděte svou objednávku</h2>
+                            <p>Zadejte číslo objednávky a e-mailovou adresu.</p>
                         </div>
                         <div class="form-group">
-                            <label for="trackOrderNumber">Order Number</label>
+                            <label for="trackOrderNumber">Číslo objednávky</label>
                             <input type="text" id="trackOrderNumber" name="orderNumber" placeholder="EZF-1234567890" required>
                         </div>
                         <div class="form-group">
-                            <label for="trackEmail">Email Address</label>
+                            <label for="trackEmail">E-mailová adresa</label>
                             <input type="email" id="trackEmail" name="email" placeholder="you@example.com" required>
                         </div>
-                        <button class="btn btn-primary btn-full" type="submit">Track Order</button>
+                        <button class="btn btn-primary btn-full" type="submit">Sledovat objednávku</button>
                     </form>
                     <div class="track-result" id="trackResult">
                         <div class="track-empty">
-                            <h3>No tracking details yet</h3>
-                            <p>Submit your order number to see status updates and items.</p>
+                            <h3>Zatím nejsou dostupné údaje o sledování</h3>
+                            <p>Odešlete číslo objednávky pro zobrazení stavu a položek.</p>
                         </div>
                     </div>
                 </div>
@@ -2005,6 +1967,14 @@
                 <div class="admin-wrapper">
                     <!-- Main Tabs: Repairs vs Custom PC -->
                     <div class="admin-tabs">
+                        <button class="admin-tab-btn" data-tab="all-orders">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18"></path>
+                                <path d="M3 12h18"></path>
+                                <path d="M3 18h18"></path>
+                            </svg>
+                            Všechny objednávky
+                        </button>
                         <button class="admin-tab-btn active" data-tab="repairs">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
@@ -2116,9 +2086,31 @@
                                 <option value="other-items">Jiné položky</option>
                                 <option value="used-shop">Bazar</option>
                             </select>
+                            <input
+                                type="text"
+                                id="allOrdersSearchInput"
+                                class="admin-filter"
+                                placeholder="Hledat číslo objednávky nebo faktury"
+                            >
                             <button class="btn btn-primary" id="createManualOrderBtn">Vytvořit objednávku</button>
                             <button class="btn btn-secondary" id="createCustomInvoiceBtn">Vytvořit fakturu</button>
                             <button class="btn btn-secondary" id="clearOrdersBtn">Vymazat všechny objednávky</button>
+                        </div>
+                    </div>
+
+                    <!-- All Orders Tab Content -->
+                    <div id="all-orders-content" class="admin-tab-content">
+                        <div class="orders-list" id="allOrdersList">
+                            <div class="no-orders">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                                <h3>Žádné objednávky zatím</h3>
+                                <p>Všechny objednávky se zobrazí zde</p>
+                            </div>
                         </div>
                     </div>
 
@@ -2488,7 +2480,7 @@
                                             <textarea id="catalogServicesInput" class="catalog-textarea" rows="12"></textarea>
                                         </div>
                                         <div>
-                                            <h4>Custom Builds</h4>
+                                            <h4>Vlastní sestavy</h4>
                                             <textarea id="catalogBuildsInput" class="catalog-textarea" rows="12"></textarea>
                                         </div>
                                         <div>
@@ -2496,7 +2488,7 @@
                                             <textarea id="catalogPrintingInput" class="catalog-textarea" rows="12"></textarea>
                                         </div>
                                         <div>
-                                            <h4>Checkout</h4>
+                                            <h4>Pokladna</h4>
                                             <textarea id="catalogCheckoutInput" class="catalog-textarea" rows="12"></textarea>
                                         </div>
                                         <div>
@@ -2553,55 +2545,60 @@
                             </section>
                         </div>
 
-                        <section class="admin-chat-ai-config" id="adminChatAiConfig">
+                        <section class="admin-chat-ai-config admin-chat-ai-config-collapsed" id="adminChatAiConfig">
                             <div class="admin-chat-ai-config-header">
                                 <h3>AI odpovědi bota</h3>
-                                <button type="button" class="btn btn-sm btn-secondary" id="adminChatAiReloadBtn">Načíst znovu</button>
+                                <div class="admin-chat-ai-config-header-actions">
+                                    <button type="button" class="btn btn-sm btn-secondary" id="adminChatAiToggleBtn" aria-expanded="false">Rozbalit</button>
+                                    <button type="button" class="btn btn-sm btn-secondary" id="adminChatAiReloadBtn">Načíst znovu</button>
+                                </div>
                             </div>
-                            <p class="admin-chat-ai-config-note">Přizpůsobte automatické AI odpovědi pro běžná témata chatu.</p>
+                            <div class="admin-chat-ai-config-body" id="adminChatAiConfigBody">
+                                <p class="admin-chat-ai-config-note">Přizpůsobte automatické AI odpovědi pro běžná témata chatu.</p>
 
-                            <div class="admin-chat-ai-grid">
-                                <div class="admin-chat-ai-field">
-                                    <label for="adminChatAiKeywordsEmail">Klíčová slova e-mail</label>
-                                    <input id="adminChatAiKeywordsEmail" type="text" placeholder="email, mail, kontakt" maxlength="300">
+                                <div class="admin-chat-ai-grid">
+                                    <div class="admin-chat-ai-field">
+                                        <label for="adminChatAiKeywordsEmail">Klíčová slova e-mail</label>
+                                        <input id="adminChatAiKeywordsEmail" type="text" placeholder="email, mail, kontakt" maxlength="300">
+                                    </div>
+                                    <div class="admin-chat-ai-field">
+                                        <label for="adminChatAiKeywordsPhone">Klíčová slova telefon</label>
+                                        <input id="adminChatAiKeywordsPhone" type="text" placeholder="telefon, phone, call" maxlength="300">
+                                    </div>
+                                    <div class="admin-chat-ai-field">
+                                        <label for="adminChatAiKeywordsPrice">Klíčová slova cena</label>
+                                        <input id="adminChatAiKeywordsPrice" type="text" placeholder="cena, price, kolik" maxlength="300">
+                                    </div>
+                                    <div class="admin-chat-ai-field">
+                                        <label for="adminChatAiKeywordsRepair">Klíčová slova oprava</label>
+                                        <input id="adminChatAiKeywordsRepair" type="text" placeholder="oprava, servis, repair" maxlength="300">
+                                    </div>
                                 </div>
-                                <div class="admin-chat-ai-field">
-                                    <label for="adminChatAiKeywordsPhone">Klíčová slova telefon</label>
-                                    <input id="adminChatAiKeywordsPhone" type="text" placeholder="telefon, phone, call" maxlength="300">
-                                </div>
-                                <div class="admin-chat-ai-field">
-                                    <label for="adminChatAiKeywordsPrice">Klíčová slova cena</label>
-                                    <input id="adminChatAiKeywordsPrice" type="text" placeholder="cena, price, kolik" maxlength="300">
-                                </div>
-                                <div class="admin-chat-ai-field">
-                                    <label for="adminChatAiKeywordsRepair">Klíčová slova oprava</label>
-                                    <input id="adminChatAiKeywordsRepair" type="text" placeholder="oprava, servis, repair" maxlength="300">
-                                </div>
-                            </div>
 
-                            <div class="admin-chat-ai-field">
-                                <label for="adminChatAiReplyEmail">Odpověď na e-mail</label>
-                                <textarea id="adminChatAiReplyEmail" rows="3" maxlength="1200"></textarea>
-                            </div>
-                            <div class="admin-chat-ai-field">
-                                <label for="adminChatAiReplyPhone">Odpověď na telefon</label>
-                                <textarea id="adminChatAiReplyPhone" rows="3" maxlength="1200"></textarea>
-                            </div>
-                            <div class="admin-chat-ai-field">
-                                <label for="adminChatAiReplyPrice">Odpověď na cenu</label>
-                                <textarea id="adminChatAiReplyPrice" rows="3" maxlength="1200"></textarea>
-                            </div>
-                            <div class="admin-chat-ai-field">
-                                <label for="adminChatAiReplyRepair">Odpověď na opravu/servis</label>
-                                <textarea id="adminChatAiReplyRepair" rows="3" maxlength="1200"></textarea>
-                            </div>
-                            <div class="admin-chat-ai-field">
-                                <label for="adminChatAiReplyFallback">Náhradní odpověď (když žádné klíčové slovo nesedí)</label>
-                                <textarea id="adminChatAiReplyFallback" rows="3" maxlength="1200"></textarea>
-                            </div>
+                                <div class="admin-chat-ai-field">
+                                    <label for="adminChatAiReplyEmail">Odpověď na e-mail</label>
+                                    <textarea id="adminChatAiReplyEmail" rows="3" maxlength="1200"></textarea>
+                                </div>
+                                <div class="admin-chat-ai-field">
+                                    <label for="adminChatAiReplyPhone">Odpověď na telefon</label>
+                                    <textarea id="adminChatAiReplyPhone" rows="3" maxlength="1200"></textarea>
+                                </div>
+                                <div class="admin-chat-ai-field">
+                                    <label for="adminChatAiReplyPrice">Odpověď na cenu</label>
+                                    <textarea id="adminChatAiReplyPrice" rows="3" maxlength="1200"></textarea>
+                                </div>
+                                <div class="admin-chat-ai-field">
+                                    <label for="adminChatAiReplyRepair">Odpověď na opravu/servis</label>
+                                    <textarea id="adminChatAiReplyRepair" rows="3" maxlength="1200"></textarea>
+                                </div>
+                                <div class="admin-chat-ai-field">
+                                    <label for="adminChatAiReplyFallback">Náhradní odpověď (když žádné klíčové slovo nesedí)</label>
+                                    <textarea id="adminChatAiReplyFallback" rows="3" maxlength="1200"></textarea>
+                                </div>
 
-                            <div class="admin-chat-ai-actions">
-                                <button type="button" class="btn btn-primary" id="adminChatAiSaveBtn">Uložit AI odpovědi</button>
+                                <div class="admin-chat-ai-actions">
+                                    <button type="button" class="btn btn-primary" id="adminChatAiSaveBtn">Uložit AI odpovědi</button>
+                                </div>
                             </div>
                         </section>
                     </div>
@@ -2748,7 +2745,7 @@
                     <a href="#" class="logo" data-page="home">
                         <img src="assets/logos/ezfix-logo.png" alt="EzFix logo" class="footer-logo" loading="lazy" decoding="async">
                     </a>
-                    <p>Your trusted partner for all device repairs.</p>
+                    <p>Váš spolehlivý partner pro opravy všech zařízení.</p>
                     <div class="footer-social">
                         <a href="#" class="social-link" id="footerInstagram" aria-label="Instagram" target="_blank" rel="noopener noreferrer" style="display:none;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
@@ -2759,26 +2756,26 @@
                     </div>
                 </div>
                 <div class="footer-links">
-                    <h4>Quick Links</h4>
+                    <h4>Rychlé odkazy</h4>
                     <ul>
-                        <li><a href="#" data-page="home">Home</a></li>
-                        <li><a href="#" data-page="services">Services</a></li>
-                        <li><a href="#" data-page="about">About</a></li>
-                        <li><a href="#" data-page="cart">Cart</a></li>
-                        <li><a href="#" data-page="track">Track Order</a></li>
+                        <li><a href="#" data-page="home">Domů</a></li>
+                        <li><a href="#" data-page="services">Služby</a></li>
+                        <li><a href="#" data-page="about">O nás</a></li>
+                        <li><a href="#" data-page="cart">Košík</a></li>
+                        <li><a href="#" data-page="track">Sledovat objednávku</a></li>
                     </ul>
                 </div>
                 <div class="footer-services">
-                    <h4>Services</h4>
+                    <h4>Služby</h4>
                     <ul>
-                            <li><a href="#" data-page="services">Phone Repair</a></li>
-                            <li><a href="#" data-page="services">Tablet Repair</a></li>
-                            <li><a href="#" data-page="services">Notebook Repair</a></li>
-                            <li><a href="#" data-page="services">PC Repair</a></li>
-                            <li><a href="#" data-page="custompc">Custom Builds</a></li>
-                            <li><a href="#" data-page="printing">3D Printing</a></li>
-                            <li><a href="#" data-page="used-shop">Used Shop</a></li>
-                            <li><a href="#" data-page="other">Other</a></li>
+                        <li><a href="#" data-page="services">Oprava telefonů</a></li>
+                        <li><a href="#" data-page="services">Oprava tabletů</a></li>
+                        <li><a href="#" data-page="services">Oprava notebooků</a></li>
+                        <li><a href="#" data-page="services">Oprava PC</a></li>
+                        <li><a href="#" data-page="custompc">Vlastní sestavy</a></li>
+                        <li><a href="#" data-page="printing">3D tisk</a></li>
+                        <li><a href="#" data-page="used-shop">Bazar</a></li>
+                        <li><a href="#" data-page="other">Ostatní</a></li>
                     </ul>
                 </div>
                 <div class="footer-contact">
@@ -2882,7 +2879,7 @@
         <div class="email-modal-container" role="dialog" aria-modal="true" aria-labelledby="newsDetailsTitle">
             <div class="email-modal-header">
                 <h2 id="newsDetailsTitle">News</h2>
-                <button class="email-modal-close" id="newsDetailsClose" aria-label="Close">x</button>
+                <button class="email-modal-close" id="newsDetailsClose" aria-label="Zavřít">x</button>
             </div>
             <div class="email-modal-content">
                 <div id="newsDetailsBody"></div>
@@ -2896,6 +2893,6 @@
             API_BASE_URL: 'https://api.ezfix.cz/api'
         };
     </script>
-    <script src="script.js?v=20260310o" defer></script>
+    <script src="script.js?v=20260701a" defer></script>
 </body>
 </html>

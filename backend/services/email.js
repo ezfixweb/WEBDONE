@@ -5,6 +5,7 @@
 
 const nodemailer = require('nodemailer');
 const dns = require('dns');
+const pdfMake = require('pdfmake');
 
 try {
     // Render instances sometimes return IPv6 first for SMTP hosts even when IPv6 routing is unavailable.
@@ -32,6 +33,21 @@ const smtpConfigured = Boolean(emailUser && emailPassword);
 const emailConfigured = brevoConfigured || resendConfigured || smtpConfigured;
 const preferredSmtpFamily = Number.isNaN(smtpFamily) ? 4 : smtpFamily;
 const BANK_TRANSFER_SPECIAL_EXTRA_CZK = 10;
+const INVOICE_SUPPLIER = {
+    name: 'EzFix',
+    web: 'ezfix.cz',
+    email: 'ezfix.podpora@gmail.com',
+    phone: '+420 732 434 201'
+};
+
+pdfMake.addFonts({
+    Helvetica: {
+        normal: 'Helvetica',
+        bold: 'Helvetica-Bold',
+        italics: 'Helvetica-Oblique',
+        bolditalics: 'Helvetica-BoldOblique'
+    }
+});
 
 function smtpLookup(hostname, options, callback) {
     const family = preferredSmtpFamily === 6 ? 6 : 4;
@@ -45,6 +61,248 @@ function formatCurrency(value) {
         style: 'currency',
         currency: 'CZK'
     }).format(safeValue);
+}
+
+function formatInvoiceAmount(value) {
+    const amount = Number(value || 0);
+    const safeAmount = Number.isFinite(amount) ? amount : 0;
+    return `${safeAmount.toFixed(2)} Kč`;
+}
+
+function formatInvoiceDate(dateValue) {
+    const date = dateValue ? new Date(dateValue) : new Date();
+    if (!Number.isFinite(date.getTime())) {
+        return new Date().toLocaleDateString('cs-CZ');
+    }
+    return date.toLocaleDateString('cs-CZ');
+}
+
+function toNumericValue(value, fallback = 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeOrderForInvoice(order = {}, fallbackItems = []) {
+    const itemsSource = Array.isArray(order.items) ? order.items : (Array.isArray(fallbackItems) ? fallbackItems : []);
+    const items = itemsSource.map((item) => {
+        const rawQuantity = item.parts ?? item.quantity ?? 1;
+        const quantity = Math.max(1, Math.floor(toNumericValue(rawQuantity, 1)));
+        const unitPrice = Math.max(0, toNumericValue(item.price ?? item.unitPrice, 0));
+        const description = String(
+            item.repair_name
+            || item.repairName
+            || item.repair_type
+            || item.repairType
+            || [item.device, item.brand, item.model].filter(Boolean).join(' ')
+            || 'Položka'
+        ).trim();
+
+        return {
+            description,
+            quantity,
+            unitPrice,
+            total: Number((quantity * unitPrice).toFixed(2))
+        };
+    });
+
+    const addressParts = [order.customer_address, order.customer_city, order.customer_zip, order.country]
+        .map((part) => String(part || '').trim())
+        .filter(Boolean);
+
+    return {
+        ...order,
+        items,
+        customerAddressLine: addressParts.join(', '),
+        total: Number((items.reduce((sum, item) => sum + item.total, 0)).toFixed(2))
+    };
+}
+
+function buildInvoiceNumber(orderNumber = '') {
+    const clean = String(orderNumber || '').replace(/[^a-zA-Z0-9-]/g, '').trim();
+    if (!clean) {
+        const ts = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 12);
+        return `INV-${ts}`;
+    }
+    return `INV-${clean}`;
+}
+
+function buildVariableSymbol(orderNumber = '') {
+    const digits = String(orderNumber || '').replace(/\D/g, '');
+    return digits.slice(-10) || '';
+}
+
+function createPdfBuffer(docDefinition) {
+    return pdfMake.createPdf(docDefinition).getBuffer();
+}
+
+async function buildOrderInvoiceAttachment(order = {}, fallbackItems = []) {
+    const normalized = normalizeOrderForInvoice(order, fallbackItems);
+    const orderNumber = String(normalized.order_number || '').trim();
+    if (!orderNumber) return null;
+
+    const issueDate = normalized.created_at ? new Date(normalized.created_at) : new Date();
+    const dueDate = new Date(issueDate);
+    dueDate.setDate(dueDate.getDate() + 14);
+
+    const rows = normalized.items.map((item, index) => ([
+        { text: String(index + 1), style: 'cell' },
+        { text: item.description, style: 'cell' },
+        { text: String(item.quantity), style: 'cell' },
+        { text: formatInvoiceAmount(item.unitPrice), style: 'cell' },
+        { text: formatInvoiceAmount(item.total), style: 'cellRight' }
+    ]));
+
+    const docDefinition = {
+        pageSize: 'A4',
+        pageMargins: [26, 26, 26, 26],
+        defaultStyle: {
+            font: 'Helvetica',
+            fontSize: 10,
+            color: '#111827'
+        },
+        content: [
+            { text: 'Faktura', style: 'title' },
+            {
+                columns: [
+                    {
+                        width: '*',
+                        stack: [
+                            { text: 'Dodavatel', style: 'sectionTitle' },
+                            { text: INVOICE_SUPPLIER.name, bold: true },
+                            { text: `Web: ${INVOICE_SUPPLIER.web}` },
+                            { text: `E-mail: ${INVOICE_SUPPLIER.email}` },
+                            { text: `Telefon: ${INVOICE_SUPPLIER.phone}` }
+                        ],
+                        margin: [0, 0, 8, 0],
+                        style: 'card'
+                    },
+                    {
+                        width: '*',
+                        stack: [
+                            { text: 'Odběratel', style: 'sectionTitle' },
+                            { text: String(normalized.customer_name || ''), bold: true },
+                            { text: String(normalized.customer_email || '') },
+                            { text: String(normalized.customer_phone || '') },
+                            { text: String(normalized.customerAddressLine || '') }
+                        ],
+                        margin: [8, 0, 0, 0],
+                        style: 'card'
+                    }
+                ],
+                margin: [0, 0, 0, 10]
+            },
+            {
+                columns: [
+                    {
+                        width: '*',
+                        stack: [
+                            { text: `Číslo faktury: ${buildInvoiceNumber(orderNumber)}` },
+                            { text: `Datum vystavení: ${formatInvoiceDate(issueDate)}` },
+                            { text: `Datum splatnosti: ${formatInvoiceDate(dueDate)}` }
+                        ],
+                        margin: [0, 0, 8, 0],
+                        style: 'card'
+                    },
+                    {
+                        width: '*',
+                        stack: [
+                            { text: `Variabilní symbol: ${buildVariableSymbol(orderNumber)}` },
+                            { text: `Objednávka: ${orderNumber}` }
+                        ],
+                        margin: [8, 0, 0, 0],
+                        style: 'card'
+                    }
+                ],
+                margin: [0, 0, 0, 12]
+            },
+            {
+                table: {
+                    headerRows: 1,
+                    widths: [24, '*', 58, 74, 84],
+                    body: [
+                        [
+                            { text: '#', style: 'tableHeader' },
+                            { text: 'Položka', style: 'tableHeader' },
+                            { text: 'Množství', style: 'tableHeader' },
+                            { text: 'Cena/ks', style: 'tableHeader' },
+                            { text: 'Celkem', style: 'tableHeaderRight' }
+                        ],
+                        ...(rows.length > 0 ? rows : [[
+                            { text: '' },
+                            { text: 'Bez položek', colSpan: 4 },
+                            {},
+                            {},
+                            {}
+                        ]])
+                    ]
+                },
+                layout: {
+                    hLineColor: '#e5e7eb',
+                    vLineColor: '#e5e7eb',
+                    fillColor: (rowIndex) => (rowIndex === 0 ? '#f3f4f6' : null)
+                }
+            },
+            {
+                columns: [
+                    { width: '*', text: '' },
+                    {
+                        width: 230,
+                        table: {
+                            widths: ['*', 'auto'],
+                            body: [[
+                                { text: 'Celkem k úhradě', bold: true, fontSize: 11 },
+                                { text: formatInvoiceAmount(normalized.total), bold: true, fontSize: 11 }
+                            ]]
+                        },
+                        layout: {
+                            hLineColor: '#e5e7eb',
+                            vLineColor: '#e5e7eb'
+                        },
+                        margin: [0, 12, 0, 0]
+                    }
+                ]
+            },
+            normalized.notes
+                ? { text: `Poznámka:\n${String(normalized.notes)}`, margin: [0, 16, 0, 0] }
+                : { text: '' }
+        ],
+        styles: {
+            title: {
+                fontSize: 24,
+                bold: true,
+                margin: [0, 0, 0, 12]
+            },
+            sectionTitle: {
+                fontSize: 11,
+                bold: true,
+                margin: [0, 0, 0, 6]
+            },
+            card: {
+                margin: [0, 0, 0, 0]
+            },
+            tableHeader: {
+                bold: true
+            },
+            tableHeaderRight: {
+                bold: true,
+                alignment: 'right'
+            },
+            cell: {
+                margin: [0, 2, 0, 2]
+            },
+            cellRight: {
+                margin: [0, 2, 0, 2],
+                alignment: 'right'
+            }
+        }
+    };
+
+    const pdfBuffer = await createPdfBuffer(docDefinition);
+    return {
+        filename: `faktura-${orderNumber}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+    };
 }
 
 function formatServiceType(serviceType) {
@@ -181,6 +439,27 @@ function ensureEmailConfigured(actionName) {
 
 async function sendMailWithRetry(mailOptions, context = 'Email', maxAttempts = 3) {
     const sendOnce = async () => {
+        const rawAttachments = Array.isArray(mailOptions.attachments) ? mailOptions.attachments : [];
+        const apiAttachments = rawAttachments
+            .map((attachment) => {
+                const filename = String(attachment?.filename || '').trim();
+                if (!filename) return null;
+
+                const content = attachment?.content;
+                const base64 = Buffer.isBuffer(content)
+                    ? content.toString('base64')
+                    : (typeof content === 'string' ? Buffer.from(content).toString('base64') : '');
+
+                if (!base64) return null;
+
+                return {
+                    filename,
+                    content: base64,
+                    contentType: String(attachment?.contentType || 'application/octet-stream')
+                };
+            })
+            .filter(Boolean);
+
         if (brevoConfigured) {
             const toList = String(mailOptions.to || '')
                 .split(',')
@@ -206,7 +485,15 @@ async function sendMailWithRetry(mailOptions, context = 'Email', maxAttempts = 3
                     },
                     to: toList,
                     subject: mailOptions.subject,
-                    htmlContent: mailOptions.html
+                    htmlContent: mailOptions.html,
+                    ...(apiAttachments.length > 0
+                        ? {
+                            attachment: apiAttachments.map((attachment) => ({
+                                name: attachment.filename,
+                                content: attachment.content
+                            }))
+                        }
+                        : {})
                 })
             });
 
@@ -239,7 +526,16 @@ async function sendMailWithRetry(mailOptions, context = 'Email', maxAttempts = 3
                     from: resendFrom || mailOptions.from,
                     to: toList,
                     subject: mailOptions.subject,
-                    html: mailOptions.html
+                    html: mailOptions.html,
+                    ...(apiAttachments.length > 0
+                        ? {
+                            attachments: apiAttachments.map((attachment) => ({
+                                filename: attachment.filename,
+                                content: attachment.content,
+                                content_type: attachment.contentType
+                            }))
+                        }
+                        : {})
                 })
             });
 
@@ -385,11 +681,23 @@ async function sendOrderConfirmationEmail(customerEmail, customerName, orderNumb
             </html>
         `;
 
+        const invoiceAttachment = await buildOrderInvoiceAttachment(
+            {
+                ...order,
+                order_number: orderNumber,
+                customer_name: order.customer_name || customerName,
+                customer_email: order.customer_email || customerEmail,
+                items
+            },
+            items
+        );
+
         const mailOptions = {
             from: smtpFrom,
             to: customerEmail,
             subject: `Potvrzení objednávky #${orderNumber}`,
-            html: emailHTML
+            html: emailHTML,
+            ...(invoiceAttachment ? { attachments: [invoiceAttachment] } : {})
         };
 
         const info = await sendMailWithRetry(mailOptions, 'Order confirmation email');
@@ -497,11 +805,14 @@ async function sendOrderStatusEmail(customerEmail, customerName, orderNumber, st
             </html>
         `;
 
+        const invoiceAttachment = await buildOrderInvoiceAttachment({ ...order, order_number: orderNumber }, order.items || []);
+
         const mailOptions = {
             from: smtpFrom,
             to: customerEmail,
             subject: `Objednávka #${orderNumber} - Aktualizace stavu: ${statusLabel}`,
-            html: emailHTML
+            html: emailHTML,
+            ...(invoiceAttachment ? { attachments: [invoiceAttachment] } : {})
         };
 
         const info = await sendMailWithRetry(mailOptions, 'Order status email');
@@ -641,11 +952,14 @@ async function sendCustomEmail(customerEmail, subject, message, order = {}) {
             </html>
         `;
 
+        const invoiceAttachment = await buildOrderInvoiceAttachment(order, order.items || []);
+
         const mailOptions = {
             from: smtpFrom,
             to: customerEmail,
             subject: subject,
-            html: emailHTML
+            html: emailHTML,
+            ...(invoiceAttachment ? { attachments: [invoiceAttachment] } : {})
         };
 
         const info = await sendMailWithRetry(mailOptions, 'Custom email');

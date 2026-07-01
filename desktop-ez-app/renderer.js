@@ -36,6 +36,8 @@ const state = {
   apiBase: 'https://api.ezfix.cz/api',
   token: localStorage.getItem('ezfixDesktopToken') || '',
   orders: [],
+  invoices: [],
+  invoiceNumbersByOrderId: new Map(),
   detailsById: new Map(),
   catalog: null,
   activeTab: 'orders',
@@ -669,6 +671,7 @@ function createOrderActionButtons(orderId) {
 
   return `
     <div class="order-detail-actions">
+      <button type="button" class="secondary" data-order-action="details-print" data-order-id="${orderId}">Tisk detailů</button>
       <button type="button" class="secondary" data-order-action="invoice-print" data-order-id="${orderId}">Tisk faktury</button>
       <button type="button" class="secondary" data-order-action="invoice-save" data-order-id="${orderId}">Uložit fakturu</button>
       <button type="button" class="secondary" data-order-action="receipt-print" data-order-id="${orderId}">Tisk účtenky</button>
@@ -758,80 +761,125 @@ document.getElementById('emailForm')?.addEventListener('submit', async (e) => {
 });
 
 function buildInvoiceDocumentHtml(order, items) {
-  const lineItems = items.length > 0
-    ? items.map((item, index) => `
-        <tr>
-          <td>${index + 1}.</td>
-          <td>${escapeHtml(item.repair_name || item.repair_type || item.device || 'Položka')}</td>
-          <td>${escapeHtml(item.brand || '-')} ${escapeHtml(item.model || '')}</td>
-          <td style="text-align:right;">${formatMoney(item.price || 0)}</td>
-        </tr>
-      `).join('')
-    : '<tr><td colspan="4">Objednávka neobsahuje položky.</td></tr>';
+  const issueDate = order.created_at ? new Date(order.created_at) : new Date();
+  const dueDate = new Date(issueDate);
+  dueDate.setDate(dueDate.getDate() + 14);
 
-  return `<!DOCTYPE html>
-  <html lang="cs">
-    <head>
-      <meta charset="UTF-8" />
-      <title>Faktura ${escapeHtml(order.order_number || order.id)}</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 32px; color: #111827; }
-        .head { display: flex; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
-        .card { border: 1px solid #d1d5db; border-radius: 12px; padding: 16px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; }
-        .summary { margin-top: 20px; display: flex; justify-content: flex-end; }
-        .summary-box { min-width: 220px; border: 1px solid #d1d5db; border-radius: 12px; padding: 16px; }
-        h1, h2, p { margin: 0; }
-        .muted { color: #6b7280; }
-      </style>
-    </head>
-    <body>
-      <div class="head">
-        <div>
-          <h1>EzFix</h1>
-          <p class="muted">Faktura k objednávce ${escapeHtml(order.order_number || order.id)}</p>
-        </div>
-        <div class="card">
-          <strong>Doklad</strong><br />
-          Číslo: ${escapeHtml(order.order_number || order.id)}<br />
-          Datum: ${escapeHtml(formatDate(order.created_at))}<br />
-          Stav: ${escapeHtml(statusLabel(order.status))}
-        </div>
-      </div>
-      <div class="head">
-        <div class="card" style="flex:1;">
-          <h2>Odběratel</h2>
-          <p>${escapeHtml(order.customer_name || '-')}</p>
-          <p>${escapeHtml(order.customer_email || '-')}</p>
-          <p>${escapeHtml(order.customer_phone || '-')}</p>
-          <p>${escapeHtml(order.customer_address || '-')}</p>
-        </div>
-        <div class="card" style="width:280px;">
-          <h2>Souhrn</h2>
-          <p>Typ: ${escapeHtml(toOrderTypeLabel(classifyOrder(state.detailsById.get(String(order.id)) || {})))}</p>
-          <p>Položek: ${items.length}</p>
-        </div>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Služba</th>
-            <th>Zařízení</th>
-            <th style="text-align:right;">Cena</th>
-          </tr>
-        </thead>
-        <tbody>${lineItems}</tbody>
-      </table>
-      <div class="summary">
-        <div class="summary-box">
-          <strong>Celkem</strong>
-          <div style="font-size: 24px; margin-top: 8px;">${formatMoney(order.total || 0)}</div>
-        </div>
-      </div>
-    </body>
-  </html>`;
+  const normalizedItems = Array.isArray(items)
+    ? items.map((item) => {
+        const quantityRaw = Number(item.parts || item.quantity || 1);
+        const quantity = Number.isFinite(quantityRaw) && quantityRaw > 0 ? Math.floor(quantityRaw) : 1;
+        const unitPriceRaw = Number(item.price || item.unitPrice || 0);
+        const unitPrice = Number.isFinite(unitPriceRaw) ? unitPriceRaw : 0;
+        const description = item.repair_name || item.repair_type || [item.device, item.brand, item.model].filter(Boolean).join(' ') || 'Položka';
+        return {
+          description,
+          quantity,
+          unitPrice,
+          total: quantity * unitPrice
+        };
+      })
+    : [];
+
+  const total = normalizedItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
+  const rowsHtml = normalizedItems.map((item, index) => `
+      <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(item.description || '')}</td>
+          <td>${escapeHtml(String(item.quantity || 1))}</td>
+          <td>${formatInvoiceAmount(item.unitPrice || 0)}</td>
+          <td style="text-align:right;">${formatInvoiceAmount(item.total || 0)}</td>
+      </tr>
+  `).join('');
+
+  const invoiceNumber = `INV-${escapeHtml(order.order_number || order.id || '')}`;
+  const variableSymbol = String(order.order_number || order.id || '').replace(/\D/g, '').slice(-10);
+  const customerAddress = [order.customer_address, order.customer_city, order.customer_zip, order.country]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean)
+    .join(', ');
+
+  return `
+      <!DOCTYPE html>
+      <html lang="cs">
+      <head>
+          <meta charset="UTF-8">
+          <title>Faktura ${invoiceNumber}</title>
+          <style>
+              body { font-family: Arial, sans-serif; margin: 22px; color: #111827; }
+              .top { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+              .box { flex: 1; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; }
+              h1 { margin: 0 0 10px; font-size: 1.6rem; }
+              h3 { margin: 0 0 10px; font-size: 1rem; }
+              p { margin: 3px 0; }
+              table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+              th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; font-size: 0.95rem; }
+              th { background: #f3f4f6; }
+              .right { text-align: right; }
+              .summary { margin-top: 16px; display: flex; justify-content: flex-end; }
+              .summary-box { min-width: 240px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
+              .summary-row { display: flex; justify-content: space-between; margin: 6px 0; }
+              .total { font-weight: 700; font-size: 1.08rem; }
+              .notes { margin-top: 18px; white-space: pre-wrap; }
+              @media print { body { margin: 0; } }
+          </style>
+      </head>
+      <body>
+          <h1>Faktura</h1>
+          <div class="top">
+              <div class="box">
+                  <h3>Dodavatel</h3>
+                  <p><strong>EzFix</strong></p>
+                  <p>Web: ezfix.cz</p>
+                  <p>E-mail: ezfix.podpora@gmail.com</p>
+                  <p>Telefon: +420 732 434 201</p>
+              </div>
+              <div class="box">
+                  <h3>Odběratel</h3>
+                  <p><strong>${escapeHtml(order.customer_name || '')}</strong></p>
+                  <p>${escapeHtml(order.customer_email || '')}</p>
+                  <p>${escapeHtml(order.customer_phone || '')}</p>
+                  <p>${escapeHtml(customerAddress || '')}</p>
+              </div>
+          </div>
+
+          <div class="top" style="margin-bottom: 8px;">
+              <div class="box">
+                  <p><strong>Číslo faktury:</strong> ${invoiceNumber}</p>
+                  <p><strong>Datum vystavení:</strong> ${formatInvoiceDate(issueDate)}</p>
+                  <p><strong>Datum splatnosti:</strong> ${formatInvoiceDate(dueDate)}</p>
+              </div>
+              <div class="box">
+                  <p><strong>Variabilní symbol:</strong> ${escapeHtml(variableSymbol || '')}</p>
+                  <p><strong>Objednávka:</strong> ${escapeHtml(order.order_number || 'Vlastní faktura')}</p>
+              </div>
+          </div>
+
+          <table>
+              <thead>
+                  <tr>
+                      <th>#</th>
+                      <th>Položka</th>
+                      <th>Množství</th>
+                      <th>Cena/ks</th>
+                      <th class="right">Celkem</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  ${rowsHtml || '<tr><td colspan="5">Bez položek</td></tr>'}
+              </tbody>
+          </table>
+
+          <div class="summary">
+              <div class="summary-box">
+                  <div class="summary-row total"><span>Celkem k úhradě</span><span>${formatInvoiceAmount(total)}</span></div>
+              </div>
+          </div>
+
+          ${order.notes ? `<div class="notes"><strong>Poznámka:</strong>\n${escapeHtml(order.notes)}</div>` : ''}
+      </body>
+      </html>
+  `;
 }
 
 function buildReceiptDocumentHtml(order, items) {
@@ -932,20 +980,20 @@ async function savePdfDocument({ title, html, defaultFileName }) {
 }
 
 async function printOrderInvoice(orderId) {
-  const { order, items } = await ensureOrderData(orderId);
+  const { order, details, items } = await ensureOrderData(orderId);
   await printHtmlDocument({
     title: `Faktura ${order.order_number || order.id}`,
-    html: buildInvoiceDocumentHtml(order, items),
+    html: buildInvoiceDocumentHtml({ ...order, ...details }, items),
     printerName: state.fullPrintPrinter
   });
   showToast('Faktura byla odeslána na tisk');
 }
 
 async function saveOrderInvoicePdf(orderId) {
-  const { order, items } = await ensureOrderData(orderId);
+  const { order, details, items } = await ensureOrderData(orderId);
   await savePdfDocument({
     title: `Faktura ${order.order_number || order.id}`,
-    html: buildInvoiceDocumentHtml(order, items),
+    html: buildInvoiceDocumentHtml({ ...order, ...details }, items),
     defaultFileName: `faktura-${String(order.order_number || order.id).replace(/[^a-zA-Z0-9-_]+/g, '-')}.pdf`
   });
   showToast('Faktura byla uložena do PDF');
@@ -974,6 +1022,100 @@ async function printOrderLabel(orderId) {
     printerName: state.labelPrinter
   });
   showToast('Štítek byl odeslán na tisk');
+}
+
+function buildOrderDetailsDocumentHtml(order, items) {
+  const rowsHtml = (Array.isArray(items) ? items : []).map((item) => {
+    const customDetails = getCustomBuildDetails(item);
+    const printingDetails = getPrintingDetails(item);
+    const otherDetails = getOtherItemDetails(item);
+    const detailLine = customDetails
+      ? `Typ sestavy: ${escapeHtml(customDetails.buildType)}${customDetails.partsSummary ? ' | Díly: ' + escapeHtml(customDetails.partsSummary) : ''}`
+      : printingDetails
+        ? `Tiskárna: ${escapeHtml(printingDetails.printer || 'N/A')} | Filament: ${escapeHtml(printingDetails.filament || 'N/A')} | Barva: ${escapeHtml(printingDetails.color || 'N/A')} | Pevnost: ${escapeHtml(printingDetails.strength || 'N/A')} | Kusy: ${escapeHtml(String(printingDetails.parts || 1))}${printingDetails.fileName ? ' | Soubor: ' + escapeHtml(printingDetails.fileName) : ''}`
+        : otherDetails
+          ? `Položka: ${escapeHtml(otherDetails.name || 'Jiná položka')}${otherDetails.desc ? ' | Detaily: ' + escapeHtml(otherDetails.desc) : ''}`
+          : `${escapeHtml(item.brand || '')} ${escapeHtml(item.model || '')}`;
+
+    return `<tr><td>${escapeHtml(item.repair_name || item.repair_type || 'Oprava')}</td><td>${detailLine}</td><td style="text-align:right;">${formatMoney(item.price || 0)}</td></tr>`;
+  }).join('');
+
+  const safeAddress = escapeHtml(order.customer_address || 'N/A');
+  const safeCity = escapeHtml(order.customer_city || '');
+  const safeZip = escapeHtml(order.customer_zip || '');
+  const safeCountry = escapeHtml(order.country || 'Czech Republic');
+  const notes = escapeHtml(order.notes || '');
+
+  return `
+    <!DOCTYPE html>
+    <html lang="cs">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Objednávka ${escapeHtml(order.order_number || '')}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { margin: 0; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .info-section h3 { margin: 0 0 10px 0; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        .info-line { margin: 5px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f5f5f5; font-weight: bold; }
+        .total { margin-top: 20px; text-align: right; font-weight: bold; }
+        @media print { body { margin: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Detaily objednávky</h1>
+        <p>Objednávka #${escapeHtml(order.order_number || '')}</p>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-section">
+          <h3>Informace o zákazníkovi</h3>
+          <div class="info-line"><strong>Jméno:</strong> ${escapeHtml(order.customer_name || '')}</div>
+          <div class="info-line"><strong>E-mail:</strong> ${escapeHtml(order.customer_email || '')}</div>
+          <div class="info-line"><strong>Telefon:</strong> ${escapeHtml(order.customer_phone || '')}</div>
+          <div class="info-line"><strong>Adresa:</strong> ${safeAddress}</div>
+          ${safeCity ? `<div class="info-line"><strong>Město:</strong> ${safeCity}</div>` : ''}
+          ${safeZip ? `<div class="info-line"><strong>PSČ:</strong> ${safeZip}</div>` : ''}
+          <div class="info-line"><strong>Země:</strong> ${safeCountry}</div>
+        </div>
+        <div class="info-section">
+          <h3>Informace o objednávce</h3>
+          <div class="info-line"><strong>Datum:</strong> ${order.created_at ? new Date(order.created_at).toLocaleString('cs-CZ') : ''}</div>
+          <div class="info-line"><strong>Typ služby:</strong> ${escapeHtml(formatServiceTypeLabel(order.service_type || ''))}</div>
+          <div class="info-line"><strong>Stav:</strong> ${escapeHtml(statusLabel(order.status || ''))}</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>Oprava</th><th>Zařízení</th><th>Cena</th></tr>
+        </thead>
+        <tbody>
+          ${rowsHtml || '<tr><td colspan="3">Bez položek</td></tr>'}
+        </tbody>
+      </table>
+
+      ${notes ? `<div><strong>Poznámky:</strong><p>${notes}</p></div>` : ''}
+
+      <div class="total">Celkem: ${formatMoney(order.total || 0)}</div>
+    </body>
+    </html>
+  `;
+}
+
+async function printOrderDetailsDocument(orderId) {
+  const { order, details, items } = await ensureOrderData(orderId);
+  await printHtmlDocument({
+    title: `Objednávka ${order.order_number || order.id}`,
+    html: buildOrderDetailsDocumentHtml({ ...order, ...details }, items),
+    printerName: state.fullPrintPrinter
+  });
+  showToast('Detaily objednávky byly odeslány na tisk');
 }
 
 async function deleteOrder(orderId) {
@@ -1007,6 +1149,7 @@ function bindOrderActionButtons(root) {
 
       button.disabled = true;
       try {
+        if (action === 'details-print') await printOrderDetailsDocument(orderId);
         if (action === 'invoice-print') await printOrderInvoice(orderId);
         if (action === 'invoice-save') await saveOrderInvoicePdf(orderId);
         if (action === 'receipt-print') await printOrderReceipt(orderId);
@@ -1896,10 +2039,29 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-function formatMoney(value) {
+function formatCzkAmount(value, decimals = 2) {
   const amount = Number(value || 0);
-  const safe = Number.isFinite(amount) ? amount : 0;
-  return `${safe.toFixed(2)} Kč`;
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  const normalizedDecimals = Number.isInteger(decimals) && decimals >= 0 ? decimals : 2;
+  const formatted = new Intl.NumberFormat('cs-CZ', {
+    minimumFractionDigits: normalizedDecimals,
+    maximumFractionDigits: normalizedDecimals
+  }).format(safeAmount).replace(/\u00A0|\u202F/g, ' ');
+  return `${formatted} Kč`;
+}
+
+function formatMoney(value) {
+  return formatCzkAmount(value, 2);
+}
+
+function formatInvoiceAmount(value) {
+  return formatCzkAmount(value, 2);
+}
+
+function formatInvoiceDate(dateValue) {
+  const date = dateValue ? new Date(dateValue) : new Date();
+  if (!Number.isFinite(date.getTime())) return new Date().toLocaleDateString('cs-CZ');
+  return date.toLocaleDateString('cs-CZ');
 }
 
 function toOrderTypeLabel(type) {
@@ -2102,6 +2264,21 @@ function getOrderItems(orderId) {
   return Array.isArray(details?.items) ? details.items : [];
 }
 
+function rebuildInvoiceOrderMap() {
+  const nextMap = new Map();
+  const source = Array.isArray(state.invoices) ? state.invoices : [];
+  source.forEach((invoice) => {
+    const orderId = String(invoice?.order_id || '').trim();
+    const invoiceNumber = String(invoice?.invoice_number || '').trim();
+    if (!orderId || !invoiceNumber) return;
+    if (!nextMap.has(orderId)) {
+      nextMap.set(orderId, []);
+    }
+    nextMap.get(orderId).push(invoiceNumber);
+  });
+  state.invoiceNumbersByOrderId = nextMap;
+}
+
 function classifyOrder(details) {
   const items = Array.isArray(details?.items) ? details.items : [];
   const devices = new Set(items.map((item) => String(item.device || '').toLowerCase()));
@@ -2128,6 +2305,7 @@ async function loadDetailsForOrders(orders) {
 function getFilteredOrders() {
   const status = document.getElementById('statusFilter').value;
   const type = document.getElementById('typeFilter').value;
+  const query = String(document.getElementById('orderSearchFilter')?.value || '').trim().toLowerCase();
 
   return state.orders.filter((order) => {
     if (status !== 'all' && String(order.status) !== status) return false;
@@ -2135,6 +2313,14 @@ function getFilteredOrders() {
       const details = state.detailsById.get(String(order.id));
       const orderType = classifyOrder(details);
       if (orderType !== type) return false;
+    }
+    if (query) {
+      const orderNumber = String(order.order_number || '').toLowerCase();
+      if (orderNumber.includes(query)) return true;
+
+      const invoiceNumbers = state.invoiceNumbersByOrderId.get(String(order.id)) || [];
+      const hasInvoiceMatch = invoiceNumbers.some((invoiceNumber) => String(invoiceNumber || '').toLowerCase().includes(query));
+      if (!hasInvoiceMatch) return false;
     }
     return true;
   });
@@ -2562,15 +2748,18 @@ function syncKnownOrderIds(orders, notify) {
 
 async function loadDashboardData(options = {}) {
   const { silent = false, notifyOnNew = false } = options;
-  const [ordersResult, catalogResult, partsResult] = await Promise.all([
+  const [ordersResult, catalogResult, partsResult, invoicesResult] = await Promise.all([
     apiFetch('/orders'),
     apiFetch('/catalog'),
-    apiFetch('/builds/parts').catch(() => ({ components: {} }))
+    apiFetch('/builds/parts').catch(() => ({ components: {} })),
+    apiFetch('/orders/admin/invoices').catch(() => ({ invoices: [] }))
   ]);
 
   const nextOrders = Array.isArray(ordersResult.orders) ? ordersResult.orders : [];
   syncKnownOrderIds(nextOrders, notifyOnNew && state.notificationsEnabled);
   state.orders = nextOrders;
+  state.invoices = Array.isArray(invoicesResult?.invoices) ? invoicesResult.invoices : [];
+  rebuildInvoiceOrderMap();
   state.catalog = catalogResult.catalog || {};
   ensureInventoryArrays(state.catalog);
 
@@ -2958,6 +3147,7 @@ async function bootstrap() {
 
   document.getElementById('statusFilter').addEventListener('change', renderOrders);
   document.getElementById('typeFilter').addEventListener('change', renderOrders);
+  document.getElementById('orderSearchFilter').addEventListener('input', renderOrders);
 
   document.getElementById('inventoryEditBtn').addEventListener('click', () => {
     setInventoryEditMode(true);

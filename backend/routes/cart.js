@@ -53,7 +53,7 @@ router.post('/', verifyToken, async (req, res) => {
         const {
             device, deviceName, brand, brandName, model,
             repairType, repairName, repairDesc, price,
-            printer, filament, color, parts, fileName
+            printer, filament, color, parts, fileName, filePath, file_url, fileUrl
         } = req.body;
 
         const deviceNormalized = String(device || '').toLowerCase();
@@ -77,13 +77,15 @@ router.post('/', verifyToken, async (req, res) => {
             });
         }
 
+         const fileReference = filePath || file_url || fileUrl || fileName || null;
+
         const result = await db.runAsync(
             `INSERT INTO cart_items 
              (user_id, device, device_name, brand, brand_name, model, 
                 repair_type, repair_name, repair_desc, price, printer, filament, color, parts, file_name) 
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [req.user.id, device, deviceName, resolvedBrand, brandName || resolvedBrand, resolvedModel,
-               repairType, repairName, repairDesc, priceNumber, printer || null, filament || null, color || null, parts || null, fileName || null]
+             repairType, repairName, repairDesc, priceNumber, printer || null, filament || null, color || null, parts || null, fileReference]
         );
 
         res.status(201).json({

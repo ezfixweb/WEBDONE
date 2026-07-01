@@ -1493,21 +1493,25 @@ body.auth-screen-active .page {
 
 .hero-image-container {
     position: relative;
-    background: linear-gradient(135deg, #2a2356 0%, #141328 100%);
+    background: linear-gradient(180deg, rgba(20,19,40,0.85), rgba(42,35,86,0.65)), url('https://images.unsplash.com/photo-1510557880182-3f8a1a5d090b?auto=format&fit=crop&w=1400&q=80') center/cover no-repeat;
     border-radius: 24px;
     padding: 40px;
     min-height: 450px;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+}
+
+.hero-image-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 5, 20, 0.35);
 }
 
 .hero-img-placeholder {
-    width: 200px;
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: none;
 }
 
 .hero-img-placeholder svg {
@@ -2155,7 +2159,7 @@ body.auth-screen-active .page {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 12px;
+    margin: 0 auto 20px;
     color: var(--primary);
     box-shadow: var(--shadow);
 }
@@ -3962,6 +3966,12 @@ body.auth-screen-active .page {
     gap: 10px;
 }
 
+.admin-chat-ai-config-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .admin-chat-ai-config-header h3 {
     margin: 0;
     color: #2f2b6e;
@@ -3972,6 +3982,10 @@ body.auth-screen-active .page {
     margin: 8px 0 12px;
     color: var(--text-light);
     font-size: 0.86rem;
+}
+
+.admin-chat-ai-config.admin-chat-ai-config-collapsed .admin-chat-ai-config-body {
+    display: none;
 }
 
 .admin-chat-ai-grid {
@@ -4503,6 +4517,20 @@ body.auth-screen-active .page {
 
 .social-links-form {
     padding: 12px 0 4px;
+}
+
+.social-links-admin-section .social-links-form {
+    padding: 16px 24px 22px;
+}
+
+.social-links-admin-section .social-links-form .form-row {
+    margin-bottom: 4px;
+}
+
+@media (max-width: 768px) {
+    .social-links-admin-section .social-links-form {
+        padding: 14px 16px 18px;
+    }
 }
 
 .footer h4 {
@@ -5137,6 +5165,16 @@ body.auth-screen-active .page {
     align-items: start;
 }
 
+.cart-wrapper.cart-wrapper-empty {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.cart-wrapper.cart-wrapper-empty .cart-items {
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+}
+
 .cart-items {
     background: white;
     border-radius: var(--radius-lg);
@@ -5544,19 +5582,53 @@ body.auth-screen-active .page {
     }
 
     #buildTypeGrid .brand-card,
-    #cpuBrandGrid .brand-card {
+    #cpuBrandGrid .brand-card,
+    #serverTypeGrid .brand-card,
+    #haBrandGrid .brand-card,
+    #haTypeGrid .brand-card,
+    #haStorageTypeGrid .brand-card {
         width: 100%;
         max-width: 360px;
-        min-height: 120px;
-        padding: 24px 10px;
+        min-height: 150px;
+        padding: 24px 18px;
+        display: flex;
         flex-direction: column;
-        gap: 10px;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
         text-align: center;
         margin: 0 auto;
     }
 
-    #buildTypeGrid .brand-card h3 {
-        font-size: 1.2rem;
+    #buildTypeGrid .brand-card h3,
+    #serverTypeGrid .brand-card h3,
+    #haBrandGrid .brand-card h3,
+    #haTypeGrid .brand-card h3,
+    #haStorageTypeGrid .brand-card h3 {
+        font-size: 1.1rem;
+        line-height: 1.25;
+        margin: 0;
+    }
+
+    #buildTypeGrid .brand-card .card-icon,
+    #serverTypeGrid .brand-card .card-icon,
+    #haBrandGrid .brand-card .card-icon,
+    #haTypeGrid .brand-card .card-icon,
+    #haStorageTypeGrid .brand-card .card-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto;
+        border-radius: 18px;
+        flex-shrink: 0;
+    }
+
+    #buildTypeGrid .brand-card .card-icon svg,
+    #serverTypeGrid .brand-card .card-icon svg,
+    #haBrandGrid .brand-card .card-icon svg,
+    #haTypeGrid .brand-card .card-icon svg,
+    #haStorageTypeGrid .brand-card .card-icon svg {
+        width: 32px;
+        height: 32px;
     }
 
     #cpuBrandGrid .brand-card h3 {
@@ -6082,10 +6154,12 @@ body.auth-screen-active .page {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    align-self: center;
     min-width: 20px;
     height: 20px;
     border-radius: 999px;
     padding: 0 5px;
+    line-height: 1;
     font-size: 0.65rem;
     font-weight: 700;
     background: #ef4444;

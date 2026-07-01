@@ -27,6 +27,7 @@
     "jsonwebtoken": "^9.0.0",
     "multer": "^2.0.2",
     "nodemailer": "^8.0.0",
+    "pdfmake": "^0.3.11",
     "pg": "^8.20.0"
   },
   "overrides": {
