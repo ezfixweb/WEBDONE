@@ -819,7 +819,7 @@ th { color: #cbbdf7; font-weight: 600; }
 
 .inventory-edit-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 2fr 0.8fr 1fr 0.9fr;
   gap: 8px;
 }
 
@@ -1087,6 +1087,19 @@ th { color: #cbbdf7; font-weight: 600; }
 .users-form {
   display: grid;
   gap: 10px;
+}
+
+.users-permissions-box {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(34, 31, 69, 0.7);
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.users-permissions-box .small {
+  margin-bottom: 2px;
 }
 
 .users-form-actions {

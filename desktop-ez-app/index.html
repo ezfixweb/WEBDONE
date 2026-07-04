@@ -387,6 +387,14 @@
                   <input id="newUserUsername" type="text" minlength="3" required />
                 </label>
                 <label>
+                  Jméno
+                  <input id="newUserFirstName" type="text" />
+                </label>
+                <label>
+                  Příjmení
+                  <input id="newUserLastName" type="text" />
+                </label>
+                <label>
                   E-mail (volitelné)
                   <input id="newUserEmail" type="email" />
                 </label>
@@ -402,6 +410,17 @@
                     <option value="customer">customer</option>
                   </select>
                 </label>
+                <div class="users-permissions-box">
+                  <div class="small">Přístupy v aplikaci a webu</div>
+                  <label class="check-row"><input id="newUserPermissionOrders" type="checkbox" checked /> Objednávky</label>
+                  <label class="check-row"><input id="newUserPermissionCatalog" type="checkbox" checked /> Katalog / sklad</label>
+                  <label class="check-row"><input id="newUserPermissionChats" type="checkbox" checked /> Chat</label>
+                  <label class="check-row"><input id="newUserPermissionCredentials" type="checkbox" /> Správa účtů</label>
+                </div>
+                <label class="check-row">
+                  <input id="newUserMobileAppAccess" type="checkbox" checked />
+                  Přístup do mobilní aplikace
+                </label>
                 <button type="submit">Vytvořit přihlášení</button>
               </form>
               <p class="error" id="createUserError"></p>
@@ -414,8 +433,11 @@
                   <thead>
                     <tr>
                       <th>Uživatel</th>
+                      <th>Jméno</th>
+                      <th>Příjmení</th>
                       <th>E-mail</th>
                       <th>Role</th>
+                      <th>Přístupy</th>
                       <th>Vytvořeno</th>
                       <th>Akce</th>
                     </tr>
@@ -701,6 +723,14 @@
           <input id="editUserUsername" type="text" minlength="3" required />
         </label>
         <label>
+          Jméno
+          <input id="editUserFirstName" type="text" />
+        </label>
+        <label>
+          Příjmení
+          <input id="editUserLastName" type="text" />
+        </label>
+        <label>
           E-mail (volitelné)
           <input id="editUserEmail" type="email" />
         </label>
@@ -716,6 +746,17 @@
             <option value="customer">customer</option>
             <option value="owner">owner</option>
           </select>
+        </label>
+        <div class="users-permissions-box">
+          <div class="small">Přístupy v aplikaci a webu</div>
+          <label class="check-row"><input id="editUserPermissionOrders" type="checkbox" checked /> Objednávky</label>
+          <label class="check-row"><input id="editUserPermissionCatalog" type="checkbox" checked /> Katalog / sklad</label>
+          <label class="check-row"><input id="editUserPermissionChats" type="checkbox" checked /> Chat</label>
+          <label class="check-row"><input id="editUserPermissionCredentials" type="checkbox" /> Správa účtů</label>
+        </div>
+        <label class="check-row">
+          <input id="editUserMobileAppAccess" type="checkbox" checked />
+          Přístup do mobilní aplikace
         </label>
         <p class="small" id="editUserRoleNote"></p>
         <div class="users-form-actions">

@@ -1484,6 +1484,8 @@ body.auth-screen-active .page {
     font-weight: 800;
     margin-bottom: 24px;
     line-height: 1.1;
+    color: rgba(255, 255, 255, 0.96);
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
 }
 
 .hero h1 span {

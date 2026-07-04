@@ -381,6 +381,86 @@ function formatRoleLabel(role) {
   return 'customer';
 }
 
+const USER_PERMISSION_OPTIONS = [
+  { key: 'orders', label: 'Objednávky' },
+  { key: 'catalog', label: 'Katalog / sklad' },
+  { key: 'chats', label: 'Chat' },
+  { key: 'credentials', label: 'Správa účtů' }
+];
+
+function getDefaultPermissionsForRole(role) {
+  const normalized = String(role || '').toLowerCase();
+  if (normalized === 'owner') return USER_PERMISSION_OPTIONS.map((item) => item.key);
+  if (normalized === 'manager') return ['orders', 'catalog', 'chats'];
+  if (normalized === 'worker') return ['orders', 'chats'];
+  return [];
+}
+
+function normalizePermissionSelection(role, permissions = []) {
+  const normalizedRole = String(role || '').toLowerCase();
+  const allowed = new Set(getDefaultPermissionsForRole(normalizedRole));
+  const source = Array.isArray(permissions) ? permissions : [];
+  const selection = source
+    .map((item) => String(item || '').trim().toLowerCase())
+    .filter((item) => allowed.has(item));
+
+  if (normalizedRole === 'owner') {
+    return USER_PERMISSION_OPTIONS.map((item) => item.key);
+  }
+
+  return Array.from(new Set(selection));
+}
+
+function formatPermissionLabel(permission) {
+  const found = USER_PERMISSION_OPTIONS.find((item) => item.key === String(permission || '').toLowerCase());
+  return found ? found.label : String(permission || '');
+}
+
+function formatAccessSummary(user) {
+  const permissions = normalizePermissionSelection(user.role, user.permissions || []);
+  const labels = permissions.map((permission) => formatPermissionLabel(permission)).filter(Boolean);
+  if (user.mobile_app_access !== false) {
+    labels.push('Mobil');
+  }
+  return labels.length > 0 ? labels.join(', ') : 'Bez přístupu';
+}
+
+function getPermissionSelection(prefix) {
+  return USER_PERMISSION_OPTIONS
+    .map((item) => item.key)
+    .filter((permission) => {
+      const input = document.getElementById(`${prefix}Permission${permission[0].toUpperCase()}${permission.slice(1)}`);
+      return Boolean(input?.checked);
+    });
+}
+
+function applyPermissionSelection(prefix, permissions = [], role = 'manager') {
+  const selection = normalizePermissionSelection(role, permissions);
+  USER_PERMISSION_OPTIONS.forEach((item) => {
+    const input = document.getElementById(`${prefix}Permission${item.key[0].toUpperCase()}${item.key.slice(1)}`);
+    if (!input) return;
+    if (item.key === 'credentials' && String(role || '').toLowerCase() !== 'owner') {
+      input.checked = false;
+      input.disabled = true;
+      return;
+    }
+    input.disabled = false;
+    input.checked = selection.includes(item.key);
+  });
+}
+
+function applyMobileAppAccess(prefix, role = 'manager', value = null) {
+  const input = document.getElementById(`${prefix}MobileAppAccess`);
+  if (!input) return;
+  input.disabled = false;
+  input.checked = value === null ? String(role || '').toLowerCase() !== 'customer' : Boolean(value);
+}
+
+function syncUserAccessControls(prefix, role = 'manager', permissions = [], mobileAppAccess = null) {
+  applyPermissionSelection(prefix, permissions, role);
+  applyMobileAppAccess(prefix, role, mobileAppAccess);
+}
+
 function refreshOwnerUiVisibility() {
   const owner = isOwner();
   usersTabBtn.classList.toggle('hidden', !owner);
@@ -1795,12 +1875,12 @@ async function saveChatAiConfig() {
 
 function renderUsers() {
   if (!isOwner()) {
-    usersTableBody.innerHTML = '<tr><td colspan="5">Nemáte oprávnění k zobrazení uživatelů.</td></tr>';
+    usersTableBody.innerHTML = '<tr><td colspan="8">Nemáte oprávnění k zobrazení uživatelů.</td></tr>';
     return;
   }
 
   if (!Array.isArray(state.users) || state.users.length === 0) {
-    usersTableBody.innerHTML = '<tr><td colspan="5">Žádní uživatelé.</td></tr>';
+    usersTableBody.innerHTML = '<tr><td colspan="8">Žádní uživatelé.</td></tr>';
     return;
   }
 
@@ -1815,8 +1895,11 @@ function renderUsers() {
     return `
       <tr>
         <td>${escapeHtml(user.username || '-')}</td>
+        <td>${escapeHtml(user.first_name || '-')}</td>
+        <td>${escapeHtml(user.last_name || '-')}</td>
         <td>${escapeHtml(user.email || '-')}</td>
         <td>${escapeHtml(formatRoleLabel(user.role))}</td>
+        <td>${escapeHtml(formatAccessSummary(user))}</td>
         <td>${formatDate(user.created_at)}</td>
         <td>
           <div class="users-actions">
@@ -1890,17 +1973,22 @@ async function createUserFromForm(event) {
 
   try {
     const username = document.getElementById('newUserUsername').value.trim();
+    const first_name = document.getElementById('newUserFirstName').value.trim();
+    const last_name = document.getElementById('newUserLastName').value.trim();
     const email = document.getElementById('newUserEmail').value.trim();
     const password = document.getElementById('newUserPassword').value;
     const role = document.getElementById('newUserRole').value;
+    const permissions = getPermissionSelection('newUser');
+    const mobile_app_access = Boolean(document.getElementById('newUserMobileAppAccess').checked);
 
     await apiFetch('/admin/users', {
       method: 'POST',
-      body: JSON.stringify({ username, email, password, role })
+      body: JSON.stringify({ username, first_name, last_name, email, password, role, permissions, mobile_app_access })
     });
 
     document.getElementById('createUserForm').reset();
     document.getElementById('newUserRole').value = 'manager';
+    syncUserAccessControls('newUser', 'manager');
     showToast('Nové přihlášení bylo vytvořeno');
     await loadUsers();
   } catch (error) {
@@ -1926,12 +2014,15 @@ function openEditUserModal(userId) {
 
   document.getElementById('editUserId').value = String(user.id);
   document.getElementById('editUserUsername').value = String(user.username || '');
+  document.getElementById('editUserFirstName').value = String(user.first_name || '');
+  document.getElementById('editUserLastName').value = String(user.last_name || '');
   document.getElementById('editUserEmail').value = String(user.email || '');
   document.getElementById('editUserPassword').value = '';
 
   const roleSelect = document.getElementById('editUserRole');
   roleSelect.value = String(user.role || 'customer').toLowerCase();
   roleSelect.disabled = roleLocked;
+  syncUserAccessControls('editUser', roleSelect.value, user.permissions || [], user.mobile_app_access);
 
   const roleNote = document.getElementById('editUserRoleNote');
   if (isSelf) {
@@ -1951,6 +2042,7 @@ function closeEditUserModal() {
   editUserModal.classList.add('hidden');
   document.getElementById('editUserForm').reset();
   document.getElementById('editUserRole').disabled = false;
+  syncUserAccessControls('editUser', 'manager');
   document.getElementById('editUserRoleNote').textContent = '';
   document.getElementById('editUserError').textContent = '';
 }
@@ -1973,16 +2065,28 @@ async function updateUserFromForm(event) {
   }
 
   const nextUsername = document.getElementById('editUserUsername').value.trim();
+  const nextFirstName = document.getElementById('editUserFirstName').value.trim();
+  const nextLastName = document.getElementById('editUserLastName').value.trim();
   const nextEmailRaw = document.getElementById('editUserEmail').value.trim();
   const nextEmail = nextEmailRaw.toLowerCase();
   const nextPassword = document.getElementById('editUserPassword').value;
   const roleSelect = document.getElementById('editUserRole');
   const roleLocked = roleSelect.disabled;
+  const permissions = getPermissionSelection('editUser');
+  const mobile_app_access = Boolean(document.getElementById('editUserMobileAppAccess').checked);
 
   const payload = {};
 
   if (nextUsername && nextUsername !== String(existing.username || '')) {
     payload.username = nextUsername;
+  }
+
+  if (nextFirstName !== String(existing.first_name || '')) {
+    payload.first_name = nextFirstName;
+  }
+
+  if (nextLastName !== String(existing.last_name || '')) {
+    payload.last_name = nextLastName;
   }
 
   const currentEmail = String(existing.email || '').trim().toLowerCase();
@@ -1997,6 +2101,16 @@ async function updateUserFromForm(event) {
   const selectedRole = roleSelect.value;
   if (!roleLocked && selectedRole !== String(existing.role || '')) {
     payload.role = selectedRole;
+  }
+
+  const currentPermissions = normalizePermissionSelection(existing.role, existing.permissions || []);
+  const nextPermissions = normalizePermissionSelection(roleLocked ? existing.role : selectedRole, permissions);
+  if (JSON.stringify(nextPermissions) !== JSON.stringify(currentPermissions)) {
+    payload.permissions = nextPermissions;
+  }
+
+  if (mobile_app_access !== Boolean(existing.mobile_app_access !== false)) {
+    payload.mobile_app_access = mobile_app_access;
   }
 
   if (Object.keys(payload).length === 0) {
@@ -2504,6 +2618,8 @@ function normalizeInventoryPrices(catalog) {
       if (!item || typeof item !== 'object') return;
       const parsed = Number(item.price || 0);
       item.price = Number.isFinite(parsed) ? parsed : 0;
+      const quantity = Number(item.qty || 0);
+      item.qty = Number.isFinite(quantity) && quantity >= 0 ? Math.floor(quantity) : 0;
     });
   });
 }
@@ -2511,21 +2627,21 @@ function normalizeInventoryPrices(catalog) {
 function createInventoryItem(kind) {
   const stamp = Date.now();
   if (kind === 'printers') {
-    return { id: `printer-${stamp}`, name: 'Nová tiskarna', price: 0, active: true };
+    return { id: `printer-${stamp}`, name: 'Nová tiskarna', qty: 0, price: 0, active: true };
   }
   if (kind === 'filaments') {
-    return { id: `filament-${stamp}`, name: 'Nový filament', price: 0, active: true };
+    return { id: `filament-${stamp}`, name: 'Nový filament', qty: 0, price: 0, active: true };
   }
   if (kind === 'pcBuildParts') {
-    return { id: `pc-part-${stamp}`, name: 'Nový PC díl', price: 0, active: true };
+    return { id: `pc-part-${stamp}`, name: 'Nový PC díl', qty: 0, price: 0, active: true };
   }
   if (kind === 'usedShopItems') {
-    return { id: `used-${stamp}`, name: 'Nová bazarová polozka', price: 0, active: true };
+    return { id: `used-${stamp}`, name: 'Nová bazarová polozka', qty: 0, price: 0, active: true };
   }
   if (kind === 'otherCustomItems') {
-    return { id: `other-${stamp}`, name: 'Nová položka v Other', price: 0, active: true };
+    return { id: `other-${stamp}`, name: 'Nová položka v Other', qty: 0, price: 0, active: true };
   }
-  return { id: `item-${stamp}`, name: 'Nová polozka', price: 0, active: true };
+  return { id: `item-${stamp}`, name: 'Nová polozka', qty: 0, price: 0, active: true };
 }
 
 function setTextContent(id, value) {
@@ -2573,9 +2689,11 @@ function buildInventoryList(listId, list, kind) {
       const name = escapeHtml(item.name || item.id || 'Položka');
       const price = Number(item.price || 0);
       const safePrice = Number.isFinite(price) ? price : 0;
+      const quantity = Number(item.qty || 0);
+      const safeQuantity = Number.isFinite(quantity) && quantity >= 0 ? Math.floor(quantity) : 0;
 
       if (!isSectionEditable) {
-        const suffix = ` - ${formatMoney(safePrice)}`;
+        const suffix = ` - ${safeQuantity} ks - ${formatMoney(safePrice)}`;
         return `<li>${name}${suffix}</li>`;
       }
 
@@ -2583,6 +2701,7 @@ function buildInventoryList(listId, list, kind) {
         <li class="inventory-edit-item">
           <div class="inventory-edit-row">
             <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="name" value="${escapeHtml(item.name || '')}" placeholder="Název" />
+            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="qty" type="number" min="0" step="1" value="${safeQuantity}" placeholder="Sklad" />
             <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="price" type="number" step="0.01" value="${safePrice}" placeholder="Cena" />
             <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="active" value="${item.active === false ? 'false' : 'true'}" placeholder="true/false" />
           </div>
@@ -2689,6 +2808,12 @@ function renderInventory() {
         if (field === 'price') {
           const parsed = Number(input.value);
           list[index][field] = Number.isFinite(parsed) ? parsed : 0;
+          return;
+        }
+
+        if (field === 'qty') {
+          const parsed = Number(input.value);
+          list[index][field] = Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 0;
           return;
         }
 
@@ -3001,6 +3126,7 @@ function stopPolling() {
 async function saveInventoryDraft() {
   if (!state.inventoryDraft || typeof state.inventoryDraft !== 'object') return;
   ensureInventoryArrays(state.inventoryDraft);
+  normalizeInventoryPrices(state.inventoryDraft);
   await apiFetch('/catalog', {
     method: 'PUT',
     body: JSON.stringify({ catalog: state.inventoryDraft })
@@ -3067,6 +3193,9 @@ async function bootstrap() {
   if (inventorySearchInput) {
     inventorySearchInput.value = state.inventorySearchQuery;
   }
+
+  syncUserAccessControls('newUser', document.getElementById('newUserRole')?.value || 'manager');
+  syncUserAccessControls('editUser', document.getElementById('editUserRole')?.value || 'manager');
 
   document.getElementById('loginForm').addEventListener('submit', onLoginSubmit);
   document.getElementById('refreshBtn').addEventListener('click', async () => {
@@ -3216,6 +3345,9 @@ async function bootstrap() {
   });
 
   document.getElementById('createUserForm').addEventListener('submit', createUserFromForm);
+  document.getElementById('newUserRole').addEventListener('change', (event) => {
+    syncUserAccessControls('newUser', event.target.value || 'manager');
+  });
   document.getElementById('createManualOrderForm').addEventListener('submit', createManualOrderFromForm);
   document.getElementById('createInvoiceForm').addEventListener('submit', createInvoiceFromForm);
   if (toggleManualOrderFormBtn) {
@@ -3365,6 +3497,9 @@ async function bootstrap() {
     chatAiToggleBtn.textContent = state.chatAiCollapsed ? 'Rozbalít' : 'Minimalizovat';
   }
   document.getElementById('editUserForm').addEventListener('submit', updateUserFromForm);
+  document.getElementById('editUserRole').addEventListener('change', (event) => {
+    syncUserAccessControls('editUser', event.target.value || 'manager');
+  });
   document.getElementById('closeEditUserModalBtn').addEventListener('click', closeEditUserModal);
   document.getElementById('cancelEditUserBtn').addEventListener('click', closeEditUserModal);
   document.getElementById('closeOrderFullscreenBtn').addEventListener('click', closeOrderFullscreen);

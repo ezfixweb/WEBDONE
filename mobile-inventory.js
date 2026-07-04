@@ -585,6 +585,12 @@ async function login() {
             body: { username, password }
         });
 
+        if (result?.user?.mobile_app_access === false) {
+            setToken(null);
+            setAuthMessage('Tento účet nemá povolený přístup do mobilní aplikace.', true);
+            return;
+        }
+
         setToken(result.token || '');
         setAuthMessage(`Prihlasen: ${result?.user?.username || username}`);
     } catch (error) {
