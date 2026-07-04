@@ -20,6 +20,13 @@
         android:text="@string/server_label"
         android:paddingBottom="4dp" />
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/scanner_hint"
+        android:textSize="12sp"
+        android:paddingBottom="8dp" />
+
     <EditText
         android:id="@+id/serverUrlInput"
         android:layout_width="match_parent"
@@ -35,6 +42,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/open_inventory"
+        android:layout_marginBottom="8dp" />
+
+    <Button
+        android:id="@+id/scanButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/open_scanner"
         android:layout_marginBottom="12dp" />
 
     <ProgressBar

@@ -19,12 +19,14 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int SCANNER_REQUEST_CODE = 1234;
     private static final String PREFS_NAME = "ezfix_mobile_prefs";
     private static final String KEY_SERVER_URL = "server_url";
     private static final String DEFAULT_SERVER = "http://192.168.0.100:3000";
 
     private EditText serverUrlInput;
     private Button openButton;
+    private Button scanButton;
     private WebView webView;
     private ProgressBar progressBar;
 
@@ -35,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
         serverUrlInput = findViewById(R.id.serverUrlInput);
         openButton = findViewById(R.id.openButton);
+        scanButton = findViewById(R.id.scanButton);
         webView = findViewById(R.id.inventoryWebView);
         progressBar = findViewById(R.id.progressBar);
 
@@ -43,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         serverUrlInput.setText(savedUrl);
 
         setupWebView();
+        loadInventoryPage(savedUrl);
 
         openButton.setOnClickListener(v -> {
             String serverUrl = serverUrlInput.getText().toString().trim();
@@ -57,13 +61,20 @@ public class MainActivity extends AppCompatActivity {
             loadInventoryPage(serverUrl);
         });
 
-        // Start scanner button integration: long-press server url input to open native scanner
+        scanButton.setOnClickListener(v -> {
+            openScanner();
+        });
+
+        // Long press remains as fallback scanner trigger.
         serverUrlInput.setOnLongClickListener(v -> {
-            // launch scanner activity
-            Intent intent = new Intent(this, ScannerActivity.class);
-            startActivityForResult(intent, 1234);
+            openScanner();
             return true;
         });
+    }
+
+    private void openScanner() {
+        Intent intent = new Intent(this, ScannerActivity.class);
+        startActivityForResult(intent, SCANNER_REQUEST_CODE);
     }
 
     private void setupWebView() {
@@ -117,11 +128,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1234 && resultCode == RESULT_OK && data != null) {
+        if (requestCode == SCANNER_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             String barcode = data.getStringExtra("barcode");
             if (barcode != null) {
                 final String esc = JSONObject.quote(barcode);
-                final String js = "(function(){try{const code=" + esc + ";const input=document.getElementById('searchInput'); if(input){input.value=code; input.dispatchEvent(new Event('input')); const ev=new KeyboardEvent('keydown',{key:'Enter'}); input.dispatchEvent(ev);} if(window.filterInventory){window.filterInventory(code);} }catch(e){} })();";
+                final String js = "(function(){try{const code=" + esc + "; if(window.handleWarehouseScan){window.handleWarehouseScan(code); return;} const input=document.getElementById('searchInput'); if(input){input.value=code; input.dispatchEvent(new Event('input')); const ev=new KeyboardEvent('keydown',{key:'Enter'}); input.dispatchEvent(ev);} if(window.filterInventory){window.filterInventory(code);} }catch(e){} })();";
                 runOnUiThread(() -> webView.evaluateJavascript(js, null));
             }
         }

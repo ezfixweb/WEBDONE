@@ -592,6 +592,16 @@
 
                         <div class="auth-panel" id="authRegisterPanel">
                             <form id="authRegisterForm" class="auth-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="authRegisterFirstName">Jméno</label>
+                                        <input type="text" id="authRegisterFirstName" minlength="2" placeholder="Např. Jan">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="authRegisterLastName">Příjmení</label>
+                                        <input type="text" id="authRegisterLastName" minlength="2" placeholder="Např. Novák">
+                                    </div>
+                                </div>
                                 <div class="form-group">
                                     <label for="authRegisterUsername">Uživatelské jméno</label>
                                     <input type="text" id="authRegisterUsername" required>
@@ -659,6 +669,14 @@
                     <div class="profile-summary-card">
                         <h3>Informace o účtu</h3>
                         <div class="profile-summary-grid">
+                            <div class="profile-summary-item">
+                                <span class="label">Jméno</span>
+                                <span class="value" id="profileFirstName">-</span>
+                            </div>
+                            <div class="profile-summary-item">
+                                <span class="label">Příjmení</span>
+                                <span class="value" id="profileLastName">-</span>
+                            </div>
                             <div class="profile-summary-item">
                                 <span class="label">Uživatelské jméno</span>
                                 <span class="value" id="profileUsername">-</span>
@@ -2886,6 +2904,24 @@
             </div>
         </div>
     </div>
+
+    <nav class="bottom-quick-menu" aria-label="Spodní menu">
+        <a href="#" data-page="home" class="bottom-quick-link">
+            <span>Domů</span>
+        </a>
+        <a href="#" data-page="services" class="bottom-quick-link">
+            <span>Služby</span>
+        </a>
+        <a href="#" data-page="cart" class="bottom-quick-link">
+            <span>Košík</span>
+        </a>
+        <a href="#" data-page="profile" class="bottom-quick-link" id="bottomProfileNav" style="display:none;">
+            <span>Účet</span>
+        </a>
+        <a href="#" data-page="admin" class="bottom-quick-link" id="bottomAdminNav" style="display:none;">
+            <span>Role</span>
+        </a>
+    </nav>
 
     <script>
         window.EZFIX_CONFIG = {

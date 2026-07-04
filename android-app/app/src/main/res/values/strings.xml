@@ -3,4 +3,6 @@
     <string name="app_name">EzFix Sklad</string>
     <string name="server_label">Adresa serveru</string>
     <string name="open_inventory">Otevřít sklad</string>
+    <string name="open_scanner">Naskenovat barcode</string>
+    <string name="scanner_hint">Tip: fyzický skener funguje jako klávesnice. Tlačítko slouží pro ruční otevření nativního skeneru.</string>
 </resources>

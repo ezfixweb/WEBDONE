@@ -3,89 +3,346 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EzFix Mobilní Sklad</title>
-    <meta name="theme-color" content="#0f0e2b">
+    <title>EzFix Sklad - Mobil</title>
+    <meta name="theme-color" content="#14161b">
     <link rel="manifest" href="/mobile-app-manifest.json">
-    <link rel="stylesheet" href="styles.css?v=20260312a">
     <style>
-        body { min-height: 100vh; background: #0f0e2b; color: #e8e8ff; }
-        .mobile-inventory-shell { max-width: 960px; margin: 0 auto; padding: 16px; }
-        .mobile-inventory-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-        .mobile-inventory-header h1 { font-size: 1.3rem; margin: 0; }
-        .mobile-inventory-notice { margin-bottom: 14px; color: #c7d2fe; font-size: 0.93rem; line-height: 1.4; }
-        .mobile-inventory-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-        .mobile-inventory-actions button { flex: 1 1 140px; }
-        .mobile-inventory-search { display: grid; gap: 10px; margin-bottom: 18px; }
-        .mobile-inventory-search input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.4); background: rgba(15, 14, 43, 0.9); color: #f8f8ff; }
-        .mobile-inventory-sync { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-bottom: 18px; }
-        .mobile-inventory-sync span { display: inline-flex; align-items: center; justify-content: center; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(23, 22, 65, 0.85); }
-        .mobile-inventory-summary { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-bottom: 18px; }
-        .mobile-inventory-count { padding: 14px; border-radius: 14px; background: rgba(32, 28, 68, 0.95); border: 1px solid rgba(82, 78, 148, 0.4); }
-        .mobile-inventory-count strong { display: block; margin-top: 6px; font-size: 1.35rem; }
-        .mobile-inventory-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-        .mobile-inventory-item { padding: 14px 16px; border-radius: 16px; background: rgba(20, 18, 52, 0.95); border: 1px solid rgba(120, 103, 236, 0.35); }
-        .mobile-inventory-item h2 { margin: 0 0 8px; font-size: 1rem; }
-        .mobile-inventory-item-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.94rem; color: #c7d2fe; }
-        .mobile-inventory-item-meta span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(98, 95, 212, 0.18); }
-        .mobile-inventory-warning { color: #fde047; }
+        :root {
+            --bg: #101218;
+            --panel: #1a1e27;
+            --panel-2: #212734;
+            --line: #30394d;
+            --text: #ecf2ff;
+            --muted: #9fb0ce;
+            --good: #10b981;
+            --warn: #f59e0b;
+            --bad: #ef4444;
+            --primary: #3b82f6;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .app {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 12px 12px 110px;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(16, 18, 24, 0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--line);
+            margin: -12px -12px 12px;
+            padding: 12px;
+        }
+
+        .topbar-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.15rem;
+            letter-spacing: 0.01em;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .grow { flex: 1 1 auto; }
+
+        input, select, button {
+            font: inherit;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: var(--panel-2);
+            color: var(--text);
+            min-height: 42px;
+            padding: 8px 10px;
+        }
+
+        button {
+            cursor: pointer;
+            background: #273149;
+        }
+
+        button.primary {
+            background: var(--primary);
+            border-color: #2563eb;
+        }
+
+        button.good { background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); }
+        button.warn { background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.5); }
+        button.bad { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .stat {
+            background: var(--panel-2);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 8px;
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 1.2rem;
+            margin-top: 4px;
+        }
+
+        .tabbar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 60;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+            border-top: 1px solid var(--line);
+            background: rgba(16, 18, 24, 0.96);
+        }
+
+        .tabbar button.active {
+            background: var(--primary);
+            border-color: #2563eb;
+        }
+
         .hidden { display: none !important; }
+
+        .item-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 8px;
+        }
+
+        .item {
+            background: var(--panel-2);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .item-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .item-name {
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .qty {
+            font-weight: 800;
+            min-width: 72px;
+            text-align: right;
+        }
+
+        .qty.ok { color: var(--good); }
+        .qty.low { color: var(--warn); }
+        .qty.zero { color: var(--bad); }
+
+        .item-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            color: var(--muted);
+            font-size: 0.82rem;
+            margin-bottom: 8px;
+        }
+
+        .item-actions {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 6px;
+        }
+
+        .item-actions button {
+            min-height: 36px;
+            padding: 4px;
+            font-size: 0.84rem;
+        }
+
+        .history-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 8px;
+        }
+
+        .history-item {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--panel-2);
+            padding: 8px;
+            font-size: 0.85rem;
+        }
+
+        .scanner-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 12px;
+        }
+
+        .scanner-box {
+            width: min(100%, 760px);
+            position: relative;
+        }
+
+        #scannerVideo {
+            width: 100%;
+            border-radius: 12px;
+            background: #000;
+        }
+
+        .scanner-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            min-height: 36px;
+        }
+
+        @media (max-width: 760px) {
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .item-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
     </style>
 </head>
 <body>
-    <div class="mobile-inventory-shell">
-        <div class="mobile-inventory-header">
-            <div>
-                <h1>EzFix Mobilní sklad</h1>
-                <div class="small">Pro Honeywell CN80 / USB dock</div>
+    <div class="app">
+        <header class="topbar">
+            <div class="topbar-row">
+                <div>
+                    <h1>Sklad - mobilní terminál</h1>
+                    <div class="muted">Připraveno pro fyzický barcode skener (keyboard mode)</div>
+                </div>
+                <button id="refreshBtn" class="primary">Obnovit</button>
             </div>
-            <button id="refreshBtn" class="btn btn-secondary btn-sm">Obnovit</button>
-        </div>
+        </header>
 
-        <p class="mobile-inventory-notice">
-            Otevři tuto stránku v prohlížeči telefonu, který má přístup ke stejnému backendu jako PC aplikace. Skener funguje jako klávesnice – naskenuj barcode do vyhledávacího pole.
-        </p>
-
-        <div class="mobile-inventory-actions">
-            <button id="scanHelpBtn" class="btn btn-primary btn-sm">Použít skener</button>
-            <button id="cameraScanBtn" class="btn btn-primary btn-sm">Skenovat pomocí kamery</button>
-            <button id="backupBtn" class="btn btn-warning btn-sm">Zálohovat na PC</button>
-            <button id="desktopLinkBtn" class="btn btn-secondary btn-sm">Otevřít PC app</button>
-        </div>
-
-        <div class="mobile-inventory-search">
-            <input id="searchInput" type="search" placeholder="Hledej dle názvu nebo barcode" autocomplete="off" inputmode="text" />
-            <div id="statusMessage" class="small">Načítání skladu…</div>
-        </div>
-
-        <div class="mobile-inventory-sync">
-            <span id="syncStatus">Synchronizuji...</span>
-            <span id="activeDevices">Připojeno zařízení: 0</span>
-        </div>
-
-        <div class="mobile-inventory-summary">
-            <div class="mobile-inventory-count">
-                <div>Celkem položek</div>
-                <strong id="totalCount">0</strong>
+        <section id="stockView">
+            <div class="panel">
+                <div class="row">
+                    <input id="searchInput" class="grow" type="search" placeholder="Skenuj barcode nebo napiš název/ID" autocomplete="off" inputmode="text">
+                    <button id="focusScanBtn">Sken režim</button>
+                    <button id="syncNowBtn" class="primary">Ulozit</button>
+                </div>
+                <div class="row" style="margin-top:8px;">
+                    <select id="categoryFilter" class="grow"></select>
+                    <select id="stockFilter" class="grow">
+                        <option value="all">Vše</option>
+                        <option value="low">Jen nízké zásoby</option>
+                        <option value="zero">Jen vyprodané</option>
+                    </select>
+                </div>
+                <div id="statusMessage" class="muted" style="margin-top:8px;">Načítání skladu...</div>
+                <div id="syncStatus" class="muted">Synchronizace: čekám</div>
             </div>
-            <div class="mobile-inventory-count">
-                <div>Aktivní položky</div>
-                <strong id="activeCount">0</strong>
-            </div>
-        </div>
 
-        <ul id="inventoryList" class="mobile-inventory-list"></ul>
-        <div id="emptyMessage" class="small mobile-inventory-warning hidden">Žádné položky pro tento dotaz. Zkus použít barcode nebo zkontroluj připojení k serveru.</div>
+            <div class="stats panel">
+                <div class="stat">Položek<strong id="totalCount">0</strong></div>
+                <div class="stat">Aktivních<strong id="activeCount">0</strong></div>
+                <div class="stat">Nízká zásoba<strong id="lowCount">0</strong></div>
+                <div class="stat">Bez zásoby<strong id="zeroCount">0</strong></div>
+            </div>
+
+            <div class="panel">
+                <ul id="inventoryList" class="item-list"></ul>
+                <div id="emptyMessage" class="muted hidden">Žádná položka pro filtr/vyhledávání.</div>
+            </div>
+        </section>
+
+        <section id="historyView" class="hidden">
+            <div class="panel">
+                <div class="row">
+                    <button id="syncNowBtnSecondary" class="primary">Ulozit zmeny na server</button>
+                    <button id="clearHistoryBtn" class="bad">Vyčistit historii</button>
+                </div>
+                <div class="muted" id="historySummary" style="margin-top:8px;">Historie: 0 záznamů</div>
+            </div>
+            <div class="panel">
+                <ul id="historyList" class="history-list"></ul>
+            </div>
+        </section>
+
+        <section id="settingsView" class="hidden">
+            <div class="panel">
+                <h3 style="margin:0 0 8px;">Nastavení skladu</h3>
+                <div class="row">
+                    <label for="lowThresholdInput" class="muted">Limit nízké zásoby:</label>
+                    <input id="lowThresholdInput" type="number" min="0" value="3" style="max-width:120px;">
+                    <button id="saveSettingsBtn" class="primary">Uložit</button>
+                </div>
+                <div class="muted" style="margin-top:8px;">Tip: fyzický skener funguje nejlépe, když je aktivní pole hledání a po skenu posílá Enter.</div>
+            </div>
+            <div class="panel">
+                <h3 style="margin:0 0 8px;">Účet (volitelné)</h3>
+                <div class="row">
+                    <input id="loginIdentifier" class="grow" type="text" placeholder="Uživatel nebo e-mail">
+                    <input id="loginPassword" class="grow" type="password" placeholder="Heslo">
+                </div>
+                <div class="row" style="margin-top:8px;">
+                    <button id="loginBtn" class="primary">Přihlásit</button>
+                    <button id="logoutBtn">Odhlásit</button>
+                </div>
+                <div id="authMessage" class="muted" style="margin-top:8px;">Nepřihlášen</div>
+            </div>
+        </section>
     </div>
 
-        <!-- Camera scanner overlay -->
-        <div id="scannerOverlay" class="hidden" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);z-index:9999;">
-            <div style="width:100%;max-width:720px;margin:16px;position:relative;">
-                <video id="scannerVideo" autoplay muted playsinline style="width:100%;height:auto;border-radius:12px;background:#000"></video>
-                <canvas id="scannerCanvas" class="hidden"></canvas>
-                <button id="stopScannerBtn" class="btn btn-secondary" style="position:absolute;top:12px;right:12px;">Zavřít</button>
-                <div id="scannerHint" style="position:absolute;left:12px;bottom:12px;color:#fff;background:rgba(0,0,0,0.4);padding:8px 10px;border-radius:8px">Nasměruj kameru na barcode</div>
-            </div>
-        </div>
+    <nav class="tabbar" aria-label="Navigace skladu">
+        <button id="tabStock" class="active">Sklad</button>
+        <button id="tabHistory">Historie</button>
+        <button id="tabSettings">Nastavení</button>
+    </nav>
 
     <script src="mobile-inventory.js" defer></script>
 </body>

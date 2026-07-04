@@ -35,7 +35,7 @@ const verifyToken = async (req, res, next) => {
         
         // Get user from database
         const user = await db.getAsync(
-            'SELECT id, username, email, role, permissions, mobile_app_access, created_at FROM users WHERE id = ?',
+            'SELECT id, username, email, first_name, last_name, role, permissions, mobile_app_access, created_at FROM users WHERE id = ?',
             [decoded.id]
         );
 

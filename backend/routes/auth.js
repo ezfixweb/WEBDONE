@@ -68,6 +68,8 @@ const ensureUniqueUsername = async (base) => {
  */
 router.post('/register', [
     body('username').trim().isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
+    body('first_name').optional({ checkFalsy: true }).trim().isLength({ min: 2 }).withMessage('First name must be at least 2 characters'),
+    body('last_name').optional({ checkFalsy: true }).trim().isLength({ min: 2 }).withMessage('Last name must be at least 2 characters'),
     body('password')
         .isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
         .matches(/[A-Z]/).withMessage('Password must contain uppercase letter')
@@ -85,9 +87,11 @@ router.post('/register', [
             });
         }
 
-        const { username, password, email } = req.body;
+        const { username, password, email, first_name, last_name } = req.body;
         const normalizedEmail = normalizeEmail(email);
         const normalizedUsername = String(username || '').trim();
+        const normalizedFirstName = String(first_name || '').trim();
+        const normalizedLastName = String(last_name || '').trim();
         const usernameKey = normalizedUsername.toLowerCase();
 
         // Check if user exists
@@ -111,8 +115,16 @@ router.post('/register', [
             ? 'owner'
             : (isManagerEmail(normalizedEmail) ? 'manager' : 'customer');
         const result = await db.runAsync(
-            'INSERT INTO users (username, password_hash, email, role, permissions) VALUES (?, ?, ?, ?, ?)',
-            [normalizedUsername, hashedPassword, normalizedEmail, role, JSON.stringify(rolePermissions(role))]
+            'INSERT INTO users (username, password_hash, email, first_name, last_name, role, permissions) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [
+                normalizedUsername,
+                hashedPassword,
+                normalizedEmail,
+                normalizedFirstName || null,
+                normalizedLastName || null,
+                role,
+                JSON.stringify(rolePermissions(role))
+            ]
         );
 
         // Generate token
@@ -130,6 +142,8 @@ router.post('/register', [
                 id: result.lastID,
                 username,
                 email,
+                first_name: normalizedFirstName || null,
+                last_name: normalizedLastName || null,
                 role,
                 permissions: rolePermissions(role),
                 created_at: new Date().toISOString()
@@ -169,7 +183,7 @@ router.post('/login', [
 
         // Find user
         const user = await db.getAsync(
-            'SELECT id, username, email, password_hash, role, permissions, created_at FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)',
+            'SELECT id, username, email, first_name, last_name, password_hash, role, permissions, mobile_app_access, created_at FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)',
             [identifier, identifier]
         );
 
@@ -226,8 +240,11 @@ router.post('/login', [
                 id: user.id,
                 username: user.username,
                 email: user.email,
+                first_name: user.first_name || null,
+                last_name: user.last_name || null,
                 role: user.role,
                 permissions: parsePermissions(user.permissions),
+                mobile_app_access: user.mobile_app_access !== false,
                 created_at: user.created_at
             }
         });
@@ -256,6 +273,80 @@ router.get('/me', verifyToken, async (req, res) => {
             success: false, 
             message: 'Failed to get user', 
             error: err.message 
+        });
+    }
+});
+
+/**
+ * Update current user profile
+ * PUT /api/auth/profile
+ */
+router.put('/profile', verifyToken, [
+    body('first_name').optional({ checkFalsy: true }).trim().isLength({ min: 2 }).withMessage('First name must be at least 2 characters'),
+    body('last_name').optional({ checkFalsy: true }).trim().isLength({ min: 2 }).withMessage('Last name must be at least 2 characters')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                errors: errors.array()
+            });
+        }
+
+        const hasFirstName = Object.prototype.hasOwnProperty.call(req.body, 'first_name');
+        const hasLastName = Object.prototype.hasOwnProperty.call(req.body, 'last_name');
+
+        if (!hasFirstName && !hasLastName) {
+            return res.status(400).json({
+                success: false,
+                message: 'At least one field is required to update'
+            });
+        }
+
+        const nextFirstName = hasFirstName ? String(req.body.first_name || '').trim() : null;
+        const nextLastName = hasLastName ? String(req.body.last_name || '').trim() : null;
+
+        const fields = [];
+        const params = [];
+
+        if (hasFirstName) {
+            fields.push('first_name = ?');
+            params.push(nextFirstName || null);
+        }
+        if (hasLastName) {
+            fields.push('last_name = ?');
+            params.push(nextLastName || null);
+        }
+
+        fields.push('updated_at = CURRENT_TIMESTAMP');
+        params.push(req.user.id);
+
+        await db.runAsync(
+            `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
+            params
+        );
+
+        const user = await db.getAsync(
+            'SELECT id, username, email, first_name, last_name, role, permissions, mobile_app_access, created_at FROM users WHERE id = ?',
+            [req.user.id]
+        );
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            user: {
+                ...user,
+                permissions: parsePermissions(user.permissions),
+                mobile_app_access: user.mobile_app_access !== false
+            }
+        });
+    } catch (err) {
+        console.error('Profile update error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update profile',
+            error: err.message
         });
     }
 });
@@ -483,7 +574,7 @@ router.get('/google/callback', async (req, res) => {
         }
 
         let user = await db.getAsync(
-            'SELECT id, username, email, role FROM users WHERE LOWER(email) = LOWER(?) ORDER BY id ASC LIMIT 1',
+            'SELECT id, username, email, first_name, last_name, role, permissions, mobile_app_access FROM users WHERE LOWER(email) = LOWER(?) ORDER BY id ASC LIMIT 1',
             [email]
         );
         let wasCreated = false;
@@ -493,20 +584,26 @@ router.get('/google/callback', async (req, res) => {
             const username = await ensureUniqueUsername(baseUsername);
             const randomPassword = crypto.randomBytes(16).toString('hex');
             const hashedPassword = await bcrypt.hash(randomPassword, 10);
+            const firstName = String(userData.given_name || '').trim();
+            const lastName = String(userData.family_name || '').trim();
             const role = username.toLowerCase() === OWNER_USERNAME
                 ? 'owner'
                 : (isManagerEmail(email) ? 'manager' : 'customer');
 
             const result = await db.runAsync(
-                'INSERT INTO users (username, password_hash, email, role) VALUES (?, ?, ?, ?)',
-                [username, hashedPassword, email, role]
+                'INSERT INTO users (username, password_hash, email, first_name, last_name, role, permissions) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [username, hashedPassword, email, firstName || null, lastName || null, role, JSON.stringify(rolePermissions(role))]
             );
 
             user = {
                 id: result.lastID,
                 username,
                 email,
-                role
+                first_name: firstName || null,
+                last_name: lastName || null,
+                role,
+                permissions: rolePermissions(role),
+                mobile_app_access: true
             };
             wasCreated = true;
         } else if (user.role !== 'owner' && user.role !== 'manager' && isManagerEmail(user.email)) {
@@ -527,7 +624,11 @@ router.get('/google/callback', async (req, res) => {
             id: user.id,
             username: user.username,
             email: user.email,
-            role: user.role
+            first_name: user.first_name || null,
+            last_name: user.last_name || null,
+            role: user.role,
+            permissions: parsePermissions(user.permissions),
+            mobile_app_access: user.mobile_app_access !== false
         };
         const userPayload = Buffer.from(JSON.stringify(safeUser), 'utf8').toString('base64');
 

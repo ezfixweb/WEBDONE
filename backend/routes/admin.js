@@ -56,7 +56,7 @@ const normalizeRequestedPermissions = (value, role) => {
 router.get('/users', verifyToken, verifyOwner, async (req, res) => {
     try {
         const users = await db.allAsync(
-            `SELECT id, username, email, first_name, last_name, role, permissions, created_at FROM users ORDER BY created_at DESC`
+            `SELECT id, username, email, first_name, last_name, role, permissions, mobile_app_access, created_at FROM users ORDER BY created_at DESC`
         );
 
         const usersWithPermissions = users.map(user => ({
@@ -86,7 +86,7 @@ router.get('/users/:userId/details', verifyToken, verifyOwner, async (req, res) 
     try {
         const { userId } = req.params;
         const user = await db.getAsync(
-            'SELECT id, username, email, first_name, last_name, role, permissions, created_at FROM users WHERE id = ?',
+            'SELECT id, username, email, first_name, last_name, role, permissions, mobile_app_access, created_at FROM users WHERE id = ?',
             [userId]
         );
 
@@ -164,7 +164,7 @@ router.get('/users/:userId/details', verifyToken, verifyOwner, async (req, res) 
  */
 router.post('/users', verifyToken, verifyOwner, async (req, res) => {
     try {
-        const { username, password, email, first_name, last_name, role, permissions } = req.body;
+        const { username, password, email, first_name, last_name, role, permissions, mobile_app_access } = req.body;
         const normalizedEmail = (email || '').trim().toLowerCase();
         const normalizedUsername = (username || '').trim();
         const normalizedFirstName = (first_name || '').trim();
@@ -180,9 +180,13 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
         }
 
         const existing = await db.getAsync(
-            'SELECT id, username, email, first_name, last_name, role FROM users WHERE username = ? OR email = ?',
+            'SELECT id, username, email, first_name, last_name, role, mobile_app_access FROM users WHERE username = ? OR email = ?',
             [normalizedUsername || null, normalizedEmail || null]
         );
+
+        const nextMobileAppAccess = mobile_app_access === undefined
+            ? true
+            : !(mobile_app_access === false || mobile_app_access === 0 || mobile_app_access === 'false');
 
         if (existing) {
             if (existing.role === nextRole) {
@@ -194,8 +198,8 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
             }
 
             await db.runAsync(
-                'UPDATE users SET role = ?, permissions = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                [nextRole, JSON.stringify(nextPermissions), existing.id]
+                'UPDATE users SET role = ?, permissions = ?, mobile_app_access = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [nextRole, JSON.stringify(nextPermissions), nextMobileAppAccess, existing.id]
             );
 
             return res.json({
@@ -208,7 +212,8 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
                     first_name: existing.first_name || null,
                     last_name: existing.last_name || null,
                     role: nextRole,
-                    permissions: nextPermissions
+                    permissions: nextPermissions,
+                    mobile_app_access: nextMobileAppAccess
                 }
             });
         }
@@ -251,8 +256,17 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const result = await db.runAsync(
-            'INSERT INTO users (username, password_hash, email, first_name, last_name, role, permissions) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [normalizedUsername, hashedPassword, normalizedEmail || null, normalizedFirstName || null, normalizedLastName || null, nextRole, JSON.stringify(nextPermissions)]
+            'INSERT INTO users (username, password_hash, email, first_name, last_name, role, permissions, mobile_app_access) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+                normalizedUsername,
+                hashedPassword,
+                normalizedEmail || null,
+                normalizedFirstName || null,
+                normalizedLastName || null,
+                nextRole,
+                JSON.stringify(nextPermissions),
+                nextMobileAppAccess
+            ]
         );
 
         res.status(201).json({
@@ -263,7 +277,8 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
                 username: normalizedUsername,
                 email: normalizedEmail || null,
                 role: nextRole,
-                permissions: nextPermissions
+                permissions: nextPermissions,
+                mobile_app_access: nextMobileAppAccess
             }
         });
     } catch (err) {
@@ -283,9 +298,9 @@ router.post('/users', verifyToken, verifyOwner, async (req, res) => {
 router.put('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
     try {
         const { userId } = req.params;
-        const { username, email, password, first_name, last_name, role, permissions } = req.body;
+        const { username, email, password, first_name, last_name, role, permissions, mobile_app_access } = req.body;
 
-        if (!username && !email && !password && first_name === undefined && last_name === undefined && role === undefined && permissions === undefined) {
+        if (!username && !email && !password && first_name === undefined && last_name === undefined && role === undefined && permissions === undefined && mobile_app_access === undefined) {
             return res.status(400).json({
                 success: false,
                 message: 'At least one field is required to update'
@@ -293,7 +308,7 @@ router.put('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
         }
 
         const user = await db.getAsync(
-            'SELECT id, username, email, role, permissions FROM users WHERE id = ?',
+            'SELECT id, username, email, role, permissions, mobile_app_access FROM users WHERE id = ?',
             [userId]
         );
 
@@ -339,6 +354,11 @@ router.put('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
                     message: 'Password must contain uppercase, lowercase, number, and special character (any symbol)'
                 });
             }
+        }
+
+        if (mobile_app_access !== undefined) {
+            fields.push('mobile_app_access = ?');
+            params.push(!(mobile_app_access === false || mobile_app_access === 0 || mobile_app_access === 'false'));
         }
 
         if (nextUsername) {
@@ -419,7 +439,7 @@ router.put('/users/:userId', verifyToken, verifyOwner, async (req, res) => {
         );
 
         const updated = await db.getAsync(
-            'SELECT id, username, email, first_name, last_name, role, permissions, created_at FROM users WHERE id = ?',
+            'SELECT id, username, email, first_name, last_name, role, permissions, mobile_app_access, created_at FROM users WHERE id = ?',
             [userId]
         );
 

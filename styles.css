@@ -744,6 +744,41 @@ body.has-announcement .hero {
     height: 20px;
 }
 
+.bottom-quick-menu {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1100;
+    display: none;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+    background: rgba(12, 11, 36, 0.96);
+    border-top: 1px solid rgba(119, 114, 210, 0.35);
+    backdrop-filter: blur(10px);
+}
+
+.bottom-quick-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: #e9e8ff;
+    background: rgba(120, 103, 236, 0.2);
+    border: 1px solid rgba(120, 103, 236, 0.35);
+}
+
+.bottom-quick-link:hover,
+.bottom-quick-link:focus-visible {
+    color: #ffffff;
+    background: rgba(120, 103, 236, 0.35);
+}
+
 @media (max-width: 1200px) {
     .logo-icon {
         width: 160px;
@@ -5014,7 +5049,15 @@ body.auth-screen-active .page {
 
     .support-chat {
         right: 10px;
-        bottom: 10px;
+        bottom: 82px;
+    }
+
+    .bottom-quick-menu {
+        display: grid;
+    }
+
+    body {
+        padding-bottom: 86px;
     }
 
     .admin-chat-layout {

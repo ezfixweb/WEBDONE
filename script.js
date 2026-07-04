@@ -4517,12 +4517,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageEl = document.getElementById('profileMessage');
         const ordersListEl = document.getElementById('profileOrdersList');
         const chatsListEl = document.getElementById('profileChatsList');
+        const firstNameEl = document.getElementById('profileFirstName');
+        const lastNameEl = document.getElementById('profileLastName');
         const usernameEl = document.getElementById('profileUsername');
         const emailEl = document.getElementById('profileEmail');
         const roleEl = document.getElementById('profileRole');
         const createdEl = document.getElementById('profileCreatedAt');
 
-        if (!ordersListEl || !chatsListEl || !usernameEl || !emailEl || !roleEl || !createdEl) return;
+        if (!ordersListEl || !chatsListEl || !firstNameEl || !lastNameEl || !usernameEl || !emailEl || !roleEl || !createdEl) return;
 
         if (!Storage.getToken()) {
             if (messageEl) messageEl.textContent = 'Pro zobrazení profilu se přihlaste.';
@@ -4538,6 +4540,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const user = meResult?.user || Storage.getUser() || {};
             Storage.setUser(user);
 
+            firstNameEl.textContent = user.first_name || '-';
+            lastNameEl.textContent = user.last_name || '-';
             usernameEl.textContent = user.username || '-';
             emailEl.textContent = user.email || '-';
             roleEl.textContent = formatProfileRoleLabel(user.role);
@@ -7633,6 +7637,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const logoutBtn = DOM.logoutBtn;
         const logoutBtnMobile = document.getElementById('logoutBtnMobile');
         const adminNavLink = document.getElementById('adminNavLink');
+        const bottomAdminNav = document.getElementById('bottomAdminNav');
+        const bottomProfileNav = document.getElementById('bottomProfileNav');
         const isLoggedIn = !!Storage.getToken();
         const currentUser = Storage.getUser();
         const isAdmin = Storage.adminLoggedIn && isLoggedIn;
@@ -7665,6 +7671,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (logoutBtn) logoutBtn.style.display = isLoggedIn ? 'inline-flex' : 'none';
         if (logoutBtnMobile) logoutBtnMobile.style.display = isLoggedIn ? 'inline-flex' : 'none';
         if (adminNavLink) adminNavLink.style.display = isAdmin ? 'list-item' : 'none';
+        if (bottomAdminNav) bottomAdminNav.style.display = isAdmin ? 'inline-flex' : 'none';
+        if (bottomProfileNav) bottomProfileNav.style.display = isLoggedIn ? 'inline-flex' : 'none';
         if (DOM.loginNavBtn) DOM.loginNavBtn.style.display = isLoggedIn ? 'none' : 'inline-flex';
         const loginNavBtnMobile = document.getElementById('loginNavBtnMobile');
         if (loginNavBtnMobile) loginNavBtnMobile.style.display = isLoggedIn ? 'none' : 'inline-flex';
@@ -11106,6 +11114,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('authRegisterForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const firstName = document.getElementById('authRegisterFirstName')?.value.trim() || '';
+        const lastName = document.getElementById('authRegisterLastName')?.value.trim() || '';
         const username = document.getElementById('authRegisterUsername')?.value.trim();
         const email = document.getElementById('authRegisterEmail')?.value.trim();
         const password = document.getElementById('authRegisterPassword')?.value || '';
@@ -11118,8 +11128,24 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        if (firstName && firstName.length < 2) {
+            if (message) message.textContent = 'Jméno musí mít alespoň 2 znaky.';
+            return;
+        }
+
+        if (lastName && lastName.length < 2) {
+            if (message) message.textContent = 'Příjmení musí mít alespoň 2 znaky.';
+            return;
+        }
+
         try {
-            const result = await apiCall('POST', '/auth/register', { username, email, password });
+            const result = await apiCall('POST', '/auth/register', {
+                username,
+                email,
+                password,
+                first_name: firstName || undefined,
+                last_name: lastName || undefined
+            });
             Storage.setToken(result.token);
             Storage.setUser(result.user);
             Storage.setAdminLoggedIn(canAccessAdmin(result.user));
