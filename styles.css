@@ -1530,7 +1530,7 @@ body.auth-screen-active .page {
 
 .hero-image-container {
     position: relative;
-    background: linear-gradient(180deg, rgba(20,19,40,0.85), rgba(42,35,86,0.65)), url('https://images.unsplash.com/photo-1510557880182-3f8a1a5d090b?auto=format&fit=crop&w=1400&q=80') center/cover no-repeat;
+    background: linear-gradient(180deg, rgba(20,19,40,0.85), rgba(42,35,86,0.65)), url('assets/logos/ezfix-logo.jpeg') center/cover no-repeat;
     border-radius: 24px;
     padding: 40px;
     min-height: 450px;

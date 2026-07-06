@@ -1,8 +1,8 @@
-const CACHE_NAME = 'ezfix-mobile-app-v1';
+const CACHE_NAME = 'ezfix-mobile-app-v2';
 const CACHE_URLS = [
   '/mobile-inventory.html',
   '/mobile-inventory.js',
-  '/styles.css?v=20260312a',
+  '/styles.css?v=20260706a',
   '/assets/logos/ezfix-logo.png',
   '/assets/logos/favicon-32.png'
 ];
