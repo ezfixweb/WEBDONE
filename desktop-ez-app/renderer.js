@@ -32,6 +32,36 @@ function loadLabelTemplateFromStorage() {
   }
 }
 
+function loadInventoryMovementsFromStorage() {
+  try {
+    const raw = localStorage.getItem('ezfixDesktopInventoryMovements');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item) => item && typeof item === 'object')
+      .slice(0, 250);
+  } catch {
+    return [];
+  }
+}
+
+function persistInventoryMovements() {
+  localStorage.setItem('ezfixDesktopInventoryMovements', JSON.stringify(state.inventoryMovements || []));
+}
+
+function getDefaultInventoryDeviceLabel() {
+  const base = String(window?.ezfixDesktop?.appName || 'Desktop').trim() || 'Desktop';
+  const suffix = (typeof navigator !== 'undefined' && navigator.platform)
+    ? String(navigator.platform).split(' ')[0]
+    : 'Client';
+  return `${base}-${suffix}`.replace(/\s+/g, '-');
+}
+
+function getInventoryDeviceLabel() {
+  return String(state.inventoryDeviceLabel || '').trim() || getDefaultInventoryDeviceLabel();
+}
+
 const state = {
   apiBase: 'https://api.ezfix.cz/api',
   token: localStorage.getItem('ezfixDesktopToken') || '',
@@ -60,12 +90,17 @@ const state = {
   fullPrintPrinter: localStorage.getItem('ezfixDesktopFullPrintPrinter') || '',
   receiptPrinter: localStorage.getItem('ezfixDesktopReceiptPrinter') || '',
   labelPrinter: localStorage.getItem('ezfixDesktopLabelPrinter') || '',
-  labelTemplate: loadLabelTemplateFromStorage(),
   inventoryCollapsed: getDefaultInventoryCollapsed(),
   inventoryEditKind: null,
   catalogEditorMode: 'easy',
   easyCatalogListVisible: false,
   inventorySearchQuery: '',
+  inventoryStockFilter: localStorage.getItem('ezfixDesktopInventoryStockFilter') || 'all',
+  inventoryCompactMode: localStorage.getItem('ezfixDesktopInventoryCompactMode') === 'true',
+  inventoryLastScanCode: '',
+  inventoryDeviceLabel: localStorage.getItem('ezfixDesktopInventoryDeviceLabel') || getDefaultInventoryDeviceLabel(),
+  inventoryMovements: loadInventoryMovementsFromStorage(),
+  inventoryMovementsSynced: false,
   easyCatalogEditIndex: null,
   customEasyCatalogCategories: new Map(),
   easyCatalogShowAddCategoryForm: false,
@@ -164,6 +199,15 @@ const EASY_CATALOG_KIND_LABELS = {
   otherCustomItems: 'Další (Other)',
   usedShopItems: 'Bazar'
 };
+
+const INVENTORY_SECTION_CONFIG = [
+  { kind: 'printers', listId: 'printersList', label: 'Tiskárny' },
+  { kind: 'filaments', listId: 'filamentsList', label: 'Filamenty' },
+  { kind: 'pcBuildParts', listId: 'pcBuildPartsList', label: 'PC díly' },
+  { kind: 'otherItems', listId: 'otherItemsList', label: 'Ostatní položky' },
+  { kind: 'otherCustomItems', listId: 'otherCustomItemsList', label: 'Další (Other)' },
+  { kind: 'usedShopItems', listId: 'usedItemsList', label: 'Bazar' }
+];
 
 function getDefaultInventoryCollapsed() {
   return {
@@ -2620,6 +2664,9 @@ function normalizeInventoryPrices(catalog) {
       item.price = Number.isFinite(parsed) ? parsed : 0;
       const quantity = Number(item.qty || 0);
       item.qty = Number.isFinite(quantity) && quantity >= 0 ? Math.floor(quantity) : 0;
+      item.sku = String(item.sku || item.id || '').trim();
+      item.barcode = String(item.barcode || '').trim();
+      item.location = String(item.location || '').trim();
     });
   });
 }
@@ -2627,21 +2674,21 @@ function normalizeInventoryPrices(catalog) {
 function createInventoryItem(kind) {
   const stamp = Date.now();
   if (kind === 'printers') {
-    return { id: `printer-${stamp}`, name: 'Nová tiskarna', qty: 0, price: 0, active: true };
+    return { id: `printer-${stamp}`, sku: `SKU-PRN-${stamp}`, barcode: '', location: 'A-01', name: 'Nová tiskarna', qty: 0, price: 0, active: true };
   }
   if (kind === 'filaments') {
-    return { id: `filament-${stamp}`, name: 'Nový filament', qty: 0, price: 0, active: true };
+    return { id: `filament-${stamp}`, sku: `SKU-FIL-${stamp}`, barcode: '', location: 'B-01', name: 'Nový filament', qty: 0, price: 0, active: true };
   }
   if (kind === 'pcBuildParts') {
-    return { id: `pc-part-${stamp}`, name: 'Nový PC díl', qty: 0, price: 0, active: true };
+    return { id: `pc-part-${stamp}`, sku: `SKU-PC-${stamp}`, barcode: '', location: 'C-01', name: 'Nový PC díl', qty: 0, price: 0, active: true };
   }
   if (kind === 'usedShopItems') {
-    return { id: `used-${stamp}`, name: 'Nová bazarová polozka', qty: 0, price: 0, active: true };
+    return { id: `used-${stamp}`, sku: `SKU-USED-${stamp}`, barcode: '', location: 'D-01', name: 'Nová bazarová polozka', qty: 0, price: 0, active: true };
   }
   if (kind === 'otherCustomItems') {
-    return { id: `other-${stamp}`, name: 'Nová položka v Other', qty: 0, price: 0, active: true };
+    return { id: `other-${stamp}`, sku: `SKU-OTH-${stamp}`, barcode: '', location: 'E-01', name: 'Nová položka v Other', qty: 0, price: 0, active: true };
   }
-  return { id: `item-${stamp}`, name: 'Nová polozka', qty: 0, price: 0, active: true };
+  return { id: `item-${stamp}`, sku: `SKU-ITEM-${stamp}`, barcode: '', location: 'Z-01', name: 'Nová polozka', qty: 0, price: 0, active: true };
 }
 
 function setTextContent(id, value) {
@@ -2675,43 +2722,824 @@ function applyInventoryCollapseState() {
   });
 }
 
-function buildInventoryList(listId, list, kind) {
+function getInventoryStockLevel(quantity) {
+  const safeQuantity = Number.isFinite(Number(quantity)) ? Math.max(0, Math.floor(Number(quantity))) : 0;
+  if (safeQuantity <= 0) return 'empty';
+  if (safeQuantity <= 3) return 'low';
+  if (safeQuantity <= 10) return 'medium';
+  return 'healthy';
+}
+
+function normalizeInventoryLookupValue(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function hashSeed(value) {
+  const text = String(value || '');
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function buildEan13CheckDigit(base12) {
+  const digits = String(base12 || '').replace(/\D/g, '').slice(0, 12).padStart(12, '0');
+  const sum = digits
+    .split('')
+    .reduce((acc, char, index) => {
+      const value = Number(char);
+      if (!Number.isFinite(value)) return acc;
+      return acc + value * (index % 2 === 0 ? 1 : 3);
+    }, 0);
+  const mod = sum % 10;
+  return mod === 0 ? 0 : 10 - mod;
+}
+
+function collectUsedInventoryBarcodes(sourceCatalog) {
+  const used = new Set();
+  const printing = sourceCatalog?.printing || {};
+  INVENTORY_SECTION_CONFIG.forEach((section) => {
+    const list = Array.isArray(printing?.[section.kind]) ? printing[section.kind] : [];
+    list.forEach((item) => {
+      const value = String(item?.barcode || '').trim();
+      if (value) used.add(value);
+    });
+  });
+  return used;
+}
+
+function generateUniqueInventoryBarcode(sourceCatalog, seed = '') {
+  const used = collectUsedInventoryBarcodes(sourceCatalog);
+  const baseSeed = `${seed}-${Date.now()}-${Math.random()}`;
+
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    const start = hashSeed(`${baseSeed}-${attempt}`);
+    let stateValue = start;
+    let body = '';
+
+    while (body.length < 12) {
+      stateValue = (Math.imul(stateValue, 1664525) + 1013904223) >>> 0;
+      body += String(stateValue).padStart(10, '0');
+    }
+
+    const base12 = body.slice(0, 12);
+    const checkDigit = buildEan13CheckDigit(base12);
+    const candidate = `${base12}${checkDigit}`;
+
+    if (!used.has(candidate)) {
+      return candidate;
+    }
+  }
+
+  return '';
+}
+
+function generateBarcodeForItem(item, sourceCatalog) {
+  const seed = `${item?.id || ''}|${item?.sku || ''}|${item?.name || ''}`;
+  return generateUniqueInventoryBarcode(sourceCatalog, seed);
+}
+
+function sanitizeCode39Value(value) {
+  const allowed = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%';
+  const upper = String(value || '').toUpperCase();
+  return upper
+    .split('')
+    .map((char) => (allowed.includes(char) ? char : '-'))
+    .join('')
+    .trim();
+}
+
+function buildCode39BarcodeSvg(rawValue) {
+  const PATTERNS = {
+    '0': 'nnnwwnwnn', '1': 'wnnwnnnnw', '2': 'nnwwnnnnw', '3': 'wnwwnnnnn', '4': 'nnnwwnnnw',
+    '5': 'wnnwwnnnn', '6': 'nnwwwnnnn', '7': 'nnnwnnwnw', '8': 'wnnwnnwnn', '9': 'nnwwnnwnn',
+    A: 'wnnnnwnnw', B: 'nnwnnwnnw', C: 'wnwnnwnnn', D: 'nnnnwwnnw', E: 'wnnnwwnnn',
+    F: 'nnwnwwnnn', G: 'nnnnnwwnw', H: 'wnnnnwwnn', I: 'nnwnnwwnn', J: 'nnnnwwwnn',
+    K: 'wnnnnnnww', L: 'nnwnnnnww', M: 'wnwnnnnwn', N: 'nnnnwnnww', O: 'wnnnwnnwn',
+    P: 'nnwnwnnwn', Q: 'nnnnnnwww', R: 'wnnnnnwwn', S: 'nnwnnnwwn', T: 'nnnnwnwwn',
+    U: 'wwnnnnnnw', V: 'nwwnnnnnw', W: 'wwwnnnnnn', X: 'nwnnwnnnw', Y: 'wwnnwnnnn',
+    Z: 'nwwnwnnnn', '-': 'nwnnnnwnw', '.': 'wwnnnnwnn', ' ': 'nwwnnnwnn',
+    '$': 'nwnwnwnnn', '/': 'nwnwnnnwn', '+': 'nwnnnwnwn', '%': 'nnnwnwnwn', '*': 'nwnnwnwnn'
+  };
+
+  const content = sanitizeCode39Value(rawValue || '-') || '-';
+  const encoded = `*${content}*`;
+  const narrow = 2;
+  const wide = 5;
+  const gap = narrow;
+  const barHeight = 66;
+  const quiet = 10;
+  const textHeight = 20;
+  let x = quiet;
+  const rects = [];
+
+  encoded.split('').forEach((char) => {
+    const pattern = PATTERNS[char] || PATTERNS['-'];
+    for (let i = 0; i < pattern.length; i += 1) {
+      const width = pattern[i] === 'w' ? wide : narrow;
+      if (i % 2 === 0) {
+        rects.push(`<rect x="${x}" y="0" width="${width}" height="${barHeight}" fill="#111827" />`);
+      }
+      x += width;
+    }
+    x += gap;
+  });
+
+  const totalWidth = x + quiet;
+  const human = escapeHtml(content);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${barHeight + textHeight}" viewBox="0 0 ${totalWidth} ${barHeight + textHeight}" role="img" aria-label="Code39 ${human}">${rects.join('')}<text x="50%" y="${barHeight + 14}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#111827" letter-spacing="1.4">${human}</text></svg>`;
+}
+
+function buildInventoryLabelDocumentHtml(item, sectionLabel) {
+  const template = state.labelTemplate || getDefaultLabelTemplate();
+  const widthMm = clampNumber(template.widthMm, 35, 120, 58);
+  const heightMm = clampNumber(template.heightMm, 24, 120, 50);
+  const fontSize = clampNumber(template.fontSize, 8, 16, 11);
+  const name = escapeHtml(String(item?.name || item?.id || 'Položka'));
+  const sku = escapeHtml(String(item?.sku || item?.id || '-'));
+  const location = escapeHtml(String(item?.location || '-'));
+  const barcode = String(item?.barcode || '').trim() || sku;
+  const barcodeSvg = buildCode39BarcodeSvg(barcode);
+  const section = escapeHtml(sectionLabel || 'Sklad');
+
+  return `<!DOCTYPE html>
+  <html lang="cs">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Skladový štítek ${sku}</title>
+      <style>
+        @page { size: ${widthMm}mm ${heightMm}mm; margin: 1.2mm; }
+        html, body { margin: 0; padding: 0; }
+        body { width: ${widthMm}mm; height: ${heightMm}mm; font-family: Arial, sans-serif; font-size: ${fontSize}px; color: #111827; }
+        .label { box-sizing: border-box; width: 100%; height: 100%; border: 1px solid #111827; border-radius: 2mm; padding: 1.6mm; display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 1mm; }
+        .head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; border-bottom: 1px dashed #6b7280; padding-bottom: 0.8mm; }
+        .name { font-weight: 700; line-height: 1.2; }
+        .meta { display: flex; justify-content: space-between; gap: 2mm; font-size: ${Math.max(8, fontSize - 1)}px; }
+        .barcode { display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .foot { text-align: center; font-size: ${Math.max(8, fontSize - 1)}px; color: #374151; }
+        svg { max-width: 100%; height: auto; }
+      </style>
+    </head>
+    <body>
+      <div class="label">
+        <div class="head"><span>${escapeHtml(template.header || 'EZFix Warehouse')}</span><span>${section}</span></div>
+        <div class="name">${name}</div>
+        <div class="meta"><span>SKU: <strong>${sku}</strong></span><span>Pozice: <strong>${location}</strong></span></div>
+        <div class="barcode">${barcodeSvg}</div>
+        <div class="foot">${escapeHtml(template.footer || '')}</div>
+      </div>
+    </body>
+  </html>`;
+}
+
+async function printInventoryLabel(item, sectionLabel = 'Sklad') {
+  const html = buildInventoryLabelDocumentHtml(item, sectionLabel);
+  await printHtmlDocument({
+    title: `Skladovy stitek ${item?.sku || item?.id || ''}`,
+    html,
+    printerName: state.labelPrinter
+  });
+  showToast('Skladový štítek byl odeslán na tisk');
+}
+
+async function printInventoryLabelFromScannerContext() {
+  const scanInput = document.getElementById('inventoryScanInput');
+  const sourceCatalog = state.inventoryEditMode ? state.inventoryDraft : state.catalog;
+  ensureInventoryArrays(sourceCatalog || {});
+  normalizeInventoryPrices(sourceCatalog || {});
+
+  const code = String(scanInput?.value || state.inventoryLastScanCode || '').trim();
+  if (!code) {
+    setInventoryScanResult('Pro tisk štítku nejdřív naskenujte nebo vyhledejte položku.', 'error');
+    return;
+  }
+
+  const matches = findInventoryMatchesByCode(sourceCatalog, code);
+  if (matches.length === 0) {
+    setInventoryScanResult(`Pro kód ${code} nebyla nalezena žádná položka.`, 'error');
+    return;
+  }
+
+  const target = matches[0];
+  await printInventoryLabel(target.item, target.sectionLabel);
+  setInventoryScanResult(`Štítek vytištěn: ${target.item?.name || target.item?.id}`, 'success');
+}
+
+function generateMissingInventoryBarcodes() {
+  if (!state.catalog) return;
+  if (!state.inventoryEditMode) {
+    setInventoryEditMode(true, state.inventoryEditKind || 'printers');
+  }
+
+  const sourceCatalog = state.inventoryDraft || state.catalog;
+  ensureInventoryArrays(sourceCatalog);
+  normalizeInventoryPrices(sourceCatalog);
+
+  let updated = 0;
+  INVENTORY_SECTION_CONFIG.forEach((section) => {
+    const list = Array.isArray(sourceCatalog.printing?.[section.kind]) ? sourceCatalog.printing[section.kind] : [];
+    list.forEach((item) => {
+      if (!item || item.active === false) return;
+      if (String(item.barcode || '').trim()) return;
+      const nextBarcode = generateBarcodeForItem(item, sourceCatalog);
+      if (!nextBarcode) return;
+      item.barcode = nextBarcode;
+      updated += 1;
+    });
+  });
+
+  renderInventory();
+  if (updated > 0) {
+    setInventoryScanResult(`Vygenerováno ${updated} nových kódů.`, 'success');
+    showToast(`Vygenerováno ${updated} čárových kódů`);
+    return;
+  }
+
+  setInventoryScanResult('Všechny aktivní položky už mají kód.', 'success');
+  showToast('Žádné chybějící kódy k vygenerování');
+}
+
+function findInventoryMatchesByCode(sourceCatalog, rawCode) {
+  const normalizedCode = normalizeInventoryLookupValue(rawCode);
+  if (!normalizedCode) return [];
+
+  const printing = sourceCatalog?.printing || {};
+  const matches = [];
+
+  INVENTORY_SECTION_CONFIG.forEach((section) => {
+    const list = Array.isArray(printing?.[section.kind]) ? printing[section.kind] : [];
+    list.forEach((item, sourceIndex) => {
+      if (!item) return;
+      if (!state.inventoryEditMode && item.active === false) return;
+
+      const nameValue = normalizeInventoryLookupValue(item.name);
+      const idValue = normalizeInventoryLookupValue(item.id);
+      const skuValue = normalizeInventoryLookupValue(item.sku);
+      const barcodeValue = normalizeInventoryLookupValue(item.barcode);
+      const locationValue = normalizeInventoryLookupValue(item.location);
+
+      let score = null;
+      if (barcodeValue && barcodeValue === normalizedCode) score = 0;
+      else if (skuValue && skuValue === normalizedCode) score = 1;
+      else if (idValue && idValue === normalizedCode) score = 2;
+      else if (nameValue && nameValue === normalizedCode) score = 3;
+      else if (barcodeValue && barcodeValue.includes(normalizedCode)) score = 4;
+      else if (skuValue && skuValue.includes(normalizedCode)) score = 5;
+      else if (idValue && idValue.includes(normalizedCode)) score = 6;
+      else if (nameValue && nameValue.includes(normalizedCode)) score = 7;
+      else if (locationValue && locationValue.includes(normalizedCode)) score = 8;
+
+      if (score === null) return;
+
+      matches.push({
+        score,
+        kind: section.kind,
+        listId: section.listId,
+        sectionLabel: section.label,
+        sourceIndex,
+        item
+      });
+    });
+  });
+
+  return matches.sort((a, b) => a.score - b.score);
+}
+
+function setInventoryScanResult(message, type = '') {
+  const resultEl = document.getElementById('inventoryScanResult');
+  if (!resultEl) return;
+  resultEl.textContent = message;
+  resultEl.classList.remove('error', 'success');
+  if (type === 'error' || type === 'success') {
+    resultEl.classList.add(type);
+  }
+}
+
+function getFilteredInventoryEntries(list) {
   const query = String(state.inventorySearchQuery || '').trim().toLowerCase();
-  const isSectionEditable = state.inventoryEditMode && state.inventoryEditKind === kind;
-  const html = list
-    .filter((x) => x && (state.inventoryEditMode || x.active !== false))
-    .filter((x) => {
+  const stockFilter = String(state.inventoryStockFilter || 'all').toLowerCase();
+  const shouldFilterByStock = !state.inventoryEditMode && stockFilter !== 'all';
+
+  return list
+    .map((item, sourceIndex) => ({ item, sourceIndex }))
+    .filter((entry) => entry.item && (state.inventoryEditMode || entry.item.active !== false))
+    .filter((entry) => {
       if (!query) return true;
-      const name = String(x?.name || x?.id || '').toLowerCase();
-      return name.includes(query);
+      const searchText = [entry.item?.name, entry.item?.id, entry.item?.sku, entry.item?.barcode, entry.item?.location]
+        .map((value) => String(value || '').toLowerCase())
+        .join(' ');
+      return searchText.includes(query);
     })
-    .map((item, index) => {
+    .filter((entry) => {
+      if (!shouldFilterByStock) return true;
+      return getInventoryStockLevel(Number(entry.item?.qty || 0)) === stockFilter;
+    });
+}
+
+function renderInventoryMovements() {
+  const listEl = document.getElementById('inventoryMovementList');
+  const countEl = document.getElementById('inventoryMovementCount');
+  if (!listEl || !countEl) return;
+
+  const movements = Array.isArray(state.inventoryMovements) ? state.inventoryMovements : [];
+  countEl.textContent = `${movements.length} záznamů`;
+
+  if (movements.length === 0) {
+    listEl.innerHTML = '<div class="inventory-movement-empty">Zatím bez pohybu. Po skenu Naskladnit/Vyskladnit se historie začne plnit.</div>';
+    return;
+  }
+
+  listEl.innerHTML = movements.map((movement) => {
+    const movementType = String(movement?.type || '').toLowerCase();
+    const kindClass = movementType === 'in' ? 'in' : movementType === 'out' ? 'out' : 'fix';
+    const kindLabel = movementType === 'in' ? 'Příjem +' : movementType === 'out' ? 'Výdej -' : 'Úprava';
+    const timestamp = formatDate(movement?.at || '');
+    const name = escapeHtml(String(movement?.name || movement?.id || '-'));
+    const sku = escapeHtml(String(movement?.sku || '-'));
+    const location = escapeHtml(String(movement?.location || '-'));
+    const operator = escapeHtml(String(movement?.operator || 'Neznámý operátor'));
+    const device = escapeHtml(String(movement?.device || '-'));
+    const beforeQty = Number.isFinite(Number(movement?.beforeQty)) ? Math.max(0, Math.floor(Number(movement.beforeQty))) : 0;
+    const afterQty = Number.isFinite(Number(movement?.afterQty)) ? Math.max(0, Math.floor(Number(movement.afterQty))) : 0;
+    const deltaQty = Number.isFinite(Number(movement?.deltaQty)) ? Math.floor(Number(movement.deltaQty)) : 0;
+    const deltaPrefix = deltaQty > 0 ? '+' : '';
+
+    return `
+      <div class="inventory-movement-item">
+        <div class="inventory-movement-item-top">
+          <span class="inventory-movement-kind ${kindClass}">${kindLabel}</span>
+          <span>${escapeHtml(timestamp)}</span>
+        </div>
+        <div class="inventory-movement-line"><strong>${name}</strong> | SKU: ${sku} | Pozice: ${location}</div>
+        <div class="inventory-movement-line">${beforeQty} -> ${afterQty} ks <strong>(${deltaPrefix}${deltaQty})</strong></div>
+        <div class="inventory-movement-line">Operátor: ${operator} | Zařízení: ${device}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function getInventoryMovementOperatorLabel() {
+  const username = String(state.currentUser?.username || '').trim();
+  if (username) return username;
+  const email = String(state.currentUser?.email || '').trim();
+  if (email) return email;
+  const id = String(state.currentUser?.id || '').trim();
+  if (id) return `Uživatel ${id}`;
+  return 'Neznámý operátor';
+}
+
+function normalizeInventoryMovementRecord(entry = {}) {
+  return {
+    id: String(entry?.id || '').trim() || `mv-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+    at: (() => {
+      const parsed = new Date(entry?.at || Date.now());
+      return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : new Date().toISOString();
+    })(),
+    type: String(entry?.type || 'fix'),
+    name: String(entry?.name || '-'),
+    sku: String(entry?.sku || '-'),
+    location: String(entry?.location || '-'),
+    beforeQty: Number.isFinite(Number(entry?.beforeQty)) ? Math.floor(Number(entry.beforeQty)) : 0,
+    afterQty: Number.isFinite(Number(entry?.afterQty)) ? Math.floor(Number(entry.afterQty)) : 0,
+    deltaQty: Number.isFinite(Number(entry?.deltaQty)) ? Math.floor(Number(entry.deltaQty)) : 0,
+    operator: String(entry?.operator || getInventoryMovementOperatorLabel()),
+    device: String(entry?.device || getInventoryDeviceLabel()),
+    idRef: String(entry?.idRef || '')
+  };
+}
+
+function sortInventoryMovementsDesc(list) {
+  return list.sort((a, b) => {
+    const timeA = new Date(a?.at || 0).getTime();
+    const timeB = new Date(b?.at || 0).getTime();
+    return (Number.isFinite(timeB) ? timeB : 0) - (Number.isFinite(timeA) ? timeA : 0);
+  });
+}
+
+async function fetchInventoryMovementsFromApi() {
+  if (!state.token) return [];
+  const result = await apiFetch('/inventory/movements?limit=250');
+  const movements = Array.isArray(result?.movements) ? result.movements : [];
+  return movements.map((item) => normalizeInventoryMovementRecord(item));
+}
+
+async function pushInventoryMovementToApi(movement) {
+  if (!state.token) return;
+  await apiFetch('/inventory/movements', {
+    method: 'POST',
+    body: JSON.stringify({ movement: normalizeInventoryMovementRecord(movement) })
+  });
+}
+
+async function clearInventoryMovementsOnApi() {
+  if (!state.token) return;
+  await apiFetch('/inventory/movements', { method: 'DELETE' });
+}
+
+async function syncInventoryMovementsFromApi() {
+  if (!state.token || state.inventoryMovementsSynced) return;
+
+  const localMovements = Array.isArray(state.inventoryMovements)
+    ? state.inventoryMovements.map((item) => normalizeInventoryMovementRecord(item))
+    : [];
+
+  try {
+    const remoteMovements = await fetchInventoryMovementsFromApi();
+    const byId = new Map();
+
+    remoteMovements.forEach((item) => {
+      byId.set(item.id, item);
+    });
+
+    const missingOnRemote = [];
+    localMovements.forEach((item) => {
+      if (!byId.has(item.id)) {
+        missingOnRemote.push(item);
+      }
+      byId.set(item.id, item);
+    });
+
+    state.inventoryMovements = sortInventoryMovementsDesc(Array.from(byId.values())).slice(0, 250);
+    persistInventoryMovements();
+    renderInventoryMovements();
+
+    if (missingOnRemote.length > 0) {
+      await Promise.allSettled(missingOnRemote.slice(0, 250).map((item) => pushInventoryMovementToApi(item)));
+    }
+
+    state.inventoryMovementsSynced = true;
+  } catch (error) {
+    console.warn('Inventory movement sync failed, using local history only:', error);
+  }
+}
+
+function addInventoryMovement(entry) {
+  const nextMovement = normalizeInventoryMovementRecord(entry);
+
+  const existing = Array.isArray(state.inventoryMovements) ? state.inventoryMovements : [];
+  state.inventoryMovements = [nextMovement, ...existing].slice(0, 250);
+  persistInventoryMovements();
+  renderInventoryMovements();
+  void pushInventoryMovementToApi(nextMovement).catch((error) => {
+    console.warn('Inventory movement API save failed:', error);
+  });
+}
+
+function clearInventoryMovements() {
+  state.inventoryMovements = [];
+  persistInventoryMovements();
+  renderInventoryMovements();
+  void clearInventoryMovementsOnApi().catch((error) => {
+    console.warn('Inventory movement API clear failed:', error);
+  });
+}
+
+function exportInventoryMovementsCsv() {
+  const movements = Array.isArray(state.inventoryMovements) ? state.inventoryMovements : [];
+  if (movements.length === 0) {
+    setInventoryScanResult('Historie pohybů je prázdná. Není co exportovat.', 'error');
+    return;
+  }
+
+  const headers = ['Datum', 'Typ', 'Položka', 'SKU', 'Pozice', 'Před', 'Po', 'Změna', 'Operátor', 'Zařízení'];
+  const lines = [headers.map(makeCsvValue).join(',')];
+  movements.forEach((movement) => {
+    const movementType = String(movement?.type || '').toLowerCase();
+    const kindLabel = movementType === 'in' ? 'Příjem +' : movementType === 'out' ? 'Výdej -' : 'Úprava';
+    const row = [
+      formatDate(movement?.at || ''),
+      kindLabel,
+      String(movement?.name || '-'),
+      String(movement?.sku || '-'),
+      String(movement?.location || '-'),
+      String(Number.isFinite(Number(movement?.beforeQty)) ? Math.floor(Number(movement.beforeQty)) : 0),
+      String(Number.isFinite(Number(movement?.afterQty)) ? Math.floor(Number(movement.afterQty)) : 0),
+      String(Number.isFinite(Number(movement?.deltaQty)) ? Math.floor(Number(movement.deltaQty)) : 0),
+      String(movement?.operator || 'Neznámý operátor'),
+      String(movement?.device || '-')
+    ];
+    lines.push(row.map(makeCsvValue).join(','));
+  });
+
+  downloadBlob(`sklad-pohyby-${Date.now()}.csv`, 'text/csv;charset=utf-8;', `\ufeff${lines.join('\n')}`);
+  showToast(`CSV pohybů vytvořeno (${movements.length} záznamů)`);
+  setInventoryScanResult(`CSV export pohybů je připraven (${movements.length} záznamů).`, 'success');
+}
+
+function buildInventoryMovementsPdfHtml(movements) {
+  const rows = movements.map((movement, index) => {
+    const movementType = String(movement?.type || '').toLowerCase();
+    const kindLabel = movementType === 'in' ? 'Příjem +' : movementType === 'out' ? 'Výdej -' : 'Úprava';
+    const beforeQty = Number.isFinite(Number(movement?.beforeQty)) ? Math.floor(Number(movement.beforeQty)) : 0;
+    const afterQty = Number.isFinite(Number(movement?.afterQty)) ? Math.floor(Number(movement.afterQty)) : 0;
+    const deltaQty = Number.isFinite(Number(movement?.deltaQty)) ? Math.floor(Number(movement.deltaQty)) : 0;
+
+    return `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${escapeHtml(formatDate(movement?.at || ''))}</td>
+        <td>${escapeHtml(kindLabel)}</td>
+        <td>${escapeHtml(String(movement?.name || '-'))}</td>
+        <td>${escapeHtml(String(movement?.sku || '-'))}</td>
+        <td>${escapeHtml(String(movement?.location || '-'))}</td>
+        <td>${beforeQty}</td>
+        <td>${afterQty}</td>
+        <td>${deltaQty}</td>
+        <td>${escapeHtml(String(movement?.operator || 'Neznámý operátor'))}</td>
+        <td>${escapeHtml(String(movement?.device || '-'))}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `<!DOCTYPE html>
+  <html lang="cs">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Historie pohybů skladu</title>
+      <style>
+        @page { size: A4; margin: 12mm; }
+        body { margin: 0; font-family: Arial, sans-serif; color: #111827; }
+        h1 { margin: 0 0 8px; font-size: 20px; }
+        p { margin: 0 0 12px; color: #374151; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th, td { border: 1px solid #d1d5db; padding: 6px; text-align: left; }
+        th { background: #f3f4f6; }
+      </style>
+    </head>
+    <body>
+      <h1>Historie pohybů skladu</h1>
+      <p>Vygenerováno: ${escapeHtml(formatDate(new Date().toISOString()))}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Datum</th><th>Typ</th><th>Položka</th><th>SKU</th><th>Pozice</th><th>Před</th><th>Po</th><th>Změna</th><th>Operátor</th><th>Zařízení</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </body>
+  </html>`;
+}
+
+async function exportInventoryMovementsPdf() {
+  const movements = Array.isArray(state.inventoryMovements) ? state.inventoryMovements : [];
+  if (movements.length === 0) {
+    setInventoryScanResult('Historie pohybů je prázdná. Není co exportovat.', 'error');
+    return;
+  }
+
+  const html = buildInventoryMovementsPdfHtml(movements);
+  await savePdfDocument({
+    title: 'Historie pohybů skladu',
+    html,
+    defaultFileName: `sklad-pohyby-${Date.now()}.pdf`
+  });
+  showToast(`PDF pohybů vytvořeno (${movements.length} záznamů)`);
+  setInventoryScanResult(`PDF export pohybů je připraven (${movements.length} záznamů).`, 'success');
+}
+
+function collectVisibleInventoryLabelEntries(sourceCatalog) {
+  const printing = sourceCatalog?.printing || {};
+  return INVENTORY_SECTION_CONFIG.flatMap((section) => {
+    const list = Array.isArray(printing?.[section.kind]) ? printing[section.kind] : [];
+    const entries = getFilteredInventoryEntries(list);
+    return entries.map((entry) => ({
+      item: entry.item,
+      sectionLabel: section.label
+    }));
+  });
+}
+
+function buildInventoryBatchLabelsPdfHtml(entries) {
+  const safeEntries = Array.isArray(entries) ? entries : [];
+  const sheets = safeEntries.map((entry, index) => {
+    const item = entry?.item || {};
+    const sectionLabel = String(entry?.sectionLabel || 'Sklad');
+    const name = escapeHtml(String(item?.name || item?.id || 'Položka'));
+    const sku = escapeHtml(String(item?.sku || item?.id || '-'));
+    const location = escapeHtml(String(item?.location || '-'));
+    const barcode = String(item?.barcode || '').trim() || String(item?.sku || item?.id || '-');
+    const barcodeSvg = buildCode39BarcodeSvg(barcode);
+    const pageClass = index === safeEntries.length - 1 ? 'sheet last' : 'sheet';
+
+    return `
+      <section class="${pageClass}">
+        <div class="head">
+          <span>EZFix Warehouse</span>
+          <span>${escapeHtml(sectionLabel)}</span>
+        </div>
+        <div class="name">${name}</div>
+        <div class="meta">SKU: <strong>${sku}</strong></div>
+        <div class="meta">Pozice: <strong>${location}</strong></div>
+        <div class="barcode">${barcodeSvg}</div>
+      </section>
+    `;
+  }).join('');
+
+  return `<!DOCTYPE html>
+  <html lang="cs">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Skladové štítky</title>
+      <style>
+        @page { size: A4; margin: 10mm; }
+        body { margin: 0; font-family: Arial, sans-serif; color: #111827; }
+        .sheet {
+          width: 62mm;
+          min-height: 42mm;
+          border: 1px solid #111827;
+          border-radius: 2mm;
+          padding: 2.2mm;
+          box-sizing: border-box;
+          display: grid;
+          gap: 1.2mm;
+          margin-bottom: 4mm;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .sheet.last { margin-bottom: 0; }
+        .head { display: flex; justify-content: space-between; gap: 3mm; font-size: 11px; font-weight: 700; border-bottom: 1px dashed #6b7280; padding-bottom: 1mm; }
+        .name { font-size: 12px; font-weight: 700; }
+        .meta { font-size: 10px; }
+        .barcode { display: flex; justify-content: center; align-items: center; margin-top: 1mm; }
+        svg { max-width: 100%; height: auto; }
+      </style>
+    </head>
+    <body>${sheets}</body>
+  </html>`;
+}
+
+async function exportVisibleInventoryLabelsPdf() {
+  const sourceCatalog = state.inventoryEditMode ? state.inventoryDraft : state.catalog;
+  ensureInventoryArrays(sourceCatalog || {});
+  normalizeInventoryPrices(sourceCatalog || {});
+
+  const entries = collectVisibleInventoryLabelEntries(sourceCatalog);
+  if (entries.length === 0) {
+    setInventoryScanResult('Pro aktuální filtr není co exportovat do štítků.', 'error');
+    return;
+  }
+
+  const html = buildInventoryBatchLabelsPdfHtml(entries);
+  await savePdfDocument({
+    title: 'Skladové štítky',
+    html,
+    defaultFileName: `skladove-stitky-${Date.now()}.pdf`
+  });
+
+  showToast(`PDF štítků vytvořeno (${entries.length} položek)`);
+  setInventoryScanResult(`PDF štítků je připraveno pro ${entries.length} položek.`, 'success');
+}
+
+function runInventoryScanAction(mode) {
+  const scanInput = document.getElementById('inventoryScanInput');
+  const qtyInput = document.getElementById('inventoryScanQty');
+  const stockFilterEl = document.getElementById('inventoryStockFilter');
+  const searchInput = document.getElementById('inventorySearchInput');
+
+  const code = String(scanInput?.value || '').trim();
+  const qtyRaw = Number(qtyInput?.value || 1);
+  const quantity = Number.isFinite(qtyRaw) && qtyRaw > 0 ? Math.floor(qtyRaw) : 1;
+
+  if (!code) {
+    setInventoryScanResult('Zadejte nebo naskenujte kód.', 'error');
+    return;
+  }
+
+  const sourceCatalog = state.inventoryEditMode ? state.inventoryDraft : state.catalog;
+  ensureInventoryArrays(sourceCatalog || {});
+  normalizeInventoryPrices(sourceCatalog || {});
+
+  const matches = findInventoryMatchesByCode(sourceCatalog, code);
+  if (matches.length === 0) {
+    setInventoryScanResult(`Kód ${code} nebyl ve skladu nalezen.`, 'error');
+    return;
+  }
+
+  const target = matches[0];
+  state.inventoryLastScanCode = code;
+  const targetName = String(target.item?.name || target.item?.id || 'Položka');
+  const targetSku = String(target.item?.sku || target.item?.id || '-');
+  const targetLocation = String(target.item?.location || '-');
+  const currentQty = Number.isFinite(Number(target.item?.qty)) ? Math.max(0, Math.floor(Number(target.item.qty))) : 0;
+
+  state.inventorySearchQuery = code;
+  if (searchInput) searchInput.value = state.inventorySearchQuery;
+  localStorage.setItem('ezfixDesktopInventorySearch', state.inventorySearchQuery);
+  state.inventoryStockFilter = 'all';
+  if (stockFilterEl) stockFilterEl.value = 'all';
+  localStorage.setItem('ezfixDesktopInventoryStockFilter', state.inventoryStockFilter);
+  setInventoryListCollapsed(target.listId, false);
+  localStorage.setItem('ezfixDesktopInventoryCollapsed', JSON.stringify(state.inventoryCollapsed));
+
+  if (mode === 'find') {
+    renderInventory();
+    setInventoryScanResult(`Nalezeno: ${targetName} | SKU: ${targetSku} | Pozice: ${targetLocation} | Sklad: ${currentQty} ks`, 'success');
+    showToast(`Nalezena položka: ${targetName}`);
+    return;
+  }
+
+  if (!state.inventoryEditMode) {
+    setInventoryEditMode(true, target.kind);
+  }
+
+  if (!state.inventoryDraft?.printing?.[target.kind] || !state.inventoryDraft.printing[target.kind][target.sourceIndex]) {
+    setInventoryScanResult('Položku se nepodařilo otevřít pro úpravu skladu.', 'error');
+    return;
+  }
+
+  const draftTarget = state.inventoryDraft.printing[target.kind][target.sourceIndex];
+  const draftCurrentQty = Number.isFinite(Number(draftTarget.qty)) ? Math.max(0, Math.floor(Number(draftTarget.qty))) : 0;
+  const draftNextQty = mode === 'add'
+    ? draftCurrentQty + quantity
+    : Math.max(0, draftCurrentQty - quantity);
+  draftTarget.qty = draftNextQty;
+
+  addInventoryMovement({
+    type: mode === 'add' ? 'in' : 'out',
+    name: draftTarget.name || draftTarget.id,
+    sku: draftTarget.sku || draftTarget.id,
+    location: draftTarget.location || '-',
+    beforeQty: draftCurrentQty,
+    afterQty: draftNextQty,
+    deltaQty: mode === 'add' ? quantity : -quantity,
+    idRef: draftTarget.id || ''
+  });
+
+  renderInventory();
+  setInventoryScanResult(`Upraveno: ${targetName} | ${draftCurrentQty} -> ${draftNextQty} ks | Pozice: ${targetLocation}`, 'success');
+  showToast(mode === 'add' ? `Naskladněno +${quantity} ks` : `Vyskladněno -${quantity} ks`);
+}
+
+function buildInventoryList(listId, list, kind) {
+  const isSectionEditable = state.inventoryEditMode && state.inventoryEditKind === kind;
+  const filteredEntries = getFilteredInventoryEntries(list);
+  const html = filteredEntries
+    .map(({ item, sourceIndex }) => {
       const name = escapeHtml(item.name || item.id || 'Položka');
       const price = Number(item.price || 0);
       const safePrice = Number.isFinite(price) ? price : 0;
       const quantity = Number(item.qty || 0);
       const safeQuantity = Number.isFinite(quantity) && quantity >= 0 ? Math.floor(quantity) : 0;
+      const itemId = escapeHtml(item.id || '-');
+      const itemSku = escapeHtml(item.sku || item.id || '-');
+      const itemBarcode = escapeHtml(item.barcode || '-');
+      const itemLocation = escapeHtml(item.location || '-');
 
       if (!isSectionEditable) {
-        const suffix = ` - ${safeQuantity} ks - ${formatMoney(safePrice)}`;
-        return `<li>${name}${suffix}</li>`;
+        const stockLevel = getInventoryStockLevel(safeQuantity);
+        const stockLabelMap = {
+          empty: 'Vyprodáno',
+          low: 'Nízký sklad',
+          medium: 'Pozor',
+          healthy: 'Stabilní'
+        };
+        const stockLabel = stockLabelMap[stockLevel] || stockLabelMap.healthy;
+        const rowValue = safeQuantity * safePrice;
+        const activity = item.active === false
+          ? '<span class="inventory-activity off">Neaktivní</span>'
+          : '<span class="inventory-activity on">Aktivní</span>';
+
+        return `
+          <li class="inventory-item">
+            <div class="inventory-item-main">
+              <div class="inventory-item-name">${name}</div>
+              <div class="inventory-item-meta">ID: ${itemId} | SKU: ${itemSku} | Kód: ${itemBarcode} | Pozice: ${itemLocation}</div>
+            </div>
+            <div class="inventory-item-stats">
+              <span class="inventory-qty-badge">${safeQuantity} ks</span>
+              <span class="inventory-stock-pill ${stockLevel}">${stockLabel}</span>
+              ${activity}
+              <strong class="inventory-item-price">${formatMoney(safePrice)}</strong>
+              <span class="inventory-item-total">Hodnota: ${formatMoney(rowValue)}</span>
+            </div>
+          </li>
+        `;
       }
 
       return `
         <li class="inventory-edit-item">
           <div class="inventory-edit-row">
-            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="name" value="${escapeHtml(item.name || '')}" placeholder="Název" />
-            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="qty" type="number" min="0" step="1" value="${safeQuantity}" placeholder="Sklad" />
-            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="price" type="number" step="0.01" value="${safePrice}" placeholder="Cena" />
-            <input data-inv-kind="${kind}" data-inv-index="${index}" data-field="active" value="${item.active === false ? 'false' : 'true'}" placeholder="true/false" />
+            <input data-inv-kind="${kind}" data-inv-index="${sourceIndex}" data-field="name" value="${escapeHtml(item.name || '')}" placeholder="Název" />
+            <input data-inv-kind="${kind}" data-inv-index="${sourceIndex}" data-field="sku" value="${escapeHtml(item.sku || item.id || '')}" placeholder="SKU" />
+            <input data-inv-kind="${kind}" data-inv-index="${sourceIndex}" data-field="barcode" value="${escapeHtml(item.barcode || '')}" placeholder="Čárový kód" />
+            <input data-inv-kind="${kind}" data-inv-index="${sourceIndex}" data-field="location" value="${escapeHtml(item.location || '')}" placeholder="Pozice (regál)" />
+            <input data-inv-kind="${kind}" data-inv-index="${sourceIndex}" data-field="qty" type="number" min="0" step="1" value="${safeQuantity}" placeholder="Sklad" />
+            <input data-inv-kind="${kind}" data-inv-index="${sourceIndex}" data-field="price" type="number" step="0.01" value="${safePrice}" placeholder="Cena" />
+            <input data-inv-kind="${kind}" data-inv-index="${sourceIndex}" data-field="active" value="${item.active === false ? 'false' : 'true'}" placeholder="true/false" />
+            <button class="secondary inventory-inline-btn" type="button" data-inv-generate-barcode="${kind}" data-inv-index="${sourceIndex}">Vygenerovat kód</button>
+            <button class="secondary inventory-inline-btn" type="button" data-inv-print-label="${kind}" data-inv-index="${sourceIndex}">Tisk štítku</button>
           </div>
           <div class="inventory-item-sub">${escapeHtml(item.id || '')}</div>
-          <button class="inventory-remove-btn" data-inv-remove="${kind}" data-inv-index="${index}">Smazat</button>
+          <button class="inventory-remove-btn" data-inv-remove="${kind}" data-inv-index="${sourceIndex}">Smazat</button>
         </li>
       `;
     }).join('');
 
   document.getElementById(listId).innerHTML = html || '<li>Žádné položky</li>';
+  return filteredEntries.length;
 }
 
 function renderInventory() {
@@ -2724,15 +3552,49 @@ function renderInventory() {
   const otherItems = Array.isArray(printing.otherItems) ? printing.otherItems : [];
   const otherCustomItems = Array.isArray(printing.otherCustomItems) ? printing.otherCustomItems : [];
   const usedItems = Array.isArray(printing.usedShopItems) ? printing.usedShopItems : [];
+  const inventoryTabEl = document.getElementById('inventoryTab');
+  const compactBtn = document.getElementById('inventoryCompactToggleBtn');
+  if (inventoryTabEl) {
+    inventoryTabEl.classList.toggle('inventory-compact', Boolean(state.inventoryCompactMode));
+  }
+  if (compactBtn) {
+    compactBtn.textContent = state.inventoryCompactMode ? 'Kompaktní režim: Zapnuto' : 'Kompaktní režim: Vypnuto';
+    compactBtn.classList.toggle('active', Boolean(state.inventoryCompactMode));
+  }
+  const allInventoryItems = [printers, filaments, pcBuildParts, otherItems, otherCustomItems, usedItems]
+    .flat()
+    .filter((item) => Boolean(item));
+  const activeInventoryItems = allInventoryItems
+    .filter((item) => item.active !== false);
 
   const totalCount = printers.length + filaments.length + pcBuildParts.length + otherItems.length + otherCustomItems.length + usedItems.length;
-  const activeCount = [printers, filaments, pcBuildParts, otherItems, otherCustomItems, usedItems]
-    .flat()
-    .filter((item) => item && item.active !== false)
+  const activeCount = activeInventoryItems.length;
+  const lowStockCount = activeInventoryItems
+    .filter((item) => {
+      const qty = Number(item.qty || 0);
+      return Number.isFinite(qty) && Math.floor(qty) <= 3;
+    })
     .length;
+  const totalUnits = activeInventoryItems
+    .reduce((sum, item) => {
+      const qty = Number(item.qty || 0);
+      if (!Number.isFinite(qty) || qty < 0) return sum;
+      return sum + Math.floor(qty);
+    }, 0);
+  const estimatedValue = activeInventoryItems
+    .reduce((sum, item) => {
+      const qty = Number(item.qty || 0);
+      const price = Number(item.price || 0);
+      const safeQty = Number.isFinite(qty) && qty > 0 ? Math.floor(qty) : 0;
+      const safePrice = Number.isFinite(price) && price > 0 ? price : 0;
+      return sum + (safeQty * safePrice);
+    }, 0);
 
   setTextContent('inventoryTotalCount', totalCount);
   setTextContent('inventoryActiveCount', activeCount);
+  setTextContent('inventoryLowStockCount', lowStockCount);
+  setTextContent('inventoryTotalUnits', `${totalUnits} ks`);
+  setTextContent('inventoryEstimatedValue', formatMoney(estimatedValue));
   setTextContent('printersCount', printers.length);
   setTextContent('filamentsCount', filaments.length);
   setTextContent('pcBuildPartsCount', pcBuildParts.length);
@@ -2786,13 +3648,20 @@ function renderInventory() {
     };
   });
 
-  buildInventoryList('printersList', printers, 'printers');
-  buildInventoryList('filamentsList', filaments, 'filaments');
-  buildInventoryList('pcBuildPartsList', pcBuildParts, 'pcBuildParts');
-  buildInventoryList('otherItemsList', otherItems, 'otherItems');
-  buildInventoryList('otherCustomItemsList', otherCustomItems, 'otherCustomItems');
-  buildInventoryList('usedItemsList', usedItems, 'usedShopItems');
+  const shownCount =
+    buildInventoryList('printersList', printers, 'printers')
+    + buildInventoryList('filamentsList', filaments, 'filaments')
+    + buildInventoryList('pcBuildPartsList', pcBuildParts, 'pcBuildParts')
+    + buildInventoryList('otherItemsList', otherItems, 'otherItems')
+    + buildInventoryList('otherCustomItemsList', otherCustomItems, 'otherCustomItems')
+    + buildInventoryList('usedItemsList', usedItems, 'usedShopItems');
+  const inventoryVisibleCountEl = document.getElementById('inventoryVisibleCount');
+  if (inventoryVisibleCountEl) {
+    const totalPool = state.inventoryEditMode ? totalCount : activeCount;
+    inventoryVisibleCountEl.textContent = `Zobrazeno ${shownCount} z ${totalPool} položek`;
+  }
   applyInventoryCollapseState();
+  renderInventoryMovements();
 
   if (state.inventoryEditMode) {
     document.querySelectorAll('[data-inv-kind]').forEach((input) => {
@@ -2822,6 +3691,11 @@ function renderInventory() {
           return;
         }
 
+        if (field === 'barcode' || field === 'sku' || field === 'location') {
+          list[index][field] = String(input.value || '').trim();
+          return;
+        }
+
         list[index][field] = input.value;
       });
     });
@@ -2834,6 +3708,40 @@ function renderInventory() {
         if (!Array.isArray(list) || !Number.isFinite(index) || index < 0 || index >= list.length) return;
         list.splice(index, 1);
         renderInventory();
+      });
+    });
+
+    document.querySelectorAll('[data-inv-generate-barcode]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const kind = button.getAttribute('data-inv-generate-barcode');
+        const index = Number(button.getAttribute('data-inv-index'));
+        const list = state.inventoryDraft?.printing?.[kind || ''];
+        if (!Array.isArray(list) || !Number.isFinite(index) || index < 0 || index >= list.length) return;
+        const target = list[index];
+        const nextBarcode = generateBarcodeForItem(target, state.inventoryDraft);
+        if (!nextBarcode) {
+          showToast('Kód se nepodařilo vygenerovat');
+          return;
+        }
+        target.barcode = nextBarcode;
+        renderInventory();
+        setInventoryScanResult(`Vygenerován kód pro ${target.name || target.id}: ${nextBarcode}`, 'success');
+      });
+    });
+
+    document.querySelectorAll('[data-inv-print-label]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const kind = button.getAttribute('data-inv-print-label');
+        const index = Number(button.getAttribute('data-inv-index'));
+        const list = state.inventoryDraft?.printing?.[kind || ''];
+        if (!Array.isArray(list) || !Number.isFinite(index) || index < 0 || index >= list.length) return;
+        const target = list[index];
+        try {
+          const sectionLabel = EASY_CATALOG_KIND_LABELS[kind || ''] || 'Sklad';
+          await printInventoryLabel(target, sectionLabel);
+        } catch (error) {
+          showToast(error.message || 'Tisk štítku selhal');
+        }
       });
     });
   }
@@ -2957,6 +3865,16 @@ function switchTab(tab) {
       const errorEl = document.getElementById('chatReplyError');
       if (errorEl) errorEl.textContent = error.message || 'Načtení chat manageru selhalo';
     });
+  }
+
+  if (tab === 'inventory') {
+    const scanInput = document.getElementById('inventoryScanInput');
+    if (scanInput) {
+      window.setTimeout(() => {
+        scanInput.focus();
+        scanInput.select();
+      }, 40);
+    }
   }
 }
 
@@ -3170,6 +4088,7 @@ async function onLoginSubmit(event) {
     refreshFeatureTabsVisibility();
     refreshOrderOpsVisibility();
     await loadDashboardData({ silent: true });
+    await syncInventoryMovementsFromApi();
     await loadUsers();
     startPolling();
     showToast('Připojeno');
@@ -3189,9 +4108,32 @@ async function bootstrap() {
   renderLabelTemplateEditor();
   setCatalogEditorMode(state.catalogEditorMode);
   state.inventorySearchQuery = localStorage.getItem('ezfixDesktopInventorySearch') || '';
+  const allowedStockFilters = new Set(['all', 'healthy', 'medium', 'low', 'empty']);
+  if (!allowedStockFilters.has(state.inventoryStockFilter)) {
+    state.inventoryStockFilter = 'all';
+  }
   const inventorySearchInput = document.getElementById('inventorySearchInput');
+  const inventoryStockFilter = document.getElementById('inventoryStockFilter');
+  const inventoryCompactToggleBtn = document.getElementById('inventoryCompactToggleBtn');
+  const inventoryScanInput = document.getElementById('inventoryScanInput');
+  const inventoryScanFindBtn = document.getElementById('inventoryScanFindBtn');
+  const inventoryScanAddBtn = document.getElementById('inventoryScanAddBtn');
+  const inventoryScanRemoveBtn = document.getElementById('inventoryScanRemoveBtn');
+  const inventoryPrintScannedLabelBtn = document.getElementById('inventoryPrintScannedLabelBtn');
+  const inventoryGenerateMissingBarcodesBtn = document.getElementById('inventoryGenerateMissingBarcodesBtn');
+  const inventoryExportVisibleLabelsPdfBtn = document.getElementById('inventoryExportVisibleLabelsPdfBtn');
+  const inventoryExportMovementsCsvBtn = document.getElementById('inventoryExportMovementsCsvBtn');
+  const inventoryExportMovementsPdfBtn = document.getElementById('inventoryExportMovementsPdfBtn');
+  const inventoryClearMovementsBtn = document.getElementById('inventoryClearMovementsBtn');
+  const inventoryDeviceLabelInput = document.getElementById('inventoryDeviceLabelInput');
   if (inventorySearchInput) {
     inventorySearchInput.value = state.inventorySearchQuery;
+  }
+  if (inventoryStockFilter) {
+    inventoryStockFilter.value = state.inventoryStockFilter;
+  }
+  if (inventoryDeviceLabelInput) {
+    inventoryDeviceLabelInput.value = getInventoryDeviceLabel();
   }
 
   syncUserAccessControls('newUser', document.getElementById('newUserRole')?.value || 'manager');
@@ -3219,6 +4161,7 @@ async function bootstrap() {
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
     state.token = '';
+    state.inventoryMovementsSynced = false;
     state.currentUser = null;
     state.users = [];
     state.chatSessions = [];
@@ -3273,6 +4216,102 @@ async function bootstrap() {
       renderInventory();
     });
   }
+
+  if (inventoryStockFilter) {
+    inventoryStockFilter.addEventListener('change', (event) => {
+      const nextFilter = String(event.target.value || 'all').toLowerCase();
+      state.inventoryStockFilter = allowedStockFilters.has(nextFilter) ? nextFilter : 'all';
+      localStorage.setItem('ezfixDesktopInventoryStockFilter', state.inventoryStockFilter);
+      renderInventory();
+    });
+  }
+
+  if (inventoryCompactToggleBtn) {
+    inventoryCompactToggleBtn.addEventListener('click', () => {
+      state.inventoryCompactMode = !state.inventoryCompactMode;
+      localStorage.setItem('ezfixDesktopInventoryCompactMode', String(state.inventoryCompactMode));
+      renderInventory();
+    });
+  }
+
+  if (inventoryDeviceLabelInput) {
+    inventoryDeviceLabelInput.addEventListener('input', (event) => {
+      state.inventoryDeviceLabel = String(event.target.value || '').trim() || getDefaultInventoryDeviceLabel();
+      localStorage.setItem('ezfixDesktopInventoryDeviceLabel', state.inventoryDeviceLabel);
+    });
+  }
+
+  if (inventoryScanInput) {
+    inventoryScanInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      runInventoryScanAction('find');
+    });
+  }
+
+  if (inventoryScanFindBtn) {
+    inventoryScanFindBtn.addEventListener('click', () => runInventoryScanAction('find'));
+  }
+
+  if (inventoryScanAddBtn) {
+    inventoryScanAddBtn.addEventListener('click', () => runInventoryScanAction('add'));
+  }
+
+  if (inventoryScanRemoveBtn) {
+    inventoryScanRemoveBtn.addEventListener('click', () => runInventoryScanAction('remove'));
+  }
+
+  if (inventoryPrintScannedLabelBtn) {
+    inventoryPrintScannedLabelBtn.addEventListener('click', async () => {
+      try {
+        await printInventoryLabelFromScannerContext();
+      } catch (error) {
+        setInventoryScanResult(error.message || 'Tisk štítku selhal.', 'error');
+      }
+    });
+  }
+
+  if (inventoryGenerateMissingBarcodesBtn) {
+    inventoryGenerateMissingBarcodesBtn.addEventListener('click', () => {
+      generateMissingInventoryBarcodes();
+    });
+  }
+
+  if (inventoryExportVisibleLabelsPdfBtn) {
+    inventoryExportVisibleLabelsPdfBtn.addEventListener('click', async () => {
+      try {
+        await exportVisibleInventoryLabelsPdf();
+      } catch (error) {
+        setInventoryScanResult(error.message || 'Export PDF štítků selhal.', 'error');
+      }
+    });
+  }
+
+  if (inventoryExportMovementsCsvBtn) {
+    inventoryExportMovementsCsvBtn.addEventListener('click', () => {
+      exportInventoryMovementsCsv();
+    });
+  }
+
+  if (inventoryExportMovementsPdfBtn) {
+    inventoryExportMovementsPdfBtn.addEventListener('click', async () => {
+      try {
+        await exportInventoryMovementsPdf();
+      } catch (error) {
+        setInventoryScanResult(error.message || 'Export PDF pohybů selhal.', 'error');
+      }
+    });
+  }
+
+  if (inventoryClearMovementsBtn) {
+    inventoryClearMovementsBtn.addEventListener('click', () => {
+      clearInventoryMovements();
+      setInventoryScanResult('Historie pohybů byla vymazána.', 'success');
+    });
+  }
+
+  setInventoryScanResult('Čekám na první scan. Kód můžeš vložit ručně, nechat vygenerovat nebo rovnou vytisknout štítek.');
+  renderInventoryMovements();
 
   document.getElementById('statusFilter').addEventListener('change', renderOrders);
   document.getElementById('typeFilter').addEventListener('change', renderOrders);
@@ -3567,12 +4606,14 @@ async function bootstrap() {
       refreshFeatureTabsVisibility();
       refreshOrderOpsVisibility();
       await loadDashboardData({ silent: true });
+      await syncInventoryMovementsFromApi();
       await loadUsers();
       startPolling();
       showToast('Relace obnovena');
       return;
     } catch {
       state.token = '';
+      state.inventoryMovementsSynced = false;
       localStorage.removeItem('ezfixDesktopToken');
     }
   }
@@ -3591,12 +4632,14 @@ async function bootstrap() {
       refreshFeatureTabsVisibility();
       refreshOrderOpsVisibility();
       await loadDashboardData({ silent: true });
+      await syncInventoryMovementsFromApi();
       await loadUsers();
       startPolling();
       showToast('Automatické přihlášení úspěšné');
       return;
     } catch {
       state.token = '';
+      state.inventoryMovementsSynced = false;
       localStorage.removeItem('ezfixDesktopRememberedToken');
       localStorage.removeItem('ezfixDesktopRememberedUser');
     }

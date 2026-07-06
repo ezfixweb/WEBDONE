@@ -262,6 +262,23 @@ async function initializeDatabase() {
                 created_by_user_id INTEGER REFERENCES users(id),
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS inventory_movements (
+                movement_id TEXT PRIMARY KEY,
+                happened_at TIMESTAMPTZ NOT NULL,
+                movement_type TEXT NOT NULL,
+                item_name TEXT NOT NULL,
+                item_sku TEXT,
+                item_location TEXT,
+                before_qty INTEGER DEFAULT 0,
+                after_qty INTEGER DEFAULT 0,
+                delta_qty INTEGER DEFAULT 0,
+                operator_label TEXT,
+                device_label TEXT,
+                id_ref TEXT,
+                created_by_user_id INTEGER REFERENCES users(id),
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             )`
         ];
 
@@ -316,7 +333,24 @@ async function initializeDatabase() {
             `ALTER TABLE invoices ADD COLUMN IF NOT EXISTS scan_file_url TEXT`,
             `ALTER TABLE invoices ADD COLUMN IF NOT EXISTS notes TEXT`,
             `ALTER TABLE invoices ADD COLUMN IF NOT EXISTS created_by_user_id INTEGER REFERENCES users(id)`,
-            `ALTER TABLE invoices ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP`
+            `ALTER TABLE invoices ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS movement_id TEXT`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS happened_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS movement_type TEXT DEFAULT 'fix'`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS item_name TEXT DEFAULT '-'`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS item_sku TEXT`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS item_location TEXT`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS before_qty INTEGER DEFAULT 0`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS after_qty INTEGER DEFAULT 0`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS delta_qty INTEGER DEFAULT 0`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS operator_label TEXT`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS device_label TEXT`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS id_ref TEXT`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS created_by_user_id INTEGER REFERENCES users(id)`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP`,
+            `ALTER TABLE inventory_movements ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP`,
+            `CREATE UNIQUE INDEX IF NOT EXISTS inventory_movements_movement_id_uq ON inventory_movements(movement_id)`,
+            `CREATE INDEX IF NOT EXISTS inventory_movements_happened_at_idx ON inventory_movements(happened_at DESC)`
         ];
 
         for (const sql of compatibilityMigrations) {

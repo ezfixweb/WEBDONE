@@ -144,10 +144,10 @@
           </div>
         </section>
 
-        <section id="inventoryTab" class="panel tab-content">
+        <section id="inventoryTab" class="panel tab-content inventory-warehouse-tab">
           <div class="inventory-head">
             <div>
-              <h2>Sklad</h2>
+              <h2>Warehouse Sklad</h2>
               <div id="inventoryEditStatus" class="inventory-edit-status hidden"></div>
             </div>
             <div class="inventory-actions">
@@ -156,24 +156,100 @@
               <button id="inventoryCancelBtn" class="hidden">Zrušit</button>
             </div>
           </div>
-          <p class="small">Načítáno z /catalog (3D tisk, shop a bazar).</p>
+          <p class="small inventory-intro">Načítáno z /catalog (3D tisk, shop a bazar). Přehled je optimalizovaný pro warehouse provoz.</p>
 
           <div class="inventory-summary">
             <div class="inventory-summary-card">
+              <div class="inventory-summary-icon">SKU</div>
               <div class="small">Celkem položek</div>
               <strong id="inventoryTotalCount">0</strong>
             </div>
             <div class="inventory-summary-card">
+              <div class="inventory-summary-icon">LIVE</div>
               <div class="small">Aktivní položky</div>
               <strong id="inventoryActiveCount">0</strong>
+            </div>
+            <div class="inventory-summary-card">
+              <div class="inventory-summary-icon">LOW</div>
+              <div class="small">Nízký sklad</div>
+              <strong id="inventoryLowStockCount">0</strong>
+            </div>
+            <div class="inventory-summary-card">
+              <div class="inventory-summary-icon">QTY</div>
+              <div class="small">Kusy celkem</div>
+              <strong id="inventoryTotalUnits">0 ks</strong>
+            </div>
+            <div class="inventory-summary-card inventory-summary-card-wide">
+              <div class="inventory-summary-icon">VAL</div>
+              <div class="small">Odhad hodnoty skladu</div>
+              <strong id="inventoryEstimatedValue">0 Kč</strong>
             </div>
           </div>
 
           <div class="inventory-search-row">
             <label>
-              Rychlé hledání ve Skladu
+              Rychlé hledání ve skladu
               <input id="inventorySearchInput" type="text" placeholder="Hledej název položky..." />
             </label>
+            <div class="inventory-controls-row">
+              <label>
+                Stav zásob
+                <select id="inventoryStockFilter">
+                  <option value="all">Vše</option>
+                  <option value="healthy">Stabilní</option>
+                  <option value="medium">Pozor</option>
+                  <option value="low">Nízký sklad</option>
+                  <option value="empty">Vyprodáno</option>
+                </select>
+              </label>
+              <button id="inventoryCompactToggleBtn" type="button" class="secondary">Kompaktní režim: Vypnuto</button>
+            </div>
+            <div class="inventory-legend" aria-label="Legenda stavu zásob">
+              <span class="inventory-legend-item is-good">Stabilní</span>
+              <span class="inventory-legend-item is-medium">Pozor</span>
+              <span class="inventory-legend-item is-low">Nízký sklad</span>
+              <span class="inventory-legend-item is-empty">Vyprodáno</span>
+            </div>
+          </div>
+          <p id="inventoryVisibleCount" class="inventory-visible-count">Zobrazeno 0 položek</p>
+          <div class="inventory-scan-panel" aria-label="Skladový skener">
+            <div class="inventory-scan-head">
+              <h3>Scanner Hub</h3>
+              <span class="small">Připraveno pro telefon/skener čárových kódů</span>
+            </div>
+            <div class="inventory-scan-controls">
+              <label>
+                Kód / SKU / ID
+                <input id="inventoryScanInput" type="text" placeholder="Naskenuj nebo vlož kód" autocomplete="off" />
+              </label>
+              <label>
+                Množství
+                <input id="inventoryScanQty" type="number" min="1" step="1" value="1" />
+              </label>
+              <button id="inventoryScanFindBtn" type="button" class="secondary">Najít</button>
+              <button id="inventoryScanAddBtn" type="button">Naskladnit +</button>
+              <button id="inventoryScanRemoveBtn" type="button" class="secondary">Vyskladnit -</button>
+              <button id="inventoryPrintScannedLabelBtn" type="button" class="secondary">Tisk štítku</button>
+              <button id="inventoryGenerateMissingBarcodesBtn" type="button" class="secondary">Vygenerovat chybějící kódy</button>
+            </div>
+            <p id="inventoryScanResult" class="inventory-scan-result">Čekám na první scan.</p>
+            <div class="inventory-scan-actions">
+              <label class="inventory-device-input">
+                Zařízení
+                <input id="inventoryDeviceLabelInput" type="text" placeholder="Desktop-01 / Telefon-02" />
+              </label>
+              <button id="inventoryExportVisibleLabelsPdfBtn" type="button" class="secondary">Export štítků PDF (filtrované)</button>
+              <button id="inventoryExportMovementsCsvBtn" type="button" class="secondary">Export pohybů CSV</button>
+              <button id="inventoryExportMovementsPdfBtn" type="button" class="secondary">Export pohybů PDF</button>
+              <button id="inventoryClearMovementsBtn" type="button" class="secondary">Vymazat historii pohybů</button>
+            </div>
+            <div class="inventory-movement-panel" aria-label="Historie pohybů skladu">
+              <div class="inventory-movement-head">
+                <h4>Historie příjem/výdej</h4>
+                <span id="inventoryMovementCount" class="small">0 záznamů</span>
+              </div>
+              <div id="inventoryMovementList" class="inventory-movement-list"></div>
+            </div>
           </div>
 
           <div class="inventory-grid">

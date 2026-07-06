@@ -25,6 +25,7 @@ const emailRoutes = require('./routes/email');
 const catalogRoutes = require('./routes/catalog');
 const uploadsRoutes = require('./routes/uploads');
 const chatRoutes = require('./routes/chat');
+const inventoryRoutes = require('./routes/inventory');
 
 // Initialize Express app
 const app = express();
@@ -223,6 +224,7 @@ app.use('/api/email', apiLimiter, emailRoutes);
 app.use('/api/catalog', apiLimiter, catalogRoutes);
 app.use('/api/uploads', apiLimiter, uploadsRoutes);
 app.use('/api/chat', chatLimiter, chatRoutes);
+app.use('/api/inventory', apiLimiter, inventoryRoutes);
 
 // Serve frontend static files from the project root (one level up from backend)
 const path = require('path');
