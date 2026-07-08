@@ -196,7 +196,7 @@ const EASY_CATALOG_KIND_LABELS = {
   filaments: 'Filamenty',
   pcBuildParts: 'PC díly',
   otherItems: 'Ostatní položky',
-  otherCustomItems: 'Další (Other)',
+  otherCustomItems: 'Další položky',
   usedShopItems: 'Bazar'
 };
 
@@ -205,7 +205,7 @@ const INVENTORY_SECTION_CONFIG = [
   { kind: 'filaments', listId: 'filamentsList', label: 'Filamenty' },
   { kind: 'pcBuildParts', listId: 'pcBuildPartsList', label: 'PC díly' },
   { kind: 'otherItems', listId: 'otherItemsList', label: 'Ostatní položky' },
-  { kind: 'otherCustomItems', listId: 'otherCustomItemsList', label: 'Další (Other)' },
+  { kind: 'otherCustomItems', listId: 'otherCustomItemsList', label: 'Další položky' },
   { kind: 'usedShopItems', listId: 'usedItemsList', label: 'Bazar' }
 ];
 
@@ -2697,9 +2697,34 @@ function setTextContent(id, value) {
   el.textContent = String(value);
 }
 
+function buildInventorySectionSummary(items) {
+  const safeItems = Array.isArray(items) ? items.filter((item) => Boolean(item)) : [];
+  const activeItems = safeItems.filter((item) => item.active !== false);
+  const totalUnits = activeItems.reduce((sum, item) => {
+    const qty = Number(item.qty || 0);
+    if (!Number.isFinite(qty) || qty <= 0) return sum;
+    return sum + Math.floor(qty);
+  }, 0);
+  const lowStockCount = activeItems.filter((item) => {
+    const qty = Number(item.qty || 0);
+    return Number.isFinite(qty) && Math.floor(qty) <= 3;
+  }).length;
+
+  const parts = [`${activeItems.length} aktivních`];
+  if (totalUnits > 0) {
+    parts.push(`${totalUnits} ks`);
+  }
+  if (lowStockCount > 0) {
+    parts.push(lowStockCount === 1 ? '1 dochází' : `${lowStockCount} dochází`);
+  }
+
+  return parts.join(' • ');
+}
+
 function setInventoryListCollapsed(listId, collapsed) {
   const listEl = document.getElementById(listId);
   const button = document.querySelector(`[data-inv-toggle="${listId}"]`);
+  const surface = document.querySelector(`[data-inv-surface="${listId}"]`);
   const actions = document.querySelector(`[data-inv-actions="${listId}"]`);
   const block = listEl ? listEl.closest('.inventory-block') : null;
   if (!listEl || !button) return;
@@ -2712,6 +2737,10 @@ function setInventoryListCollapsed(listId, collapsed) {
     block.classList.toggle('inventory-block-collapsed', collapsed);
   }
   button.textContent = collapsed ? 'Zobrazit' : 'Skrýt';
+  button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  if (surface) {
+    surface.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  }
   state.inventoryCollapsed[listId] = Boolean(collapsed);
 }
 
@@ -3601,6 +3630,12 @@ function renderInventory() {
   setTextContent('otherItemsCount', otherItems.length);
   setTextContent('otherCustomItemsCount', otherCustomItems.length);
   setTextContent('usedItemsCount', usedItems.length);
+  setTextContent('printersSummaryMeta', buildInventorySectionSummary(printers));
+  setTextContent('filamentsSummaryMeta', buildInventorySectionSummary(filaments));
+  setTextContent('pcBuildPartsSummaryMeta', buildInventorySectionSummary(pcBuildParts));
+  setTextContent('otherItemsSummaryMeta', buildInventorySectionSummary(otherItems));
+  setTextContent('otherCustomItemsSummaryMeta', buildInventorySectionSummary(otherCustomItems));
+  setTextContent('usedItemsSummaryMeta', buildInventorySectionSummary(usedItems));
 
   document.querySelectorAll('[data-inv-edit]').forEach((button) => {
     const kind = button.getAttribute('data-inv-edit');
@@ -3615,7 +3650,7 @@ function renderInventory() {
       filaments: 'Filamenty',
       pcBuildParts: 'PC díly',
       otherItems: 'Ostatní položky',
-      otherCustomItems: 'Další (Other)',
+      otherCustomItems: 'Další položky',
       usedShopItems: 'Bazar'
     };
     if (state.inventoryEditMode && state.inventoryEditKind) {
@@ -4206,6 +4241,29 @@ async function bootstrap() {
       const isCollapsed = Boolean(state.inventoryCollapsed[listId]);
       setInventoryListCollapsed(listId, !isCollapsed);
       localStorage.setItem('ezfixDesktopInventoryCollapsed', JSON.stringify(state.inventoryCollapsed));
+    });
+  });
+
+  document.querySelectorAll('[data-inv-surface]').forEach((surface) => {
+    const toggleFromSurface = () => {
+      const listId = surface.getAttribute('data-inv-surface');
+      if (!listId) return;
+      const isCollapsed = Boolean(state.inventoryCollapsed[listId]);
+      setInventoryListCollapsed(listId, !isCollapsed);
+      localStorage.setItem('ezfixDesktopInventoryCollapsed', JSON.stringify(state.inventoryCollapsed));
+    };
+
+    surface.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('button, a, input, select, textarea, label')) {
+        return;
+      }
+      toggleFromSurface();
+    });
+
+    surface.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      toggleFromSurface();
     });
   });
 
